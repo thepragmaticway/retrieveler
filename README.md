@@ -42,8 +42,9 @@ Nature:
 
 Concrete examples:
 
-- HTML or XML documents, where elements contain child elements.
+- HTML, XML or JSON documents, where elements contain child elements.
 - File systems, where folders contain subfolders and files.
+- A family tree or human genealogy, where generations are represented as parent-child branches.
 - Organization charts, where a CEO is at the root and departments branch downward.
 
 When to use it:
