@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Retrieveler — Cover</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #020810;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+.cover {
+  width: 1280px;
+  height: 640px;
+  background: #050d1c;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Outfit', system-ui, sans-serif;
+  color: #dce8f5;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.bg-dots {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, #ffffff08 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: 0;
+}
+.corner {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  pointer-events: none;
+  z-index: 1;
+}
+.corner-tl { top: 18px; left: 18px; border-top: 1px solid #ffffff12; border-left: 1px solid #ffffff12; }
+.corner-br { bottom: 18px; right: 18px; border-bottom: 1px solid #ffffff12; border-right: 1px solid #ffffff12; }
+.corner-tr { top: 18px; right: 18px; border-top: 1px solid #ffffff08; border-right: 1px solid #ffffff08; }
+.corner-bl { bottom: 18px; left: 18px; border-bottom: 1px solid #ffffff08; border-left: 1px solid #ffffff08; }
+
+.header {
+  position: relative;
+  z-index: 2;
+  padding: 40px 72px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex: 0 0 auto;
+}
+.title {
+  font-size: 60px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: #eef4ff;
+  line-height: 1;
+}
+.title .dot { color: #00c8ef; }
+.tagline {
+  margin-top: 9px;
+  font-size: 13px;
+  color: #2e4460;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.07em;
+}
+.badges {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.badge {
+  font-size: 10.5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  padding: 4px 13px;
+  border-radius: 99px;
+  border: 1px solid;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.meta {
+  text-align: right;
+  padding-top: 6px;
+}
+.meta-line {
+  font-size: 12px;
+  color: #1e2e42;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.05em;
+  line-height: 1.9;
+}
+.meta-line.bright { color: #2d4460; }
+
+.panels {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 16px;
+  padding: 18px 64px 32px;
+  flex: 1;
+  min-height: 0;
+}
+.panel {
+  flex: 1;
+  border-radius: 14px;
+  border: 1px solid;
+  padding: 16px 18px 13px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 0;
+}
+.panel-r { background: linear-gradient(180deg, #001e2e 0%, #030f1a 55%); border-color: #00c8ef22; }
+.panel-h { background: linear-gradient(180deg, #1c0e00 0%, #0c0600 55%); border-color: #f0a01e22; }
+.panel-g { background: linear-gradient(180deg, #14082a 0%, #080315 55%); border-color: #9966ff22; }
+
+.panel-top-glow {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 90px;
+  border-radius: 14px 14px 0 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.glow-r { background: linear-gradient(180deg, #00c8ef12 0%, transparent 100%); }
+.glow-h { background: linear-gradient(180deg, #f0a01e12 0%, transparent 100%); }
+.glow-g { background: linear-gradient(180deg, #9966ff12 0%, transparent 100%); }
+
+.panel-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex: 0 0 auto;
+}
+.panel-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.panel-type {
+  font-size: 10.5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.panel-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+}
+.panel-body svg { display: block; max-width: 100%; max-height: 100%; }
+.panel-foot {
+  position: relative;
+  z-index: 1;
+  margin-top: 8px;
+  flex: 0 0 auto;
+  border-top: 1px solid;
+  padding-top: 8px;
+}
+.foot-r { border-color: #00c8ef18; }
+.foot-h { border-color: #f0a01e18; }
+.foot-g { border-color: #9966ff18; }
+.panel-desc {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.05em;
+  opacity: 0.75;
+}
+</style>
+</head>
+<body>
+<div class="cover">
+  <div class="bg-dots"></div>
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-br"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+
+  <div class="header">
+    <div>
+      <div class="title">Retrieveler<span class="dot">.</span></div>
+      <div class="tagline">// data-retrieval-learner &nbsp;·&nbsp; learn how data is stored &amp; found</div>
+      <div class="badges">
+        <span class="badge" style="color:#00c8ef;border-color:#00c8ef40;background:#00c8ef0a;">relational</span>
+        <span class="badge" style="color:#f0a01e;border-color:#f0a01e40;background:#f0a01e0a;">hierarchical</span>
+        <span class="badge" style="color:#9966ff;border-color:#9966ff40;background:#9966ff0a;">graph</span>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="meta-line bright">three fundamental data structures</div>
+      <div class="meta-line">relational · hierarchical · graph</div>
+      <div class="meta-line" style="margin-top:6px;">educational · intuitive · practical</div>
+    </div>
+  </div>
+
+  <div class="panels">
+
+    <!-- ─────────────────────── RELATIONAL ─────────────────────── -->
+    <div class="panel panel-r">
+      <div class="panel-top-glow glow-r"></div>
+      <div class="panel-header">
+        <div class="panel-dot" style="background:#00c8ef;"></div>
+        <span class="panel-type" style="color:#00c8ef;">Relational</span>
+      </div>
+      <div class="panel-body">
+        <svg viewBox="0 0 300 250" width="300" height="250" xmlns="http://www.w3.org/2000/svg">
+          <!-- ── Table 1: customers ── -->
+          <rect x="4" y="6" width="124" height="22" rx="3" fill="#003b50"/>
+          <text x="66" y="21" text-anchor="middle" fill="#00c8ef" font-family="JetBrains Mono,monospace" font-size="11" font-weight="500">customers</text>
+          <!-- col header row -->
+          <rect x="4" y="28" width="124" height="19" fill="#00243a"/>
+          <line x1="48" y1="28" x2="48" y2="47" stroke="#005577" stroke-width="0.5"/>
+          <text x="26" y="41" text-anchor="middle" fill="#3a8aa0" font-family="JetBrains Mono,monospace" font-size="9.5">id ★</text>
+          <text x="85" y="41" text-anchor="middle" fill="#3a8aa0" font-family="JetBrains Mono,monospace" font-size="9.5">name</text>
+          <!-- rows -->
+          <rect x="4" y="47" width="124" height="20" fill="#010e18"/>
+          <line x1="4" y1="47" x2="128" y2="47" stroke="#004466" stroke-width="0.5"/>
+          <line x1="48" y1="47" x2="48" y2="67" stroke="#003355" stroke-width="0.5"/>
+          <text x="26" y="61" text-anchor="middle" fill="#00c8ef" font-family="JetBrains Mono,monospace" font-size="11" font-weight="500">1</text>
+          <text x="85" y="61" text-anchor="middle" fill="#7dbdd0" font-family="JetBrains Mono,monospace" font-size="10">Alice</text>
+
+          <rect x="4" y="67" width="124" height="20" fill="#020f1c"/>
+          <line x1="4" y1="67" x2="128" y2="67" stroke="#003355" stroke-width="0.5"/>
+          <line x1="48" y1="67" x2="48" y2="87" stroke="#003355" stroke-width="0.5"/>
+          <text x="26" y="81" text-anchor="middle" fill="#00c8ef" font-family="JetBrains Mono,monospace" font-size="11" font-weight="500">2</text>
+          <text x="85" y="81" text-anchor="middle" fill="#7dbdd0" font-family="JetBrains Mono,monospace" font-size="10">Bob</text>
+
+          <rect x="4" y="87" width="124" height="20" fill="#010e18"/>
+          <line x1="4" y1="87" x2="128" y2="87" stroke="#004466" stroke-width="0.5"/>
+          <line x1="48" y1="87" x2="48" y2="107" stroke="#003355" stroke-width="0.5"/>
+          <text x="26" y="101" text-anchor="middle" fill="#00c8ef" font-family="JetBrains Mono,monospace" font-size="11" font-weight="500">3</text>
+          <text x="85" y="101" text-anchor="middle" fill="#7dbdd0" font-family="JetBrains Mono,monospace" font-size="10">Carol</text>
+
+          <rect x="4" y="6" width="124" height="101" rx="3" fill="none" stroke="#00c8ef28" stroke-width="1"/>
+
+          <!-- JOIN connector -->
+          <line x1="128" y1="57" x2="168" y2="57" stroke="#00c8ef45" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <polygon points="164,54 171,57 164,60" fill="#00c8ef55"/>
+          <text x="148" y="50" text-anchor="middle" fill="#00c8ef40" font-family="JetBrains Mono,monospace" font-size="8.5" letter-spacing="1">JOIN</text>
+
+          <!-- Relationship lines (subtle) -->
+          <path d="M 128 57 C 148 57 148 57 168 57" fill="none" stroke="#00c8ef30" stroke-width="1" stroke-dasharray="4,3"/>
+          <path d="M 128 57 C 148 75 148 75 168 75" fill="none" stroke="#00c8ef18" stroke-width="1" stroke-dasharray="4,3"/>
+          <path d="M 128 77 C 148 90 148 90 168 90" fill="none" stroke="#00c8ef15" stroke-width="1" stroke-dasharray="4,3"/>
+
+          <!-- ── Table 2: orders ── -->
+          <rect x="172" y="6" width="124" height="22" rx="3" fill="#003b50"/>
+          <text x="234" y="21" text-anchor="middle" fill="#00c8ef" font-family="JetBrains Mono,monospace" font-size="11" font-weight="500">orders</text>
+          <rect x="172" y="28" width="124" height="19" fill="#00243a"/>
+          <line x1="218" y1="28" x2="218" y2="47" stroke="#005577" stroke-width="0.5"/>
+          <text x="195" y="41" text-anchor="middle" fill="#3a8aa0" font-family="JetBrains Mono,monospace" font-size="9">order_id</text>
+          <text x="258" y="41" text-anchor="middle" fill="#3a8aa0" font-family="JetBrains Mono,monospace" font-size="9">cust_id ★</text>
+
+          <rect x="172" y="47" width="124" height="20" fill="#010e18"/>
+          <line x1="172" y1="47" x2="296" y2="47" stroke="#004466" stroke-width="0.5"/>
+          <line x1="218" y1="47" x2="218" y2="67" stroke="#003355" stroke-width="0.5"/>
+          <text x="195" y="61" text-anchor="middle" fill="#7dbdd0" font-family="JetBrains Mono,monospace" font-size="10">101</text>
+          <text x="258" y="61" text-anchor="middle" fill="#00c8ef" font-family="JetBrains Mono,monospace" font-size="11" font-weight="500">1</text>
+
+          <rect x="172" y="67" width="124" height="20" fill="#020f1c"/>
+          <line x1="172" y1="67" x2="296" y2="67" stroke="#003355" stroke-width="0.5"/>
+          <line x1="218" y1="67" x2="218" y2="87" stroke="#003355" stroke-width="0.5"/>
+          <text x="195" y="81" text-anchor="middle" fill="#7dbdd0" font-family="JetBrains Mono,monospace" font-size="10">102</text>
+          <text x="258" y="81" text-anchor="middle" fill="#00c8ef" font-family="JetBrains Mono,monospace" font-size="11" font-weight="500">1</text>
+
+          <rect x="172" y="87" width="124" height="20" fill="#010e18"/>
+          <line x1="172" y1="87" x2="296" y2="87" stroke="#004466" stroke-width="0.5"/>
+          <line x1="218" y1="87" x2="218" y2="107" stroke="#003355" stroke-width="0.5"/>
+          <text x="195" y="101" text-anchor="middle" fill="#7dbdd0" font-family="JetBrains Mono,monospace" font-size="10">103</text>
+          <text x="258" y="101" text-anchor="middle" fill="#00c8ef" font-family="JetBrains Mono,monospace" font-size="11" font-weight="500">2</text>
+
+          <rect x="172" y="6" width="124" height="101" rx="3" fill="none" stroke="#00c8ef28" stroke-width="1"/>
+
+          <!-- SQL snippet -->
+          <rect x="4" y="122" width="292" height="48" rx="4" fill="#010c17"/>
+          <rect x="4" y="122" width="292" height="48" rx="4" fill="none" stroke="#00c8ef18" stroke-width="1"/>
+          <text x="14" y="140" fill="#006680" font-family="JetBrains Mono,monospace" font-size="10">SELECT</text>
+          <text x="57" y="140" fill="#3a90a8" font-family="JetBrains Mono,monospace" font-size="10"> name FROM customers</text>
+          <text x="14" y="158" fill="#006680" font-family="JetBrains Mono,monospace" font-size="10">JOIN</text>
+          <text x="43" y="158" fill="#3a90a8" font-family="JetBrains Mono,monospace" font-size="10"> orders ON id = cust_id</text>
+
+          <!-- legend -->
+          <text x="4" y="195" fill="#1e4a58" font-family="JetBrains Mono,monospace" font-size="9">★  primary &amp; foreign keys link tables across rows</text>
+        </svg>
+      </div>
+      <div class="panel-foot foot-r">
+        <div class="panel-desc" style="color:#009ab8;">rows · columns · keys · SQL joins</div>
+      </div>
+    </div>
+
+    <!-- ─────────────────────── HIERARCHICAL ─────────────────────── -->
+    <div class="panel panel-h">
+      <div class="panel-top-glow glow-h"></div>
+      <div class="panel-header">
+        <div class="panel-dot" style="background:#f0a01e;"></div>
+        <span class="panel-type" style="color:#f0a01e;">Hierarchical</span>
+      </div>
+      <div class="panel-body">
+        <svg viewBox="0 0 300 250" width="300" height="250" xmlns="http://www.w3.org/2000/svg">
+          <!-- Tree lines (drawn behind nodes) -->
+          <line x1="150" y1="62" x2="84" y2="104" stroke="#f0a01e30" stroke-width="1.5"/>
+          <line x1="150" y1="62" x2="216" y2="104" stroke="#f0a01e30" stroke-width="1.5"/>
+          <line x1="84" y1="138" x2="44" y2="180" stroke="#f0a01e22" stroke-width="1.5"/>
+          <line x1="84" y1="138" x2="124" y2="180" stroke="#f0a01e22" stroke-width="1.5"/>
+          <line x1="216" y1="138" x2="176" y2="180" stroke="#f0a01e22" stroke-width="1.5"/>
+          <line x1="216" y1="138" x2="256" y2="180" stroke="#f0a01e22" stroke-width="1.5"/>
+
+          <!-- Level 0: root -->
+          <circle cx="150" cy="40" r="24" fill="#241000" stroke="#f0a01e55" stroke-width="1.5"/>
+          <text x="150" y="45" text-anchor="middle" fill="#f0a01e" font-family="JetBrains Mono,monospace" font-size="12" font-weight="500">CEO</text>
+          <text x="150" y="14" text-anchor="middle" fill="#6a4010" font-family="JetBrains Mono,monospace" font-size="8.5" letter-spacing="1">ROOT</text>
+
+          <!-- Level 1 -->
+          <circle cx="84" cy="120" r="21" fill="#1a0a00" stroke="#f0a01e40" stroke-width="1.5"/>
+          <text x="84" y="124" text-anchor="middle" fill="#d08818" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="500">Eng</text>
+
+          <circle cx="216" cy="120" r="21" fill="#1a0a00" stroke="#f0a01e40" stroke-width="1.5"/>
+          <text x="216" y="124" text-anchor="middle" fill="#d08818" font-family="JetBrains Mono,monospace" font-size="10.5" font-weight="500">Mktg</text>
+
+          <!-- Level 2 leaf nodes -->
+          <circle cx="44" cy="196" r="17" fill="#100600" stroke="#f0a01e30" stroke-width="1"/>
+          <text x="44" y="200" text-anchor="middle" fill="#a07010" font-family="JetBrains Mono,monospace" font-size="9.5">Back</text>
+
+          <circle cx="124" cy="196" r="17" fill="#100600" stroke="#f0a01e30" stroke-width="1"/>
+          <text x="124" y="200" text-anchor="middle" fill="#a07010" font-family="JetBrains Mono,monospace" font-size="9.5">Front</text>
+
+          <circle cx="176" cy="196" r="17" fill="#100600" stroke="#f0a01e30" stroke-width="1"/>
+          <text x="176" y="200" text-anchor="middle" fill="#a07010" font-family="JetBrains Mono,monospace" font-size="9.5">SEO</text>
+
+          <circle cx="256" cy="196" r="17" fill="#100600" stroke="#f0a01e30" stroke-width="1"/>
+          <text x="256" y="200" text-anchor="middle" fill="#a07010" font-family="JetBrains Mono,monospace" font-size="9.5">Ads</text>
+
+          <!-- Leaf label -->
+          <text x="44" y="222" text-anchor="middle" fill="#4a2a05" font-family="JetBrains Mono,monospace" font-size="7.5">LEAF</text>
+          <text x="124" y="222" text-anchor="middle" fill="#4a2a05" font-family="JetBrains Mono,monospace" font-size="7.5">LEAF</text>
+          <text x="176" y="222" text-anchor="middle" fill="#4a2a05" font-family="JetBrains Mono,monospace" font-size="7.5">LEAF</text>
+          <text x="256" y="222" text-anchor="middle" fill="#4a2a05" font-family="JetBrains Mono,monospace" font-size="7.5">LEAF</text>
+
+          <!-- File-path legend -->
+          <text x="8" y="238" fill="#5a3a12" font-family="JetBrains Mono,monospace" font-size="9">/ CEO  ├── Engineering  └── Marketing</text>
+        </svg>
+      </div>
+      <div class="panel-foot foot-h">
+        <div class="panel-desc" style="color:#c08820;">root · parent · child · leaf nodes</div>
+      </div>
+    </div>
+
+    <!-- ─────────────────────── GRAPH ─────────────────────── -->
+    <div class="panel panel-g">
+      <div class="panel-top-glow glow-g"></div>
+      <div class="panel-header">
+        <div class="panel-dot" style="background:#9966ff;"></div>
+        <span class="panel-type" style="color:#9966ff;">Graph</span>
+      </div>
+      <div class="panel-body">
+        <svg viewBox="0 0 300 250" width="300" height="250" xmlns="http://www.w3.org/2000/svg">
+          <!-- Edges -->
+          <line x1="150" y1="40" x2="258" y2="110" stroke="#9966ff30" stroke-width="1.5"/>
+          <line x1="150" y1="40" x2="42" y2="110" stroke="#9966ff30" stroke-width="1.5"/>
+          <line x1="150" y1="40" x2="150" y2="150" stroke="#9966ff40" stroke-width="1.5"/>
+          <line x1="258" y1="110" x2="150" y2="150" stroke="#9966ff28" stroke-width="1.5"/>
+          <line x1="258" y1="110" x2="220" y2="208" stroke="#9966ff22" stroke-width="1.5"/>
+          <line x1="42" y1="110" x2="150" y2="150" stroke="#9966ff28" stroke-width="1.5"/>
+          <line x1="42" y1="110" x2="80" y2="208" stroke="#9966ff22" stroke-width="1.5"/>
+          <line x1="150" y1="150" x2="80" y2="208" stroke="#9966ff28" stroke-width="1.5"/>
+          <line x1="150" y1="150" x2="220" y2="208" stroke="#9966ff28" stroke-width="1.5"/>
+          <line x1="80" y1="208" x2="220" y2="208" stroke="#9966ff18" stroke-width="1.5"/>
+
+          <!-- Edge labels -->
+          <text x="224" y="74" text-anchor="middle" fill="#55338888" font-family="JetBrains Mono,monospace" font-size="8">follows</text>
+          <text x="76" y="74" text-anchor="middle" fill="#55338888" font-family="JetBrains Mono,monospace" font-size="8">friends</text>
+
+          <!-- Nodes -->
+          <circle cx="150" cy="40" r="22" fill="#1c0840" stroke="#9966ff75" stroke-width="1.5"/>
+          <text x="150" y="44" text-anchor="middle" fill="#c8a8ff" font-family="JetBrains Mono,monospace" font-size="10" font-weight="500">Alice</text>
+
+          <circle cx="258" cy="110" r="22" fill="#140630" stroke="#9966ff55" stroke-width="1.5"/>
+          <text x="258" y="114" text-anchor="middle" fill="#b090ee" font-family="JetBrains Mono,monospace" font-size="10" font-weight="500">Bob</text>
+
+          <circle cx="42" cy="110" r="22" fill="#140630" stroke="#9966ff55" stroke-width="1.5"/>
+          <text x="42" y="114" text-anchor="middle" fill="#b090ee" font-family="JetBrains Mono,monospace" font-size="10" font-weight="500">Eve</text>
+
+          <circle cx="150" cy="150" r="22" fill="#10052a" stroke="#9966ff65" stroke-width="1.5"/>
+          <text x="150" y="154" text-anchor="middle" fill="#b88af8" font-family="JetBrains Mono,monospace" font-size="10" font-weight="500">Frank</text>
+
+          <circle cx="220" cy="208" r="21" fill="#0c0422" stroke="#9966ff45" stroke-width="1.5"/>
+          <text x="220" y="212" text-anchor="middle" fill="#9068c8" font-family="JetBrains Mono,monospace" font-size="10" font-weight="500">Carol</text>
+
+          <circle cx="80" cy="208" r="21" fill="#0c0422" stroke="#9966ff45" stroke-width="1.5"/>
+          <text x="80" y="212" text-anchor="middle" fill="#9068c8" font-family="JetBrains Mono,monospace" font-size="10" font-weight="500">Dave</text>
+
+          <!-- Legend -->
+          <text x="4" y="242" fill="#3a2260" font-family="JetBrains Mono,monospace" font-size="9">○ node (entity) &nbsp; — edge (relationship) &nbsp; many-to-many</text>
+        </svg>
+      </div>
+      <div class="panel-foot foot-g">
+        <div class="panel-desc" style="color:#8855ee;">nodes · edges · many-to-many connections</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
