@@ -1,3 +1,4 @@
+![Retrieveler](./retrieveler-cover.png)
 # Retrieveler
 
 Retrieveler means "data retrieval learner." The project is designed to teach data retrieval using three fundamental data structures, each organized to suit a particular type of information.
