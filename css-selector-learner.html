@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CSS Selector Interactive Tutorial v2</title>
+    <style>
+      :root {
+        --bg: #0b1018;
+        --panel: rgba(20, 27, 38, 0.86);
+        --panel-strong: #161e2c;
+        --panel-soft: rgba(255, 255, 255, 0.04);
+        --ink: #e6edf3;
+        --ink-soft: #cbd5e1;
+        --muted: #8b9ba8;
+        --line: rgba(255, 255, 255, 0.08);
+        --line-strong: rgba(255, 255, 255, 0.14);
+        --accent: #2dd4bf;
+        --accent-strong: #14b8a6;
+        --accent-warm: #fb923c;
+        --accent-warm-strong: #ea7c1f;
+        --code: #f5d77a;
+        --shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+        --radius: 24px;
+        --top-bar-h: 56px;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(45, 212, 191, 0.12), transparent 35%),
+          radial-gradient(circle at 80% 0%, rgba(251, 146, 60, 0.08), transparent 30%),
+          linear-gradient(180deg, #070b12 0%, var(--bg) 50%, #0d141d 100%);
+      }
+
+      .page {
+        width: min(1440px, calc(100% - 1.5rem));
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ── Top bar: title + step pills (sticky) ── */
+      .top-bar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: rgba(11, 16, 24, 0.85);
+        border-bottom: 1px solid var(--line);
+        backdrop-filter: blur(18px);
+        padding: 0.6rem 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        border-radius: 0 0 18px 18px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      }
+
+      .top-bar h1 {
+        margin: 0;
+        font-size: 1.15rem;
+        letter-spacing: -0.03em;
+        white-space: nowrap;
+        color: var(--ink);
+      }
+
+      .top-bar .eyebrow {
+        margin: 0;
+        color: var(--accent);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        line-height: 1;
+      }
+
+      .step-pills {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+
+      .step-pill {
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        border: 1px solid var(--line-strong);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--muted);
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 140ms ease;
+        position: relative;
+      }
+
+      .step-pill:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        transform: translateY(-1px);
+        background: rgba(45, 212, 191, 0.08);
+      }
+
+      .step-pill.active {
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        color: #051917;
+        border-color: transparent;
+        box-shadow: 0 4px 16px rgba(45, 212, 191, 0.4);
+      }
+
+      .step-pill[title] { cursor: pointer; }
+
+      /* ── Step detail panel (scrollable) ── */
+      .step-detail {
+        margin: 0.75rem 0;
+        padding: 1.1rem 1.4rem;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--accent);
+        border-radius: 18px;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+      }
+
+      .step-detail .eyebrow {
+        margin: 0 0 0.2rem;
+        color: var(--accent);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .step-detail h2 {
+        margin: 0 0 0.5rem;
+        font-size: 1.4rem;
+        letter-spacing: -0.03em;
+        color: var(--ink);
+      }
+
+      .step-detail .desc {
+        margin: 0 0 0.9rem;
+        color: var(--ink-soft);
+        line-height: 1.6;
+      }
+
+      .examples-block {
+        margin-top: 0.6rem;
+        padding-top: 0.8rem;
+        border-top: 1px dashed var(--line-strong);
+      }
+
+      .examples-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.6rem;
+      }
+
+      .examples-header h4 {
+        margin: 0;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--accent-warm);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .examples-toggle {
+        padding: 0.3rem 0.7rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        cursor: pointer;
+        transition: all 140ms ease;
+      }
+
+      .examples-toggle:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+        background: rgba(45, 212, 191, 0.08);
+      }
+
+      .examples-block.collapsed .examples-list {
+        display: none;
+      }
+
+      .examples-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.45rem;
+      }
+
+      .examples-list li {
+        display: grid;
+        grid-template-columns: minmax(180px, auto) 1fr;
+        gap: 0.9rem;
+        padding: 0.5rem 0.8rem;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        align-items: center;
+        cursor: pointer;
+        transition: all 140ms ease;
+      }
+
+      .examples-list li:hover {
+        border-color: var(--accent);
+        background: rgba(45, 212, 191, 0.08);
+      }
+
+      .examples-list code {
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.85rem;
+        color: var(--code);
+        background: rgba(0, 0, 0, 0.3);
+        padding: 0.2rem 0.55rem;
+        border-radius: 6px;
+        border: 1px solid var(--line);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .examples-list .ex-text {
+        color: var(--ink-soft);
+        font-size: 0.88rem;
+        line-height: 1.45;
+      }
+
+      /* ── Query bar (sticky) ── */
+      .query-bar {
+        position: sticky;
+        top: 56px;
+        z-index: 15;
+        background: rgba(11, 16, 24, 0.9);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        backdrop-filter: blur(18px);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+        padding: 0.9rem 1.2rem;
+        display: grid;
+        gap: 0.6rem;
+      }
+
+      .query-row {
+        display: grid;
+        grid-template-columns: 220px 1fr auto auto;
+        gap: 0.6rem;
+        align-items: start;
+      }
+
+      .query-bar > .query-row > div > label {
+        display: block;
+        margin-bottom: 0.3rem;
+        font-weight: 700;
+        font-size: 0.78rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .query-bar select,
+      .query-bar input[type="text"] {
+        width: 100%;
+        font: inherit;
+        font-size: 0.92rem;
+        border: 1px solid var(--line-strong);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.35);
+        padding: 0.55rem 0.7rem;
+        color: var(--ink);
+        transition: border-color 140ms ease, box-shadow 140ms ease;
+      }
+
+      .query-bar select:focus,
+      .query-bar input[type="text"]:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+      }
+
+      .query-bar select option {
+        background: var(--panel-strong);
+        color: var(--ink);
+      }
+
+      .query-bar input[type="text"] {
+        font-family: Consolas, "Courier New", monospace;
+        color: var(--code);
+      }
+
+      .preset-desc {
+        color: var(--ink-soft);
+        font-size: 0.82rem;
+        line-height: 1.4;
+        min-height: 1.2em;
+        margin-top: 0.4rem;
+        font-style: italic;
+      }
+
+      .query-buttons {
+        display: flex;
+        gap: 0.5rem;
+        padding-top: 1.15rem;
+      }
+
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 0.55rem 1rem;
+        font: inherit;
+        font-size: 0.88rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 140ms ease, box-shadow 140ms ease;
+        white-space: nowrap;
+      }
+
+      button:hover { transform: translateY(-1px); }
+
+      .primary {
+        color: #051917;
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        box-shadow: 0 8px 18px rgba(45, 212, 191, 0.25);
+      }
+
+      .secondary {
+        color: #1a0e02;
+        background: linear-gradient(135deg, var(--accent-warm), var(--accent-warm-strong));
+        box-shadow: 0 8px 18px rgba(251, 146, 60, 0.25);
+      }
+
+      .status-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        font-size: 0.85rem;
+        color: var(--muted);
+        padding-top: 0.4rem;
+        border-top: 1px dashed var(--line);
+      }
+
+      .status-row strong { color: var(--ink); font-weight: 600; }
+      .status-row code {
+        font-size: 0.82rem;
+        color: var(--code);
+        background: rgba(0, 0, 0, 0.3);
+        padding: 0.1rem 0.4rem;
+        border-radius: 5px;
+      }
+
+      #statusMessage {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      /* ── Category tabs ── */
+      .category-tabs {
+        display: flex;
+        gap: 6px;
+        padding: 0.6rem 0;
+        flex-wrap: wrap;
+      }
+
+      .tab-btn {
+        padding: 0.45rem 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--line-strong);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--muted);
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 140ms ease;
+      }
+
+      .tab-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(45, 212, 191, 0.06);
+      }
+
+      .tab-btn.active {
+        background: linear-gradient(135deg, rgba(45, 212, 191, 0.18), rgba(45, 212, 191, 0.05));
+        border-color: var(--accent);
+        color: var(--accent);
+        box-shadow: 0 4px 14px rgba(45, 212, 191, 0.18);
+      }
+
+      /* ── Lab grid ── */
+      .lab-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        padding: 0.5rem 0 1rem;
+      }
+
+      .pane {
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: var(--panel);
+        overflow: hidden;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+      }
+
+      .pane-head {
+        padding: 0.85rem 1.1rem 0.7rem;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .pane-head h3 {
+        margin: 0 0 0.2rem;
+        font-size: 1rem;
+        color: var(--ink);
+      }
+
+      .pane-head p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      .render-wrap { padding: 1rem; }
+
+      .stage {
+        min-height: 400px;
+        padding: 1rem;
+        border-radius: 22px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
+          linear-gradient(120deg, rgba(45, 212, 191, 0.04), rgba(251, 146, 60, 0.03));
+        border: 1px solid var(--line);
+      }
+
+      .stage-grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 1rem;
+      }
+
+      .panel-hidden { display: none !important; }
+
+      /* ── Sample content styles ── */
+      .sample-card {
+        background: var(--panel-strong);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        padding: 1rem;
+        color: var(--ink);
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
+      }
+
+      .sample-card h4, .sample-card h5 { color: var(--ink); }
+      .sample-card h4, .sample-card h5, .sample-card p, .sample-card ul, .sample-card ol { margin-top: 0; }
+
+      .hero-row, .chip-row, .toolbar { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+      .hero-row { align-items: center; }
+
+      .avatar {
+        width: 64px; height: 64px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-warm));
+      }
+
+      .badge, .chip, .mini {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.42rem 0.7rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--line-strong);
+        color: var(--ink-soft);
+        text-decoration: none;
+      }
+
+      .badge { color: var(--accent); font-weight: 700; }
+
+      .swatches {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.65rem;
+        margin-top: 0.9rem;
+      }
+
+      .swatch { aspect-ratio: 1 / 1; border-radius: 18px; }
+      .tone-a { background: linear-gradient(135deg, #0f766e, #2dd4bf); }
+      .tone-b { background: linear-gradient(135deg, #ea580c, #facc15); }
+      .tone-c { background: linear-gradient(135deg, #1e293b, #64748b); }
+
+      .metric-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.7rem;
+        margin-top: 1rem;
+      }
+
+      .metric {
+        padding: 0.8rem;
+        border-radius: 18px;
+        background: rgba(45, 212, 191, 0.08);
+        border: 1px solid rgba(45, 212, 191, 0.16);
+      }
+
+      .metric strong { display: block; font-size: 1.25rem; color: var(--accent); }
+
+      .activity article, .event-list li, details {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--ink-soft);
+      }
+
+      .activity article, .event-list li { padding: 0.85rem; }
+      .activity article + article, .task-list li + li, .event-list li + li, details + details { margin-top: 0.8rem; }
+      .task-list, .event-list { padding-left: 1.15rem; }
+      details { padding: 0.75rem 0.9rem; }
+      summary { cursor: pointer; font-weight: 700; }
+
+      .stage input[type="text"],
+      .stage input[type="password"],
+      .stage input[type="file"],
+      .stage textarea,
+      .stage select {
+        width: 100%;
+        padding: 0.68rem 0.78rem;
+        border: 1px solid var(--line-strong);
+        border-radius: 14px;
+        background: rgba(0, 0, 0, 0.35);
+        color: var(--ink);
+        font: inherit;
+      }
+
+      .stage select option { background: var(--panel-strong); color: var(--ink); }
+      .stage textarea { min-height: 5rem; }
+      .stage label { color: var(--ink-soft); }
+      .field-group + .field-group, .section-stack + .section-stack { margin-top: 0.9rem; }
+      .field-group > label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.88rem; }
+      .hidden-note { display: none; }
+      .muted { color: var(--muted); }
+
+      /* ── Source view ── */
+      .source-wrap {
+        padding: 0.3rem 0;
+        max-height: 700px;
+        overflow: auto;
+      }
+
+      .code-line {
+        display: grid;
+        grid-template-columns: 3.2rem 1fr;
+        gap: 0.8rem;
+        padding: 0.08rem 1rem;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.85rem;
+        white-space: pre-wrap;
+      }
+
+      .line-no { color: #4a5868; text-align: right; user-select: none; }
+      .line-text { color: #b8c5d3; }
+      .code-line.is-match { background: rgba(251, 146, 60, 0.18); }
+      .code-line.is-match .line-no { color: var(--accent-warm); }
+      .code-line.is-match .line-text { color: #fef3c7; }
+
+      .is-match-render {
+        outline: 2px solid var(--accent-warm);
+        outline-offset: 3px;
+        background-color: rgba(251, 146, 60, 0.18) !important;
+        box-shadow: 0 0 24px rgba(251, 146, 60, 0.25);
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 1000px) {
+        .query-row { grid-template-columns: 1fr 1fr; }
+        .query-buttons { padding-top: 0; }
+        .lab-grid { grid-template-columns: 1fr; }
+        .stage-grid { grid-template-columns: 1fr; }
+      }
+
+      @media (max-width: 640px) {
+        .page { width: calc(100% - 0.5rem); }
+        .top-bar { flex-wrap: wrap; gap: 0.5rem; }
+        .query-row { grid-template-columns: 1fr; }
+        .metric-row, .swatches { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+
+      <!-- Sticky top bar: title + step pills -->
+      <header class="top-bar">
+        <div>
+          <p class="eyebrow">Interactive Tutorial</p>
+          <h1>CSS Selector Lesson</h1>
+        </div>
+        <nav id="stepPills" class="step-pills" aria-label="Tutorial steps"></nav>
+      </header>
+
+      <!-- Step detail (scrollable) -->
+      <section class="step-detail" id="stepDetail">
+        <p class="eyebrow" id="stepLabel">Step 1</p>
+        <h2 id="stepTitle">Basic selectors</h2>
+        <p class="desc" id="stepDescription"></p>
+        <div class="examples-block" id="examplesBlock">
+          <div class="examples-header">
+            <h4>Try these against the lab content</h4>
+            <button type="button" class="examples-toggle" id="examplesToggle" aria-expanded="true">Hide</button>
+          </div>
+          <ul class="examples-list" id="examplesList"></ul>
+        </div>
+      </section>
+
+      <!-- Sticky query bar -->
+      <section class="query-bar" id="queryBar">
+        <div class="query-row">
+          <div>
+            <label for="selectorPreset">Preset list</label>
+            <select id="selectorPreset"></select>
+            <div class="preset-desc" id="presetDescription"></div>
+          </div>
+          <div>
+            <label for="selectorInput">Custom selector (press Enter to apply)</label>
+            <input id="selectorInput" type="text" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="query-buttons">
+            <button class="primary" id="applyButton" type="button">Apply</button>
+            <button class="secondary" id="resetButton" type="button">Reset</button>
+          </div>
+        </div>
+        <div class="status-row">
+          <span><strong>Engine:</strong> <span id="engineType">Native CSS</span></span>
+          <span><strong>Matches:</strong> <span id="matchCount">0</span></span>
+          <span><strong>Statement:</strong> <code id="statementText">document.querySelectorAll("")</code></span>
+        </div>
+        <p id="statusMessage">Choose a selector to begin.</p>
+      </section>
+
+      <!-- Category tabs -->
+      <nav class="category-tabs" id="categoryTabs" aria-label="Content categories"></nav>
+
+      <!-- Lab: rendered + HTML side by side -->
+      <section class="lab-grid">
+        <article class="pane">
+          <div class="pane-head">
+            <h3>Rendered lab content</h3>
+            <p>Matches are outlined in the sample interface.</p>
+          </div>
+          <div class="render-wrap">
+            <div class="stage" id="tutorialSample">
+              <div class="stage-grid">
+                <section class="sample-card" id="projectCard" data-panel="overview" data-priority="high-urgent">
+                  <header class="hero-row">
+                    <div class="avatar" aria-hidden="true"></div>
+                    <div>
+                      <p class="eyebrow">Launch board</p>
+                      <h4>Modern interface review</h4>
+                      <p class="muted">Selector practice across semantic and form-heavy markup.</p>
+                    </div>
+                  </header>
+                  <div class="chip-row">
+                    <span class="badge">Design system</span>
+                    <span class="badge">Accessibility</span>
+                    <span class="badge">Motion review</span>
+                  </div>
+                  <div class="swatches" aria-label="Theme swatches">
+                    <div class="swatch tone-a" data-tone="teal"></div>
+                    <div class="swatch tone-b" data-tone="amber"></div>
+                    <div class="swatch tone-c" data-tone="slate"></div>
+                  </div>
+                  <div class="metric-row">
+                    <section class="metric"><strong>12</strong><span>Open audits</span></section>
+                    <section class="metric"><strong>84%</strong><span>Draft complete</span></section>
+                    <section class="metric"><strong>4.8</strong><span>Average rating</span></section>
+                  </div>
+                  <section class="activity section-stack">
+                    <h5>Recent activity</h5>
+                    <article data-state="published">
+                      <strong>Case study published</strong>
+                      <p>Final review notes now mention selector workshop follow-up.</p>
+                      <time datetime="2026-05-05">May 5, 2026</time>
+                    </article>
+                    <article data-state="draft">
+                      <strong>Prototype under review</strong>
+                      <p>Content hierarchy and sidebar layout were refined.</p>
+                      <time datetime="2026-05-04">May 4, 2026</time>
+                    </article>
+                  </section>
+                </section>
+
+                <aside class="sample-card" data-panel="sidebar">
+                  <section class="section-stack">
+                    <h5>Checklist</h5>
+                    <ul class="task-list">
+                      <li><label><input type="checkbox" checked> Confirm headings</label></li>
+                      <li><label><input type="checkbox" checked> Review color contrast</label></li>
+                      <li><label><input type="checkbox"> Validate keyboard order</label></li>
+                    </ul>
+                  </section>
+                  <section class="sample-card section-stack" data-panel="notes">
+                    <h5>Resource links</h5>
+                    <nav class="toolbar">
+                      <a class="mini" href="guide.html">Guide</a>
+                      <a class="mini" href="wireframe.pdf">Wireframe PDF</a>
+                      <a class="mini" href="tokens.json">Tokens JSON</a>
+                    </nav>
+                  </section>
+                  <section class="sample-card section-stack" id="quickNotes" data-panel="details">
+                    <h5>Quick notes</h5>
+                    <details open>
+                      <summary>Theme direction</summary>
+                      <p>Warm editorial palette with teal utility accents.</p>
+                    </details>
+                    <details>
+                      <summary>Interaction goals</summary>
+                      <p>Keep hierarchy obvious and highlight critical actions.</p>
+                    </details>
+                  </section>
+                </aside>
+              </div>
+
+              <section class="sample-card section-stack" id="feedbackArea" data-panel="form-lab">
+                <div class="toolbar">
+                  <button class="mini" type="button" data-role="secondary">Save draft</button>
+                  <button class="mini" type="button" data-role="action">Preview</button>
+                  <input class="mini" type="reset" value="Reset">
+                  <input class="mini" type="submit" value="Submit">
+                </div>
+                <h4>Feedback form</h4>
+                <p class="muted">This section includes a broad range of form and state selectors.</p>
+                <div class="stage-grid">
+                  <form id="feedbackForm">
+                    <div class="field-group">
+                      <label for="topicField">Topic</label>
+                      <input id="topicField" name="topic" type="text" placeholder="Selector strategy">
+                    </div>
+                    <div class="field-group">
+                      <label for="passwordField">Password</label>
+                      <input id="passwordField" name="password" type="password" value="draft-2026">
+                    </div>
+                    <div class="field-group">
+                      <label for="assetField">Attach reference file</label>
+                      <input id="assetField" name="asset" type="file">
+                    </div>
+                    <div class="field-group">
+                      <label for="priorityField">Priority</label>
+                      <select id="priorityField" name="priority">
+                        <option>Routine</option>
+                        <option selected>Important</option>
+                        <option>Critical</option>
+                      </select>
+                    </div>
+                    <div class="field-group">
+                      <label><input type="radio" name="audience" value="team" checked> Team</label>
+                      <label><input type="radio" name="audience" value="client"> Client</label>
+                    </div>
+                    <div class="field-group">
+                      <label><input type="checkbox" name="share" checked> Share with project channel</label>
+                    </div>
+                  </form>
+                  <div>
+                    <div class="field-group">
+                      <label for="messageField">Message</label>
+                      <textarea id="messageField" name="message">Use stable class names and prefer selectors that match the page structure clearly.</textarea>
+                    </div>
+                    <div class="field-group">
+                      <label for="disabledField">Disabled field</label>
+                      <input id="disabledField" type="text" value="Read only in this mockup" disabled>
+                    </div>
+                    <div class="field-group">
+                      <label for="assistField">Visible helper</label>
+                      <input id="assistField" type="text" value="Visible support field">
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="sample-card section-stack" data-panel="timeline">
+                <h4>Upcoming reviews</h4>
+                <ol class="event-list">
+                  <li>
+                    <strong>Accessibility pass</strong>
+                    <p class="muted">Review landmarks, labels, and disabled states.</p>
+                  </li>
+                  <li>
+                    <strong>Interaction audit</strong>
+                    <p class="muted">Inspect form controls, details panels, and actions.</p>
+                  </li>
+                  <li class="hidden-note">
+                    <strong>Hidden internal note</strong>
+                    <p>This item exists to demonstrate hidden selectors.</p>
+                  </li>
+                </ol>
+              </section>
+            </div>
+          </div>
+        </article>
+
+        <article class="pane">
+          <div class="pane-head">
+            <h3>HTML view</h3>
+            <p>Matched elements are highlighted in the source.</p>
+          </div>
+          <div class="source-wrap" id="htmlView"></div>
+        </article>
+      </section>
+    </div>
+
+    <script>
+      (function() {
+        /* ── Lesson data ── */
+        var LESSONS = [
+          {
+            id: "basic",
+            title: "Basic selectors",
+            summary: "Universal and type selectors",
+            description: "Start with the most general CSS selectors. These identify every element or every element of a given tag name, which makes them the simplest place to learn how matching works.",
+            presets: [
+              { selector: "*", description: "Match every element in the rendered sample." },
+              { selector: "section", description: "Match all section elements." },
+              { selector: "article", description: "Match article elements only." },
+              { selector: "button", description: "Match button elements in the toolbar." }
+            ],
+            examples: [
+              { selector: "h4", text: "Hits the section headings: \"Modern interface review\", \"Feedback form\", \"Upcoming reviews\"." },
+              { selector: "article", text: "Highlights only the two activity entries inside the Overview card." },
+              { selector: "button", text: "Picks up \"Save draft\" and \"Preview\" buttons in the Form Lab toolbar." },
+              { selector: "input", text: "Matches every form control: text, password, file, radio, checkbox, submit, reset." },
+              { selector: "time", text: "Matches the two timestamps next to activity entries (May 5, May 4)." }
+            ]
+          },
+          {
+            id: "relationships",
+            title: "Relationship selectors",
+            summary: "Descendant, child, and sibling combinators",
+            description: "These selectors rely on the DOM tree shape. Use them when you want elements based on where they live relative to other elements.",
+            presets: [
+              { selector: "section article", description: "Match articles that appear anywhere inside a section." },
+              { selector: ".sample-card > h4", description: "Match only direct h4 children of cards." },
+              { selector: "h4 + p", description: "Match the paragraph immediately after an h4." },
+              { selector: "h4 ~ p", description: "Match every later sibling paragraph after an h4." }
+            ],
+            examples: [
+              { selector: ".swatches > .swatch", text: "Direct child combinator: only the 3 swatch tiles, not nested." },
+              { selector: ".activity article time", text: "Descendant chain: time elements deep inside activity articles." },
+              { selector: "summary + p", text: "Adjacent sibling: the paragraph right after each summary in Quick notes." },
+              { selector: ".task-list li", text: "All checklist items in the Sidebar's checklist." },
+              { selector: "form > .field-group", text: "Direct field-group children of the feedback form (excludes Message side column)." }
+            ]
+          },
+          {
+            id: "identity",
+            title: "Class and identity selectors",
+            summary: "Class, ID, and combined selectors",
+            description: "Classes and IDs let you target named parts of a page. They are often the most readable selectors when the markup exposes stable names.",
+            presets: [
+              { selector: ".sample-card", description: "Match every card container." },
+              { selector: "#feedbackForm", description: "Match the feedback form by ID." },
+              { selector: "section.sample-card", description: "Match section elements that also have the sample-card class." },
+              { selector: "button[data-role=\"action\"]", description: "Combine element and attribute targeting for a specific action button." }
+            ],
+            examples: [
+              { selector: "#projectCard", text: "Single ID match: the entire Overview card." },
+              { selector: "#feedbackForm", text: "Single ID match: the feedback form (excludes the side column with Message/Disabled/Helper)." },
+              { selector: ".tone-a", text: "Single class: the teal swatch." },
+              { selector: ".badge", text: "All three badges: Design system, Accessibility, Motion review." },
+              { selector: ".metric strong", text: "Bold values inside metric cards: 12, 84%, 4.8." },
+              { selector: ".sample-card.section-stack", text: "Cards that are also stacked sections (nested resource/notes/timeline cards)." }
+            ]
+          },
+          {
+            id: "attributes",
+            title: "Attribute selectors",
+            summary: "Presence, equality, prefix, suffix, and contains",
+            description: "Attribute selectors target elements through metadata. They are powerful for forms, component states, and semantic labels carried in data attributes.",
+            presets: [
+              { selector: "[data-panel]", description: "Match every element that carries a data-panel attribute." },
+              { selector: "article[data-state=\"published\"]", description: "Match an article whose state is exactly published." },
+              { selector: "[data-priority^=\"high\"]", description: "Match elements whose data-priority starts with high." },
+              { selector: "a[href$=\".pdf\"]", description: "Match links whose href ends with .pdf." },
+              { selector: "[href*=\"json\"]", description: "Match any link whose href contains json." }
+            ],
+            examples: [
+              { selector: "[data-tone=\"amber\"]", text: "Exact match: the amber middle swatch in the Overview card." },
+              { selector: "input[type=\"checkbox\"]", text: "Type equality: all checkboxes (3 in Sidebar, 1 in Form Lab)." },
+              { selector: "input[name^=\"a\"]", text: "Prefix match: inputs whose name starts with 'a' (asset, audience)." },
+              { selector: "a[href$=\".pdf\"]", text: "Suffix match: only the Wireframe PDF link." },
+              { selector: "[href*=\"json\"]", text: "Substring match: only the Tokens JSON link." },
+              { selector: "input[disabled]", text: "Presence-only attribute: the disabled \"Read only in this mockup\" field." },
+              { selector: "[aria-label]", text: "Presence: hits the swatches container labelled \"Theme swatches\"." }
+            ]
+          },
+          {
+            id: "structure",
+            title: "Structure and position",
+            summary: "First, last, nth, negation, and container logic",
+            description: "Structural selectors let you express position inside a group. They are useful when the order of siblings is meaningful and no explicit class exists.",
+            presets: [
+              { selector: ".task-list li:first-child", description: "Match the first checklist item." },
+              { selector: ".task-list li:last-child", description: "Match the last checklist item." },
+              { selector: ".swatches .swatch:nth-child(2)", description: "Match the second swatch." },
+              { selector: ".metric:nth-of-type(2)", description: "Match the second metric section of its type." },
+              { selector: "details:not([open])", description: "Match details elements that are not open." },
+              { selector: "article:has(time)", description: "Match articles that contain a time element." }
+            ],
+            examples: [
+              { selector: ".task-list li:first-child", text: "First checklist row: \"Confirm headings\"." },
+              { selector: ".task-list li:last-child", text: "Last checklist row: \"Validate keyboard order\" (the unchecked one)." },
+              { selector: ".swatches .swatch:nth-child(odd)", text: "Odd swatches: teal (1st) and slate (3rd)." },
+              { selector: ".event-list li:nth-child(2)", text: "The \"Interaction audit\" timeline entry." },
+              { selector: "details:not([open])", text: "Closed disclosures: only \"Interaction goals\" in Quick notes." },
+              { selector: "article:has(time)", text: ":has() parent selector: both activity articles (each contains a <time>)." },
+              { selector: ".badge:nth-of-type(2)", text: "Second badge: \"Accessibility\"." }
+            ]
+          },
+          {
+            id: "forms",
+            title: "Form and state selectors",
+            summary: "Checked, selected, enabled, and disabled",
+            description: "Many selectors become useful only when form controls and UI states enter the page. These are common in real application interfaces.",
+            presets: [
+              { selector: "input", description: "Match every input control." },
+              { selector: "input:checked", description: "Match checked checkboxes and radios." },
+              { selector: "option:checked", description: "Match the selected option in the priority field." },
+              { selector: "input:disabled", description: "Match disabled input controls." },
+              { selector: "details[open]", description: "Match the expanded details panel." }
+            ],
+            examples: [
+              { selector: "input:checked", text: "Pre-checked controls: 2 checklist boxes, the \"Team\" radio, the share-channel checkbox." },
+              { selector: "input:disabled", text: "Just the \"Read only in this mockup\" field." },
+              { selector: "input:enabled", text: "Every form control except the disabled one." },
+              { selector: "option:checked", text: "The \"Important\" option pre-selected in Priority." },
+              { selector: "details[open]", text: "Open disclosure: \"Theme direction\" only." },
+              { selector: "input[type=\"radio\"]", text: "Both radios: \"Team\" and \"Client\"." },
+              { selector: "input[required]", text: "No matches in this lab — try this to confirm an empty result." }
+            ]
+          }
+        ];
+
+        var PANELS = [
+          { id: "all", label: "All" },
+          { id: "overview", label: "Overview" },
+          { id: "sidebar", label: "Sidebar" },
+          { id: "form-lab", label: "Form Lab" },
+          { id: "timeline", label: "Timeline" }
+        ];
+
+        /* ── DOM refs ── */
+        var stepPills = document.getElementById("stepPills");
+        var stepLabel = document.getElementById("stepLabel");
+        var stepTitle = document.getElementById("stepTitle");
+        var stepDescription = document.getElementById("stepDescription");
+        var examplesList = document.getElementById("examplesList");
+        var examplesBlock = document.getElementById("examplesBlock");
+        var examplesToggle = document.getElementById("examplesToggle");
+        var selectorPreset = document.getElementById("selectorPreset");
+        var presetDescription = document.getElementById("presetDescription");
+        var selectorInput = document.getElementById("selectorInput");
+        var applyButton = document.getElementById("applyButton");
+        var resetButton = document.getElementById("resetButton");
+        var engineType = document.getElementById("engineType");
+        var matchCount = document.getElementById("matchCount");
+        var statementText = document.getElementById("statementText");
+        var statusMessage = document.getElementById("statusMessage");
+        var tutorialSample = document.getElementById("tutorialSample");
+        var htmlView = document.getElementById("htmlView");
+        var categoryTabs = document.getElementById("categoryTabs");
+
+        var currentLessonIndex = 0;
+        var activePanel = "all";
+
+        var voidElements = {
+          area: true, base: true, br: true, col: true, embed: true, hr: true,
+          img: true, input: true, link: true, meta: true, param: true,
+          source: true, track: true, wbr: true
+        };
+
+        /* ── Panel roots ── */
+        var panelRoots = {};
+        function collectPanelRoots() {
+          // Collect top-level panel sections (direct children or near-top level with data-panel)
+          var allPaneled = tutorialSample.querySelectorAll("[data-panel]");
+          for (var i = 0; i < allPaneled.length; i++) {
+            var el = allPaneled[i];
+            var pid = el.getAttribute("data-panel");
+            // Only take the outermost panel element for each panel id
+            // (e.g., sidebar contains notes and details sub-panels, but we group them under sidebar)
+            if (pid === "overview" || pid === "sidebar" || pid === "form-lab" || pid === "timeline") {
+              panelRoots[pid] = el;
+            }
+          }
+        }
+
+        /* ── Node IDs ── */
+        function assignNodeIds(root) {
+          var elements = root.querySelectorAll("*");
+          for (var i = 0; i < elements.length; i++) {
+            elements[i].setAttribute("data-node-id", "node-" + (i + 1));
+          }
+        }
+
+        function escapeHtml(text) {
+          return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        /* ── Step pills ── */
+        function buildStepPills() {
+          LESSONS.forEach(function(lesson, index) {
+            var pill = document.createElement("button");
+            pill.type = "button";
+            pill.className = "step-pill";
+            pill.textContent = String(index + 1);
+            pill.title = lesson.title + " \u2014 " + lesson.summary;
+            pill.setAttribute("data-index", String(index));
+            pill.addEventListener("click", function() { activateLesson(index); });
+            stepPills.appendChild(pill);
+          });
+        }
+
+        function updateStepPillState() {
+          var pills = stepPills.querySelectorAll(".step-pill");
+          for (var i = 0; i < pills.length; i++) {
+            pills[i].classList.toggle("active", i === currentLessonIndex);
+          }
+        }
+
+        /* ── Category tabs ── */
+        function buildCategoryTabs() {
+          PANELS.forEach(function(panel) {
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "tab-btn";
+            btn.textContent = panel.label;
+            btn.setAttribute("data-panel", panel.id);
+            btn.addEventListener("click", function() { switchPanel(panel.id); });
+            categoryTabs.appendChild(btn);
+          });
+        }
+
+        function updateTabState() {
+          var btns = categoryTabs.querySelectorAll(".tab-btn");
+          for (var i = 0; i < btns.length; i++) {
+            btns[i].classList.toggle("active", btns[i].getAttribute("data-panel") === activePanel);
+          }
+        }
+
+        function switchPanel(panelId) {
+          activePanel = panelId;
+          updateTabState();
+
+          // Show/hide panel sections
+          var topPanels = ["overview", "sidebar", "form-lab", "timeline"];
+          topPanels.forEach(function(pid) {
+            var root = panelRoots[pid];
+            if (!root) return;
+            if (panelId === "all" || panelId === pid) {
+              root.classList.remove("panel-hidden");
+            } else {
+              root.classList.add("panel-hidden");
+            }
+          });
+
+          // Also handle the stage-grid: if only overview or only sidebar visible, go full-width
+          var stageGrid = tutorialSample.querySelector(".stage-grid");
+          if (stageGrid) {
+            if (panelId === "overview" || panelId === "sidebar") {
+              stageGrid.style.gridTemplateColumns = "1fr";
+            } else {
+              stageGrid.style.gridTemplateColumns = "";
+            }
+          }
+
+          applyCurrentSelector();
+        }
+
+        /* ── Presets ──
+           Merged list: lesson.presets + lesson.examples, de-duplicated by selector. */
+        var mergedPresets = [];
+
+        function buildMergedPresets(lesson) {
+          var seen = {};
+          var merged = [];
+          (lesson.presets || []).forEach(function(p) {
+            if (!seen[p.selector]) {
+              seen[p.selector] = true;
+              merged.push({ selector: p.selector, description: p.description });
+            }
+          });
+          (lesson.examples || []).forEach(function(ex) {
+            if (!seen[ex.selector]) {
+              seen[ex.selector] = true;
+              merged.push({ selector: ex.selector, description: ex.text });
+            }
+          });
+          return merged;
+        }
+
+        function populatePresetList(lesson) {
+          selectorPreset.innerHTML = "";
+          mergedPresets = buildMergedPresets(lesson);
+          mergedPresets.forEach(function(preset, index) {
+            var option = document.createElement("option");
+            option.value = String(index);
+            option.textContent = preset.selector;
+            selectorPreset.appendChild(option);
+          });
+        }
+
+        function setPreset(index) {
+          var preset = mergedPresets[index];
+          if (!preset) return;
+          selectorPreset.value = String(index);
+          selectorInput.value = preset.selector;
+          presetDescription.textContent = preset.description;
+        }
+
+        /* ── Examples ── */
+        function renderExamples(lesson) {
+          examplesList.innerHTML = "";
+          var examples = lesson.examples || [];
+          examples.forEach(function(ex) {
+            var li = document.createElement("li");
+            li.title = "Click to apply this selector";
+            var code = document.createElement("code");
+            code.textContent = ex.selector;
+            var span = document.createElement("span");
+            span.className = "ex-text";
+            span.textContent = ex.text;
+            li.appendChild(code);
+            li.appendChild(span);
+            li.addEventListener("click", function() {
+              for (var i = 0; i < mergedPresets.length; i++) {
+                if (mergedPresets[i].selector === ex.selector) {
+                  selectorPreset.value = String(i);
+                  break;
+                }
+              }
+              selectorInput.value = ex.selector;
+              presetDescription.textContent = ex.text;
+              applyCurrentSelector();
+            });
+            examplesList.appendChild(li);
+          });
+        }
+
+        /* ── Lesson activation ── */
+        function activateLesson(index) {
+          var lesson = LESSONS[index];
+          currentLessonIndex = index;
+          stepLabel.textContent = "Step " + (index + 1) + " of " + LESSONS.length;
+          stepTitle.textContent = lesson.title;
+          stepDescription.textContent = lesson.description;
+          updateStepPillState();
+          renderExamples(lesson);
+          populatePresetList(lesson);
+          if (selectorPreset.options.length > 0) {
+            setPreset(Number(selectorPreset.options[0].value));
+          }
+          applyCurrentSelector();
+        }
+
+        /* ── Selector execution (native CSS only) ── */
+        function runSelector(selector) {
+          var root = (activePanel !== "all" && panelRoots[activePanel]) ? panelRoots[activePanel] : tutorialSample;
+          var matches = Array.prototype.slice.call(root.querySelectorAll(selector));
+          return { engine: "Native CSS", matches: matches };
+        }
+
+        function clearRenderedMatches() {
+          var previous = tutorialSample.querySelectorAll(".is-match-render");
+          for (var i = 0; i < previous.length; i++) {
+            previous[i].classList.remove("is-match-render");
+          }
+        }
+
+        function formatElement(element) {
+          var label = element.tagName.toLowerCase();
+          if (element.id) label += "#" + element.id;
+          if (element.className && typeof element.className === "string") {
+            var cls = element.className.replace(/\bis-match-render\b/g, "").replace(/\bpanel-hidden\b/g, "").trim();
+            if (cls) label += "." + cls.replace(/\s+/g, ".");
+          }
+          return label;
+        }
+
+        function collectAttributes(element) {
+          return Array.prototype.slice.call(element.attributes)
+            .filter(function(attr) {
+              return attr.name !== "data-node-id" && attr.name !== "class" && attr.name !== "style";
+            })
+            .map(function(attr) {
+              return attr.name + '="' + attr.value + '"';
+            });
+        }
+
+        /* ── HTML view rendering ── */
+        function renderHtmlView(matches) {
+          var hitLookup = {};
+          var lines = [];
+          var lineNumber = 1;
+
+          matches.forEach(function(match) {
+            hitLookup[match.getAttribute("data-node-id")] = true;
+          });
+
+          function pushLine(text, isMatch) {
+            lines.push(
+              '<div class="code-line' + (isMatch ? ' is-match' : '') + '">' +
+              '<span class="line-no">' + lineNumber + "</span>" +
+              '<span class="line-text">' + text + "</span></div>"
+            );
+            lineNumber += 1;
+          }
+
+          function shouldSkipNode(node) {
+            if (activePanel === "all") return false;
+            if (node.nodeType !== 1) return false;
+            var dp = node.getAttribute("data-panel");
+            if (dp && dp !== activePanel && panelRoots[dp]) return true;
+            return false;
+          }
+
+          function renderNode(node, depth) {
+            var indent = new Array(depth + 1).join("  ");
+            if (node.nodeType === 3) {
+              if (node.textContent.trim()) pushLine(escapeHtml(indent + node.textContent.trim()), false);
+              return;
+            }
+            if (node.nodeType !== 1) return;
+            if (shouldSkipNode(node)) return;
+
+            var tagName = node.tagName.toLowerCase();
+            var attrs = [];
+            if (node.className && typeof node.className === "string" && node.className.trim()) {
+              attrs.push('class="' + node.className.replace(/\bis-match-render\b/g, "").replace(/\bpanel-hidden\b/g, "").replace(/\s+/g, " ").trim() + '"');
+            }
+            attrs = attrs.concat(collectAttributes(node));
+            var openTag = "&lt;" + tagName + (attrs.length ? " " + escapeHtml(attrs.join(" ")) : "") + "&gt;";
+            var isHit = !!hitLookup[node.getAttribute("data-node-id")];
+            pushLine(indent + openTag, isHit);
+
+            if (!voidElements[tagName]) {
+              var childHasContent = false;
+              for (var i = 0; i < node.childNodes.length; i++) {
+                var child = node.childNodes[i];
+                if (child.nodeType === 1 || (child.nodeType === 3 && child.textContent.trim())) {
+                  childHasContent = true;
+                  renderNode(child, depth + 1);
+                }
+              }
+              if (!childHasContent) pushLine(escapeHtml(indent + "  "), false);
+              pushLine(indent + "&lt;/" + tagName + "&gt;", isHit);
+            }
+          }
+
+          // Render from appropriate root
+          if (activePanel !== "all" && panelRoots[activePanel]) {
+            renderNode(panelRoots[activePanel], 0);
+          } else {
+            renderNode(tutorialSample, 0);
+          }
+          htmlView.innerHTML = lines.join("");
+        }
+
+        /* ── Apply selector ── */
+        function applyCurrentSelector() {
+          var selector = selectorInput.value.trim();
+          clearRenderedMatches();
+
+          if (!selector) {
+            engineType.textContent = "Native CSS";
+            matchCount.textContent = "0";
+            statementText.textContent = 'document.querySelectorAll("")';
+            statusMessage.textContent = "Enter a selector or choose a preset.";
+            renderHtmlView([]);
+            return;
+          }
+
+          try {
+            var result = runSelector(selector);
+            var matches = result.matches;
+            for (var i = 0; i < matches.length; i++) {
+              matches[i].classList.add("is-match-render");
+            }
+            engineType.textContent = result.engine;
+            matchCount.textContent = String(matches.length);
+            statementText.textContent = 'document.querySelectorAll("' + selector.replace(/"/g, '\\"') + '")';
+            statusMessage.textContent = matches.length
+              ? "Matched: " + matches.map(formatElement).slice(0, 5).join(", ") + (matches.length > 5 ? "..." : "")
+              : "No elements matched this selector.";
+            renderHtmlView(matches);
+          } catch (error) {
+            engineType.textContent = "Error";
+            matchCount.textContent = "0";
+            statementText.textContent = "Selector failed";
+            statusMessage.textContent = error.message;
+            renderHtmlView([]);
+          }
+        }
+
+        /* ── Event listeners ── */
+        selectorPreset.addEventListener("change", function() {
+          setPreset(Number(selectorPreset.value));
+          applyCurrentSelector();
+        });
+
+        applyButton.addEventListener("click", applyCurrentSelector);
+
+        selectorInput.addEventListener("keydown", function(e) {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            applyCurrentSelector();
+          }
+        });
+
+        examplesToggle.addEventListener("click", function() {
+          var collapsed = examplesBlock.classList.toggle("collapsed");
+          examplesToggle.textContent = collapsed ? "Show" : "Hide";
+          examplesToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        });
+
+        resetButton.addEventListener("click", function() {
+          if (selectorPreset.options.length > 0) {
+            setPreset(Number(selectorPreset.options[0].value));
+          }
+          applyCurrentSelector();
+        });
+
+        /* ── Init ── */
+        assignNodeIds(tutorialSample);
+        collectPanelRoots();
+        buildStepPills();
+        buildCategoryTabs();
+        switchPanel("all");
+        activateLesson(0);
+      })();
+    </script>
+  </body>
+</html>
