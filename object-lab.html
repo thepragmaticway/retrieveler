@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Object Lab — DOM Inspector</title>
+    <style>
+      :root {
+        --bg: #0b1018;
+        --panel: rgba(20, 27, 38, 0.86);
+        --panel-strong: #161e2c;
+        --panel-soft: rgba(255, 255, 255, 0.04);
+        --ink: #e6edf3;
+        --ink-soft: #cbd5e1;
+        --muted: #8b9ba8;
+        --line: rgba(255, 255, 255, 0.08);
+        --line-strong: rgba(255, 255, 255, 0.14);
+        --accent: #2dd4bf;
+        --accent-strong: #14b8a6;
+        --accent-warm: #fb923c;
+        --accent-warm-strong: #ea7c1f;
+        --code: #f5d77a;
+        --shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+        --radius: 24px;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(45, 212, 191, 0.12), transparent 35%),
+          radial-gradient(circle at 80% 0%, rgba(251, 146, 60, 0.08), transparent 30%),
+          linear-gradient(180deg, #070b12 0%, var(--bg) 50%, #0d141d 100%);
+      }
+
+      .page {
+        width: min(1440px, calc(100% - 1.5rem));
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ── Top bar ── */
+      .top-bar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: rgba(11, 16, 24, 0.85);
+        border-bottom: 1px solid var(--line);
+        backdrop-filter: blur(18px);
+        padding: 0.6rem 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        border-radius: 0 0 18px 18px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      }
+
+      .top-bar h1 {
+        margin: 0;
+        font-size: 1.15rem;
+        letter-spacing: -0.03em;
+        white-space: nowrap;
+        color: var(--ink);
+      }
+
+      .top-bar .eyebrow {
+        margin: 0;
+        color: var(--accent);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        line-height: 1;
+      }
+
+      /* ── Query bar ── */
+      .query-bar {
+        position: sticky;
+        top: 64px;
+        z-index: 15;
+        background: rgba(11, 16, 24, 0.9);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        backdrop-filter: blur(18px);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+        padding: 0.9rem 1.2rem;
+        margin: 0.75rem 0;
+        display: grid;
+        gap: 0.6rem;
+      }
+
+      .query-row {
+        display: grid;
+        grid-template-columns: 220px 1fr auto auto;
+        gap: 0.6rem;
+        align-items: end;
+      }
+
+      .query-bar label.field-label {
+        display: block;
+        margin-bottom: 0.3rem;
+        font-weight: 700;
+        font-size: 0.78rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .query-bar select,
+      .query-bar input[type="text"] {
+        width: 100%;
+        font: inherit;
+        font-size: 0.92rem;
+        border: 1px solid var(--line-strong);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.35);
+        padding: 0.55rem 0.7rem;
+        color: var(--ink);
+        transition: border-color 140ms ease, box-shadow 140ms ease;
+      }
+
+      .query-bar select:focus,
+      .query-bar input[type="text"]:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+      }
+
+      .query-bar select option {
+        background: var(--panel-strong);
+        color: var(--ink);
+      }
+
+      .query-bar input[type="text"] {
+        font-family: Consolas, "Courier New", monospace;
+        color: var(--code);
+      }
+
+      .query-buttons {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 0.55rem 1rem;
+        font: inherit;
+        font-size: 0.88rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 140ms ease, box-shadow 140ms ease;
+        white-space: nowrap;
+      }
+
+      button:hover { transform: translateY(-1px); }
+
+      .primary {
+        color: #051917;
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        box-shadow: 0 8px 18px rgba(45, 212, 191, 0.25);
+      }
+
+      .secondary {
+        color: #1a0e02;
+        background: linear-gradient(135deg, var(--accent-warm), var(--accent-warm-strong));
+        box-shadow: 0 8px 18px rgba(251, 146, 60, 0.25);
+      }
+
+      .status-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        font-size: 0.85rem;
+        color: var(--muted);
+        padding-top: 0.4rem;
+        border-top: 1px dashed var(--line);
+      }
+
+      .status-row strong { color: var(--ink); font-weight: 600; }
+      .status-row code {
+        font-size: 0.82rem;
+        color: var(--code);
+        background: rgba(0, 0, 0, 0.3);
+        padding: 0.1rem 0.4rem;
+        border-radius: 5px;
+      }
+
+      #statusMessage {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      /* ── Lab grid ── */
+      .lab-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        padding: 0.5rem 0 1rem;
+      }
+
+      .pane {
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: var(--panel);
+        overflow: hidden;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+      }
+
+      .pane-head {
+        padding: 0.85rem 1.1rem 0.7rem;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .pane-head h3 {
+        margin: 0 0 0.2rem;
+        font-size: 1rem;
+        color: var(--ink);
+      }
+
+      .pane-head p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      .render-wrap { padding: 1rem; }
+
+      .stage {
+        min-height: 400px;
+        padding: 1rem;
+        border-radius: 22px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
+          linear-gradient(120deg, rgba(45, 212, 191, 0.04), rgba(251, 146, 60, 0.03));
+        border: 1px solid var(--line);
+      }
+
+      /* ── Sample content ── */
+      .sample-card {
+        background: var(--panel-strong);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        padding: 1rem;
+        color: var(--ink);
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
+      }
+
+      .sample-card + .sample-card { margin-top: 0.9rem; }
+      .sample-card h4, .sample-card h5 { margin-top: 0; color: var(--ink); }
+
+      .toolbar { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-bottom: 0.7rem; }
+
+      .badge, .mini {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.42rem 0.7rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--line-strong);
+        color: var(--ink-soft);
+        text-decoration: none;
+      }
+
+      .badge { color: var(--accent); font-weight: 700; }
+
+      .field-group + .field-group { margin-top: 0.7rem; }
+      .field-group > label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.88rem; color: var(--ink-soft); }
+
+      .stage input[type="text"],
+      .stage input[type="password"],
+      .stage input[type="email"],
+      .stage textarea,
+      .stage select {
+        width: 100%;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid var(--line-strong);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.35);
+        color: var(--ink);
+        font: inherit;
+      }
+
+      .stage select option { background: var(--panel-strong); color: var(--ink); }
+      .stage textarea { min-height: 4.5rem; }
+      details {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        padding: 0.6rem 0.85rem;
+        color: var(--ink-soft);
+      }
+      details + details { margin-top: 0.6rem; }
+      summary { cursor: pointer; font-weight: 700; color: var(--ink); }
+
+      .is-match-render {
+        outline: 2px solid var(--accent-warm);
+        outline-offset: 3px;
+        background-color: rgba(251, 146, 60, 0.10) !important;
+        box-shadow: 0 0 24px rgba(251, 146, 60, 0.18);
+      }
+
+      .is-focused-render {
+        outline: 2px solid var(--accent) !important;
+        outline-offset: 3px;
+        box-shadow: 0 0 28px rgba(45, 212, 191, 0.35);
+      }
+
+      /* ── Top-level pane tabs ── */
+      .pane-tabs {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .pane-tab {
+        padding: 0.4rem 0.95rem;
+        border-radius: 999px;
+        border: 1px solid var(--line-strong);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--muted);
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        transition: all 140ms ease;
+      }
+
+      .pane-tab:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(45, 212, 191, 0.06);
+      }
+
+      .pane-tab.active {
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        color: #051917;
+        border-color: transparent;
+        box-shadow: 0 4px 14px rgba(45, 212, 191, 0.3);
+      }
+
+      .pane-tab .count {
+        font-size: 0.72rem;
+        background: rgba(0, 0, 0, 0.25);
+        padding: 0.05rem 0.5rem;
+        border-radius: 999px;
+        font-weight: 700;
+      }
+
+      .pane-subtitle {
+        margin: 0.4rem 0 0;
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+
+      /* ── Inspector ── */
+      .inspector { padding: 0.9rem 1rem 1rem; }
+
+      .match-list {
+        display: grid;
+        gap: 0.35rem;
+        margin-bottom: 0.85rem;
+        max-height: 180px;
+        overflow: auto;
+      }
+
+      .match-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+        padding: 0.45rem 0.7rem;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.03);
+        cursor: pointer;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.82rem;
+        color: var(--ink-soft);
+        transition: all 140ms ease;
+      }
+
+      .match-item:hover {
+        border-color: var(--accent);
+        background: rgba(45, 212, 191, 0.08);
+      }
+
+      .match-item.selected {
+        border-color: var(--accent);
+        background: rgba(45, 212, 191, 0.14);
+        color: var(--ink);
+      }
+
+      .match-index {
+        font-size: 0.72rem;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .selected-summary {
+        margin: 0 0 0.7rem;
+        padding: 0.6rem 0.8rem;
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--accent);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.85rem;
+        color: var(--ink);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        align-items: center;
+      }
+
+      .selected-summary .label {
+        color: var(--muted);
+        font-family: "Segoe UI", sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .inspector-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 0.7rem;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .tab-btn {
+        padding: 0.4rem 0.85rem;
+        border-radius: 999px;
+        border: 1px solid var(--line-strong);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 140ms ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .tab-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(45, 212, 191, 0.06);
+      }
+
+      .tab-btn.active {
+        background: linear-gradient(135deg, rgba(45, 212, 191, 0.18), rgba(45, 212, 191, 0.05));
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .tab-btn .count {
+        font-size: 0.7rem;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 0.05rem 0.45rem;
+        border-radius: 999px;
+        color: var(--ink-soft);
+      }
+
+      .tab-panel {
+        max-height: 460px;
+        overflow: auto;
+        padding-right: 0.3rem;
+      }
+
+      .tab-panel.hidden { display: none; }
+
+      .filter-input {
+        width: 100%;
+        font: inherit;
+        font-size: 0.85rem;
+        border: 1px solid var(--line-strong);
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.35);
+        padding: 0.4rem 0.65rem;
+        color: var(--ink);
+        margin-bottom: 0.6rem;
+      }
+
+      .filter-input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+      }
+
+      .group-head {
+        margin: 0.7rem 0 0.4rem;
+        padding: 0.25rem 0;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--accent-warm);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        border-bottom: 1px dashed var(--line-strong);
+      }
+
+      .group-head:first-child { margin-top: 0; }
+
+      .row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.55rem;
+        padding: 0.45rem 0.7rem;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.025);
+        margin-bottom: 0.35rem;
+        font-size: 0.85rem;
+      }
+
+      .row-check {
+        margin-top: 0.2rem;
+        width: 14px;
+        height: 14px;
+        accent-color: var(--accent);
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .row-body {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        gap: 0.15rem;
+      }
+
+      .row .name {
+        font-family: Consolas, "Courier New", monospace;
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      .row .value {
+        font-family: Consolas, "Courier New", monospace;
+        color: var(--code);
+        font-size: 0.8rem;
+        word-break: break-all;
+        white-space: pre-wrap;
+      }
+
+      .row .meta {
+        font-size: 0.74rem;
+        color: var(--muted);
+      }
+
+      .row .desc {
+        color: var(--ink-soft);
+        font-size: 0.8rem;
+      }
+
+      .pill {
+        display: inline-block;
+        padding: 0.05rem 0.45rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--line-strong);
+        font-size: 0.7rem;
+        color: var(--muted);
+        margin-left: 0.4rem;
+        font-family: "Segoe UI", sans-serif;
+      }
+
+      .pill.bound {
+        color: #051917;
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        border-color: transparent;
+        font-weight: 700;
+      }
+
+      .pill.catalog {
+        color: var(--accent-warm);
+        border-color: rgba(251, 146, 60, 0.35);
+      }
+
+      .empty {
+        padding: 1rem;
+        text-align: center;
+        color: var(--muted);
+        font-style: italic;
+      }
+
+      /* ── Create cell action bar ── */
+      .create-cell-bar {
+        margin-top: 0.7rem;
+        padding: 0.65rem 0.85rem;
+        border: 1px dashed var(--line-strong);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+        font-size: 0.85rem;
+        color: var(--ink-soft);
+        flex-wrap: wrap;
+      }
+
+      .create-cell-bar .summary {
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .selection-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.18rem 0.55rem;
+        border-radius: 999px;
+        background: rgba(45, 212, 191, 0.12);
+        border: 1px solid rgba(45, 212, 191, 0.3);
+        color: var(--accent);
+        font-size: 0.75rem;
+        font-weight: 700;
+      }
+
+      .create-cell-bar button {
+        padding: 0.45rem 0.95rem;
+        font-size: 0.82rem;
+      }
+
+      .create-cell-bar button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        filter: grayscale(0.4);
+      }
+
+      /* ── Executor ── */
+      .executor { padding: 0.9rem 1rem 1rem; }
+
+      .cells-empty {
+        padding: 2rem 1rem;
+        text-align: center;
+        color: var(--muted);
+        font-style: italic;
+        border: 1px dashed var(--line-strong);
+        border-radius: 14px;
+      }
+
+      .cell {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.025);
+        margin-bottom: 0.85rem;
+        overflow: hidden;
+      }
+
+      .cell-head {
+        padding: 0.55rem 0.8rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+      }
+
+      .cell-meta {
+        font-size: 0.78rem;
+        color: var(--muted);
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .cell-meta strong {
+        color: var(--ink);
+        font-weight: 700;
+      }
+
+      .cell-meta code {
+        font-family: Consolas, monospace;
+        color: var(--code);
+        background: rgba(0, 0, 0, 0.3);
+        padding: 0.05rem 0.4rem;
+        border-radius: 5px;
+        font-size: 0.78rem;
+      }
+
+      .cell-actions { display: flex; gap: 0.4rem; }
+
+      .btn-mini {
+        border: 1px solid var(--line-strong);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--ink-soft);
+        font-size: 0.78rem;
+        font-weight: 700;
+        padding: 0.32rem 0.85rem;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: all 140ms ease;
+      }
+
+      .btn-mini:hover { transform: translateY(-1px); }
+
+      .btn-mini.run {
+        color: #051917;
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        border-color: transparent;
+      }
+
+      .btn-mini.remove {
+        color: #ff8a80;
+        border-color: rgba(255, 138, 128, 0.4);
+      }
+
+      .btn-mini.remove:hover {
+        background: rgba(255, 138, 128, 0.12);
+        border-color: rgba(255, 138, 128, 0.65);
+        color: #ffaba3;
+      }
+
+      .cell-code {
+        width: 100%;
+        min-height: 8rem;
+        padding: 0.7rem 0.85rem;
+        border: 0;
+        background: rgba(0, 0, 0, 0.45);
+        color: var(--code);
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        resize: vertical;
+        display: block;
+      }
+
+      .cell-code:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
+      }
+
+      .cell-output {
+        border-top: 1px solid var(--line);
+        background: rgba(0, 0, 0, 0.28);
+        padding: 0.5rem 0.85rem;
+        max-height: 240px;
+        overflow: auto;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.78rem;
+      }
+
+      .cell-output-row {
+        padding: 0.12rem 0;
+        color: var(--ink-soft);
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .cell-output-row.warn  { color: #fbbf24; }
+      .cell-output-row.error { color: #ff8a80; }
+      .cell-output-row.meta  { color: var(--muted); font-style: italic; }
+
+      .cell-output-empty {
+        color: var(--muted);
+        font-style: italic;
+      }
+
+      .listener-warning {
+        margin: 0 0.85rem 0.6rem;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.75rem;
+        color: #fbbf24;
+        border: 1px solid rgba(251, 191, 36, 0.35);
+        border-radius: 8px;
+        background: rgba(251, 191, 36, 0.07);
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 1000px) {
+        .query-row { grid-template-columns: 1fr 1fr; }
+        .lab-grid { grid-template-columns: 1fr; }
+      }
+
+      @media (max-width: 640px) {
+        .page { width: calc(100% - 0.5rem); }
+        .query-row { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+
+      <header class="top-bar">
+        <div>
+          <p class="eyebrow">Interactive Tool</p>
+          <h1>Object Lab — DOM Inspector</h1>
+        </div>
+      </header>
+
+      <section class="query-bar" id="queryBar">
+        <div class="query-row">
+          <div>
+            <label class="field-label" for="modeSelect">Query mode</label>
+            <select id="modeSelect">
+              <option value="all" selected>querySelectorAll</option>
+              <option value="single">querySelector</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="selectorInput">CSS selector (press Enter to apply)</label>
+            <input id="selectorInput" type="text" autocomplete="off" spellcheck="false" value="#projectCard">
+          </div>
+          <div class="query-buttons">
+            <button class="primary" id="applyButton" type="button">Apply</button>
+            <button class="secondary" id="resetButton" type="button">Reset</button>
+          </div>
+        </div>
+        <div class="status-row">
+          <span><strong>Matches:</strong> <span id="matchCount">0</span></span>
+          <span><strong>Statement:</strong> <code id="statementText">document.querySelectorAll("")</code></span>
+        </div>
+        <p id="statusMessage">Choose a selector to begin.</p>
+      </section>
+
+      <section class="lab-grid">
+        <article class="pane">
+          <div class="pane-head">
+            <h3>Sample DOM</h3>
+            <p>Matches are outlined; the inspected element is highlighted in teal.</p>
+          </div>
+          <div class="render-wrap">
+            <div class="stage" id="lab">
+              <section class="sample-card" id="projectCard" data-panel="overview" data-priority="high">
+                <div class="toolbar">
+                  <span class="badge">Design system</span>
+                  <span class="badge">Accessibility</span>
+                </div>
+                <h4>Modern interface review</h4>
+                <p>Inspect any element to see its attributes, properties, methods, and events.</p>
+                <button id="primaryAction" class="mini" type="button" data-role="action">Run review</button>
+                <a class="mini" href="guide.html">Guide</a>
+              </section>
+
+              <section class="sample-card" id="feedbackArea">
+                <h4>Feedback form</h4>
+                <form id="feedbackForm" action="/submit" method="post">
+                  <div class="field-group">
+                    <label for="topicField">Topic</label>
+                    <input id="topicField" name="topic" type="text" placeholder="Selector strategy" required>
+                  </div>
+                  <div class="field-group">
+                    <label for="emailField">Email</label>
+                    <input id="emailField" name="email" type="email" value="reviewer@example.com">
+                  </div>
+                  <div class="field-group">
+                    <label for="priorityField">Priority</label>
+                    <select id="priorityField" name="priority">
+                      <option>Routine</option>
+                      <option selected>Important</option>
+                      <option>Critical</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <label for="messageField">Message</label>
+                    <textarea id="messageField" name="message">Inspect me to see textarea-specific properties.</textarea>
+                  </div>
+                  <div class="field-group">
+                    <label><input id="agreeBox" type="checkbox" name="agree" checked> Share with channel</label>
+                  </div>
+                  <div class="toolbar">
+                    <button class="mini" type="submit" data-role="primary">Submit</button>
+                    <button class="mini" type="reset" data-role="secondary">Reset</button>
+                  </div>
+                </form>
+              </section>
+
+              <section class="sample-card" id="notesArea">
+                <h4>Quick notes</h4>
+                <details id="themeDetails" open>
+                  <summary>Theme direction</summary>
+                  <p>Warm editorial palette with teal utility accents.</p>
+                </details>
+                <details id="goalsDetails">
+                  <summary>Interaction goals</summary>
+                  <p>Keep hierarchy obvious and highlight critical actions.</p>
+                </details>
+              </section>
+            </div>
+          </div>
+        </article>
+
+        <article class="pane">
+          <div class="pane-head">
+            <div class="pane-tabs" id="paneTabs">
+              <button class="pane-tab active" type="button" data-top-tab="inspector">Inspector</button>
+              <button class="pane-tab" type="button" data-top-tab="executor">
+                Executor <span class="count" id="cellCount">0</span>
+              </button>
+            </div>
+            <p class="pane-subtitle" id="paneSubtitle">Attributes, properties, methods, and events for the focused element.</p>
+          </div>
+
+          <!-- Inspector view -->
+          <div class="inspector" id="inspectorView">
+            <div id="matchList" class="match-list"></div>
+            <div id="selectedSummary" class="selected-summary" style="display:none"></div>
+            <nav id="inspectorTabs" class="inspector-tabs" aria-label="Inspector tabs"></nav>
+            <input id="filterInput" class="filter-input" type="text" placeholder="Filter by name…" autocomplete="off" spellcheck="false">
+            <div id="tabContent"></div>
+            <div id="createCellBar" class="create-cell-bar">
+              <div class="summary" id="selectionSummary">No items selected.</div>
+              <button class="primary" id="createCellBtn" type="button" disabled>Create executor cell</button>
+            </div>
+          </div>
+
+          <!-- Executor view -->
+          <div class="executor" id="executorView" style="display:none">
+            <div id="cellsContainer"></div>
+          </div>
+        </article>
+      </section>
+    </div>
+
+    <script>
+      (function() {
+        /* ──────────────────────────────────────────────────────────────
+           Static catalog of method signatures (param names + descriptions)
+        ────────────────────────────────────────────────────────────── */
+        var METHOD_CATALOG = {
+          addEventListener:    { params: ["type", "listener", "options?"], returns: "void", desc: "Register an event handler." },
+          removeEventListener: { params: ["type", "listener", "options?"], returns: "void", desc: "Remove a registered handler." },
+          dispatchEvent:       { params: ["event"], returns: "boolean", desc: "Dispatch an Event to this target." },
+
+          appendChild:    { params: ["node"], returns: "Node", desc: "Append a node as the last child." },
+          removeChild:    { params: ["child"], returns: "Node", desc: "Remove a child node." },
+          insertBefore:   { params: ["newNode", "referenceNode"], returns: "Node", desc: "Insert before a reference child." },
+          replaceChild:   { params: ["newChild", "oldChild"], returns: "Node", desc: "Replace one child with another." },
+          cloneNode:      { params: ["deep?"], returns: "Node", desc: "Duplicate this node (and optionally its subtree)." },
+          contains:       { params: ["other"], returns: "boolean", desc: "Whether other is a descendant of this node." },
+          hasChildNodes:  { params: [], returns: "boolean", desc: "Whether this node has any children." },
+          normalize:      { params: [], returns: "void", desc: "Merge adjacent text nodes." },
+          isEqualNode:    { params: ["other"], returns: "boolean", desc: "Structural equality test." },
+          isSameNode:     { params: ["other"], returns: "boolean", desc: "Reference equality test." },
+          getRootNode:    { params: ["options?"], returns: "Node", desc: "Get the root of this node's tree." },
+
+          getAttribute:        { params: ["name"], returns: "string | null", desc: "Read an attribute value." },
+          setAttribute:        { params: ["name", "value"], returns: "void", desc: "Set an attribute value." },
+          removeAttribute:     { params: ["name"], returns: "void", desc: "Remove an attribute." },
+          hasAttribute:        { params: ["name"], returns: "boolean", desc: "Test whether an attribute exists." },
+          toggleAttribute:     { params: ["name", "force?"], returns: "boolean", desc: "Toggle an attribute on/off." },
+          getAttributeNames:   { params: [], returns: "string[]", desc: "List all attribute names." },
+          getAttributeNode:    { params: ["name"], returns: "Attr | null", desc: "Get the Attr node for an attribute." },
+          closest:             { params: ["selector"], returns: "Element | null", desc: "Nearest ancestor (or self) matching selector." },
+          matches:             { params: ["selector"], returns: "boolean", desc: "Whether this element matches the selector." },
+          querySelector:       { params: ["selector"], returns: "Element | null", desc: "First descendant matching selector." },
+          querySelectorAll:    { params: ["selector"], returns: "NodeList", desc: "All descendants matching selector." },
+          getBoundingClientRect: { params: [], returns: "DOMRect", desc: "Element's box relative to the viewport." },
+          getClientRects:      { params: [], returns: "DOMRectList", desc: "Border-box rectangles." },
+          scrollIntoView:      { params: ["arg?"], returns: "void", desc: "Scroll the element into the viewport." },
+          scrollTo:            { params: ["x", "y"], returns: "void", desc: "Scroll to coordinates." },
+          scrollBy:            { params: ["x", "y"], returns: "void", desc: "Scroll by a delta." },
+          getElementsByTagName:   { params: ["tagName"], returns: "HTMLCollection", desc: "Live collection by tag name." },
+          getElementsByClassName: { params: ["classNames"], returns: "HTMLCollection", desc: "Live collection by class." },
+          insertAdjacentElement: { params: ["position", "element"], returns: "Element | null", desc: "Insert at beforebegin/afterbegin/beforeend/afterend." },
+          insertAdjacentHTML:    { params: ["position", "html"], returns: "void", desc: "Parse and insert HTML at a position." },
+          insertAdjacentText:    { params: ["position", "text"], returns: "void", desc: "Insert text at a position." },
+          append:                { params: ["...nodes"], returns: "void", desc: "Append nodes/strings as last children." },
+          prepend:               { params: ["...nodes"], returns: "void", desc: "Prepend nodes/strings as first children." },
+          before:                { params: ["...nodes"], returns: "void", desc: "Insert nodes/strings before this element." },
+          after:                 { params: ["...nodes"], returns: "void", desc: "Insert nodes/strings after this element." },
+          replaceWith:           { params: ["...nodes"], returns: "void", desc: "Replace this element with nodes/strings." },
+          remove:                { params: [], returns: "void", desc: "Remove this element from the tree." },
+          replaceChildren:       { params: ["...nodes"], returns: "void", desc: "Replace all children." },
+          animate:               { params: ["keyframes", "options?"], returns: "Animation", desc: "Run a Web Animations animation." },
+          getAnimations:         { params: [], returns: "Animation[]", desc: "Currently running animations on this element." },
+
+          focus:    { params: ["options?"], returns: "void", desc: "Move keyboard focus to this element." },
+          blur:     { params: [], returns: "void", desc: "Remove keyboard focus." },
+          click:    { params: [], returns: "void", desc: "Simulate a mouse click." },
+
+          select:            { params: [], returns: "void", desc: "Select all text in the field." },
+          setSelectionRange: { params: ["start", "end", "direction?"], returns: "void", desc: "Select a range of text." },
+          setRangeText:      { params: ["replacement", "start?", "end?", "selectMode?"], returns: "void", desc: "Replace a range of text." },
+          checkValidity:     { params: [], returns: "boolean", desc: "Run constraint validation." },
+          reportValidity:    { params: [], returns: "boolean", desc: "Validate and show any error UI." },
+          setCustomValidity: { params: ["error"], returns: "void", desc: "Set a custom validation message." },
+          stepUp:            { params: ["n?"], returns: "void", desc: "Increment the value by n × step." },
+          stepDown:          { params: ["n?"], returns: "void", desc: "Decrement the value by n × step." },
+          showPicker:        { params: [], returns: "void", desc: "Programmatically open the native picker." },
+
+          submit:        { params: [], returns: "void", desc: "Submit the form (skips validation/submit event)." },
+          reset:         { params: [], returns: "void", desc: "Reset the form to its default values." },
+          requestSubmit: { params: ["submitter?"], returns: "void", desc: "Request submission as if a submit button were clicked." },
+
+          add:       { params: ["element", "before?"], returns: "void", desc: "Add an option to the select." },
+          item:      { params: ["index"], returns: "Element | null", desc: "Option at a given index." },
+          namedItem: { params: ["name"], returns: "HTMLOptionElement | null", desc: "Option with a given name/id." },
+
+          getComputedStyle: { params: [], returns: "CSSStyleDeclaration", desc: "Resolved CSS values (call on window, not element)." }
+        };
+
+        /* String-ish param names — emit as quoted strings in sample calls. */
+        var STRING_PARAMS = {
+          type: 1, name: 1, selector: 1, html: 1, text: 1, position: 1,
+          direction: 1, tagName: 1, classNames: 1, value: 1, error: 1,
+          replacement: 1, selectMode: 1
+        };
+
+        /* ──────────────────────────────────────────────────────────────
+           Event catalog: prototype constructor name → event types.
+        ────────────────────────────────────────────────────────────── */
+        var EVENT_CATALOG = {
+          EventTarget: [],
+          Node: [],
+          Element: [
+            { type: "fullscreenchange", desc: "Fullscreen state changed." },
+            { type: "fullscreenerror",  desc: "Fullscreen request failed." }
+          ],
+          HTMLElement: [
+            { type: "click",        desc: "Pointer click." },
+            { type: "dblclick",     desc: "Double click." },
+            { type: "mousedown",    desc: "Mouse button pressed." },
+            { type: "mouseup",      desc: "Mouse button released." },
+            { type: "mousemove",    desc: "Pointer moved over element." },
+            { type: "mouseenter",   desc: "Pointer entered (no bubbling)." },
+            { type: "mouseleave",   desc: "Pointer left (no bubbling)." },
+            { type: "mouseover",    desc: "Pointer entered (bubbles)." },
+            { type: "mouseout",     desc: "Pointer left (bubbles)." },
+            { type: "contextmenu",  desc: "Context-menu requested." },
+            { type: "wheel",        desc: "Wheel rotated." },
+            { type: "keydown",      desc: "Key pressed." },
+            { type: "keyup",        desc: "Key released." },
+            { type: "focus",        desc: "Element received focus (no bubbling)." },
+            { type: "blur",         desc: "Element lost focus (no bubbling)." },
+            { type: "focusin",      desc: "Focus received (bubbles)." },
+            { type: "focusout",     desc: "Focus lost (bubbles)." },
+            { type: "pointerdown",  desc: "Pointer pressed." },
+            { type: "pointerup",    desc: "Pointer released." },
+            { type: "pointermove",  desc: "Pointer moved." },
+            { type: "pointerenter", desc: "Pointer entered." },
+            { type: "pointerleave", desc: "Pointer left." },
+            { type: "touchstart",   desc: "Touch contact began." },
+            { type: "touchend",     desc: "Touch contact ended." },
+            { type: "touchmove",    desc: "Touch moved." },
+            { type: "touchcancel",  desc: "Touch cancelled." },
+            { type: "drag",         desc: "Drag is occurring." },
+            { type: "dragstart",    desc: "Drag began." },
+            { type: "dragend",      desc: "Drag ended." },
+            { type: "dragenter",    desc: "Drag entered drop target." },
+            { type: "dragleave",    desc: "Drag left drop target." },
+            { type: "dragover",     desc: "Drag is over drop target." },
+            { type: "drop",         desc: "Drop completed." },
+            { type: "copy",         desc: "Copy command issued." },
+            { type: "cut",          desc: "Cut command issued." },
+            { type: "paste",        desc: "Paste command issued." },
+            { type: "animationstart",     desc: "CSS animation started." },
+            { type: "animationend",       desc: "CSS animation ended." },
+            { type: "animationiteration", desc: "CSS animation iterated." },
+            { type: "transitionstart",    desc: "CSS transition started." },
+            { type: "transitionend",      desc: "CSS transition ended." },
+            { type: "transitionrun",      desc: "CSS transition runs." },
+            { type: "transitioncancel",   desc: "CSS transition cancelled." }
+          ],
+          HTMLInputElement: [
+            { type: "input",   desc: "Value being edited." },
+            { type: "change",  desc: "Value committed." },
+            { type: "invalid", desc: "Constraint validation failed." },
+            { type: "select",  desc: "Text selected within the field." },
+            { type: "search",  desc: "Search input committed (type=search)." }
+          ],
+          HTMLTextAreaElement: [
+            { type: "input",   desc: "Value being edited." },
+            { type: "change",  desc: "Value committed." },
+            { type: "select",  desc: "Text selected within the field." }
+          ],
+          HTMLSelectElement: [
+            { type: "input",   desc: "Selection being edited." },
+            { type: "change",  desc: "Selection committed." }
+          ],
+          HTMLFormElement: [
+            { type: "submit",   desc: "Form is being submitted." },
+            { type: "reset",    desc: "Form is being reset." },
+            { type: "formdata", desc: "Form data is being constructed." }
+          ],
+          HTMLButtonElement: [
+            { type: "invalid", desc: "Constraint validation failed." }
+          ],
+          HTMLDetailsElement: [
+            { type: "toggle", desc: "Open state changed." }
+          ],
+          HTMLAnchorElement: [],
+          HTMLMediaElement: [
+            { type: "play",         desc: "Playback started." },
+            { type: "pause",        desc: "Playback paused." },
+            { type: "ended",        desc: "Playback reached the end." },
+            { type: "timeupdate",   desc: "currentTime changed." },
+            { type: "volumechange", desc: "Volume changed." }
+          ]
+        };
+
+        /* ──────────────────────────────────────────────────────────────
+           DOM refs
+        ────────────────────────────────────────────────────────────── */
+        var modeSelect      = document.getElementById("modeSelect");
+        var selectorInput   = document.getElementById("selectorInput");
+        var applyButton     = document.getElementById("applyButton");
+        var resetButton     = document.getElementById("resetButton");
+        var matchCount      = document.getElementById("matchCount");
+        var statementText   = document.getElementById("statementText");
+        var statusMessage   = document.getElementById("statusMessage");
+        var lab             = document.getElementById("lab");
+        var matchList       = document.getElementById("matchList");
+        var selectedSummary = document.getElementById("selectedSummary");
+        var inspectorTabs   = document.getElementById("inspectorTabs");
+        var filterInput     = document.getElementById("filterInput");
+        var tabContent      = document.getElementById("tabContent");
+        var paneTabs        = document.getElementById("paneTabs");
+        var paneSubtitle    = document.getElementById("paneSubtitle");
+        var inspectorView   = document.getElementById("inspectorView");
+        var executorView    = document.getElementById("executorView");
+        var cellsContainer  = document.getElementById("cellsContainer");
+        var cellCountBadge  = document.getElementById("cellCount");
+        var createCellBar   = document.getElementById("createCellBar");
+        var selectionSummary = document.getElementById("selectionSummary");
+        var createCellBtn   = document.getElementById("createCellBtn");
+
+        var TABS = ["attributes", "properties", "methods", "events"];
+        var activeTab = "attributes";
+        var topTab = "inspector";
+        var currentMatches = [];
+        var focusedElement = null;
+        var filterText = "";
+        var DEFAULT_SELECTOR = "#projectCard";
+
+        /* element → { attrs:Set, methods:Set, events:Set }  */
+        var selections = new WeakMap();
+        var cells = [];
+        var cellIdSeq = 0;
+
+        /* ──────────────────────────────────────────────────────────────
+           Helpers
+        ────────────────────────────────────────────────────────────── */
+        function el(tag, opts) {
+          var node = document.createElement(tag);
+          if (opts) {
+            if (opts.className) node.className = opts.className;
+            if (opts.text != null) node.textContent = opts.text;
+            if (opts.html != null) node.innerHTML = opts.html;
+          }
+          return node;
+        }
+
+        function escapeHtmlText(s) {
+          return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function isJsIdentifier(name) {
+          return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
+        }
+
+        function elementLabel(node) {
+          var label = node.tagName.toLowerCase();
+          if (node.id) label += "#" + node.id;
+          if (node.className && typeof node.className === "string") {
+            var cls = node.className
+              .replace(/\bis-match-render\b/g, "")
+              .replace(/\bis-focused-render\b/g, "")
+              .trim();
+            if (cls) label += "." + cls.split(/\s+/).join(".");
+          }
+          return label;
+        }
+
+        function walkPrototypes(node) {
+          var chain = [];
+          var p = Object.getPrototypeOf(node);
+          while (p && p !== Object.prototype) {
+            var ctor = p.constructor && p.constructor.name ? p.constructor.name : "(anonymous)";
+            chain.push({ name: ctor, proto: p });
+            p = Object.getPrototypeOf(p);
+          }
+          return chain;
+        }
+
+        function safeGet(node, name) {
+          try {
+            return { ok: true, value: node[name] };
+          } catch (err) {
+            return { ok: false, error: err.message };
+          }
+        }
+
+        function formatValue(v) {
+          if (v === null) return "null";
+          if (v === undefined) return "undefined";
+          var t = typeof v;
+          if (t === "string") {
+            var s = v.length > 80 ? v.slice(0, 77) + "…" : v;
+            return '"' + s + '"';
+          }
+          if (t === "number" || t === "boolean") return String(v);
+          if (t === "function") return "ƒ " + (v.name || "anonymous") + "()";
+          if (v instanceof Element) return "<" + v.tagName.toLowerCase() + ">";
+          if (v instanceof NodeList || v instanceof HTMLCollection) return v.constructor.name + "(" + v.length + ")";
+          if (Array.isArray(v)) return "Array(" + v.length + ")";
+          if (t === "object") {
+            try { return v.constructor && v.constructor.name ? v.constructor.name : "Object"; }
+            catch (e) { return "Object"; }
+          }
+          return String(v);
+        }
+
+        function typeLabel(v) {
+          if (v === null) return "null";
+          var t = typeof v;
+          if (t !== "object") return t;
+          if (Array.isArray(v)) return "array";
+          return v.constructor && v.constructor.name ? v.constructor.name : "object";
+        }
+
+        function getSelections(node) {
+          if (!node) return null;
+          if (!selections.has(node)) {
+            selections.set(node, { attrs: new Set(), methods: new Set(), events: new Set() });
+          }
+          return selections.get(node);
+        }
+
+        function selectionCount(node) {
+          if (!node) return 0;
+          var s = selections.get(node);
+          if (!s) return 0;
+          return s.attrs.size + s.methods.size + s.events.size;
+        }
+
+        function passesFilter(name) {
+          if (!filterText) return true;
+          return name.toLowerCase().indexOf(filterText.toLowerCase()) !== -1;
+        }
+
+        /* ──────────────────────────────────────────────────────────────
+           Selector execution
+        ────────────────────────────────────────────────────────────── */
+        function clearMatchHighlights() {
+          var prev = lab.querySelectorAll(".is-match-render, .is-focused-render");
+          for (var i = 0; i < prev.length; i++) {
+            prev[i].classList.remove("is-match-render");
+            prev[i].classList.remove("is-focused-render");
+          }
+        }
+
+        function applyCurrentSelector() {
+          var selector = selectorInput.value.trim();
+          var mode = modeSelect.value;
+          clearMatchHighlights();
+          currentMatches = [];
+          focusedElement = null;
+
+          var stmt = mode === "single"
+            ? 'document.querySelector("' + selector.replace(/"/g, '\\"') + '")'
+            : 'document.querySelectorAll("' + selector.replace(/"/g, '\\"') + '")';
+          statementText.textContent = stmt;
+
+          if (!selector) {
+            matchCount.textContent = "0";
+            statusMessage.textContent = "Enter a selector to begin.";
+            renderInspector();
+            return;
+          }
+
+          try {
+            if (mode === "single") {
+              var one = lab.querySelector(selector);
+              currentMatches = one ? [one] : [];
+            } else {
+              currentMatches = Array.prototype.slice.call(lab.querySelectorAll(selector));
+            }
+            for (var i = 0; i < currentMatches.length; i++) {
+              currentMatches[i].classList.add("is-match-render");
+            }
+            matchCount.textContent = String(currentMatches.length);
+            if (currentMatches.length === 0) {
+              statusMessage.textContent = "No elements matched.";
+            } else {
+              statusMessage.textContent = "Matched " + currentMatches.length + " element"
+                + (currentMatches.length === 1 ? "" : "s") + ". Click one to inspect.";
+              focusElement(currentMatches[0]);
+            }
+            renderInspector();
+          } catch (err) {
+            matchCount.textContent = "0";
+            statementText.textContent = "Selector failed";
+            statusMessage.textContent = "Error: " + err.message;
+            renderInspector();
+          }
+        }
+
+        function focusElement(node) {
+          if (focusedElement) focusedElement.classList.remove("is-focused-render");
+          focusedElement = node;
+          if (node) node.classList.add("is-focused-render");
+          renderInspector();
+        }
+
+        /* ──────────────────────────────────────────────────────────────
+           Build inspector data
+        ────────────────────────────────────────────────────────────── */
+        function buildAttributes(node) {
+          return Array.prototype.slice.call(node.attributes)
+            .filter(function(a) { return a.name !== "data-node-id"; })
+            .map(function(a) { return { name: a.name, value: a.value }; });
+        }
+
+        function buildPropertiesAndMethods(node) {
+          var chain = walkPrototypes(node);
+          var seen = {};
+          var groupsProps = [];
+          var groupsMethods = [];
+
+          chain.forEach(function(level) {
+            var names = Object.getOwnPropertyNames(level.proto);
+            var props = [];
+            var methods = [];
+            names.sort().forEach(function(name) {
+              if (name === "constructor") return;
+              if (name.indexOf("on") === 0) return;
+              if (seen[name]) return;
+              var desc;
+              try { desc = Object.getOwnPropertyDescriptor(level.proto, name); }
+              catch (e) { return; }
+              if (!desc) return;
+              seen[name] = true;
+
+              if (typeof desc.value === "function") {
+                methods.push({
+                  name: name,
+                  arity: desc.value.length,
+                  catalog: METHOD_CATALOG[name] || null
+                });
+              } else {
+                var got = safeGet(node, name);
+                props.push({
+                  name: name,
+                  ok: got.ok,
+                  value: got.ok ? got.value : null,
+                  error: got.ok ? null : got.error,
+                  hasGetter: !!desc.get,
+                  hasSetter: !!desc.set
+                });
+              }
+            });
+            if (props.length)   groupsProps.push({ source: level.name, items: props });
+            if (methods.length) groupsMethods.push({ source: level.name, items: methods });
+          });
+
+          return { properties: groupsProps, methods: groupsMethods };
+        }
+
+        function buildEvents(node) {
+          var chain = walkPrototypes(node);
+          var seenSlot = {};
+          var slots = [];
+          var catalogGroups = [];
+
+          chain.forEach(function(level) {
+            var names = Object.getOwnPropertyNames(level.proto);
+            var slotsHere = [];
+            names.sort().forEach(function(name) {
+              if (name.indexOf("on") !== 0 || name.length < 3) return;
+              if (seenSlot[name]) return;
+              seenSlot[name] = true;
+              var got = safeGet(node, name);
+              slotsHere.push({
+                name: name,
+                eventType: name.slice(2),
+                bound: got.ok && typeof got.value === "function",
+                source: level.name
+              });
+            });
+            if (slotsHere.length) slots.push({ source: level.name, items: slotsHere });
+
+            var cat = EVENT_CATALOG[level.name];
+            if (cat && cat.length) catalogGroups.push({ source: level.name, items: cat.slice() });
+          });
+
+          return { slots: slots, catalog: catalogGroups };
+        }
+
+        /* ──────────────────────────────────────────────────────────────
+           Row helper with optional checkbox
+        ────────────────────────────────────────────────────────────── */
+        function makeRow(opts) {
+          var row = el("div", { className: "row" });
+          if (opts && opts.selectable) {
+            var cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.className = "row-check";
+            cb.checked = !!opts.checked;
+            if (opts.dataKey) cb.setAttribute("data-event-type", opts.dataKey);
+            cb.addEventListener("change", function() {
+              opts.onToggle(cb.checked, cb);
+            });
+            row.appendChild(cb);
+          }
+          var body = el("div", { className: "row-body" });
+          row.appendChild(body);
+          return { row: row, body: body };
+        }
+
+        /* ──────────────────────────────────────────────────────────────
+           Render inspector
+        ────────────────────────────────────────────────────────────── */
+        function renderMatchList() {
+          matchList.innerHTML = "";
+          if (currentMatches.length <= 1) {
+            matchList.style.display = "none";
+            return;
+          }
+          matchList.style.display = "grid";
+          currentMatches.forEach(function(m, i) {
+            var item = el("div", { className: "match-item" + (m === focusedElement ? " selected" : "") });
+            item.appendChild(el("span", { className: "match-index", text: "[" + i + "]" }));
+            item.appendChild(el("span", { text: elementLabel(m) }));
+            item.addEventListener("click", function() { focusElement(m); });
+            matchList.appendChild(item);
+          });
+        }
+
+        function renderSelectedSummary() {
+          if (!focusedElement) {
+            selectedSummary.style.display = "none";
+            return;
+          }
+          selectedSummary.style.display = "flex";
+          selectedSummary.innerHTML = "";
+          selectedSummary.appendChild(el("span", { className: "label", text: "Inspecting" }));
+          selectedSummary.appendChild(el("span", { text: elementLabel(focusedElement) }));
+          selectedSummary.appendChild(el("span", {
+            className: "pill",
+            text: focusedElement.constructor && focusedElement.constructor.name
+              ? focusedElement.constructor.name
+              : "Element"
+          }));
+        }
+
+        function renderTabBar(counts) {
+          inspectorTabs.innerHTML = "";
+          var labels = { attributes: "Attributes", properties: "Properties", methods: "Methods", events: "Events" };
+          TABS.forEach(function(tab) {
+            var btn = el("button", { className: "tab-btn" + (tab === activeTab ? " active" : "") });
+            btn.type = "button";
+            btn.appendChild(document.createTextNode(labels[tab]));
+            btn.appendChild(el("span", { className: "count", text: String(counts[tab] || 0) }));
+            btn.addEventListener("click", function() {
+              activeTab = tab;
+              renderInspector();
+            });
+            inspectorTabs.appendChild(btn);
+          });
+        }
+
+        function renderAttributes(attrs) {
+          var visible = attrs.filter(function(a) { return passesFilter(a.name); });
+          if (!visible.length) return el("div", { className: "empty", text: "No attributes match." });
+          var sel = getSelections(focusedElement);
+          var frag = document.createDocumentFragment();
+          visible.forEach(function(a) {
+            var r = makeRow({
+              selectable: true,
+              checked: sel.attrs.has(a.name),
+              onToggle: function(checked) {
+                if (checked) sel.attrs.add(a.name); else sel.attrs.delete(a.name);
+                updateCreateCellBar();
+              }
+            });
+            r.body.appendChild(el("div", { className: "name", text: a.name }));
+            r.body.appendChild(el("div", { className: "value", text: '"' + a.value + '"' }));
+            frag.appendChild(r.row);
+          });
+          return frag;
+        }
+
+        function renderPropertyGroups(groups) {
+          var frag = document.createDocumentFragment();
+          var emitted = 0;
+          groups.forEach(function(g) {
+            var visible = g.items.filter(function(p) { return passesFilter(p.name); });
+            if (!visible.length) return;
+            frag.appendChild(el("div", { className: "group-head", text: g.source }));
+            visible.forEach(function(p) {
+              var r = makeRow();
+              var name = el("div", { className: "name", text: p.name });
+              if (p.hasGetter && !p.hasSetter)      name.appendChild(el("span", { className: "pill", text: "get" }));
+              else if (p.hasSetter && !p.hasGetter) name.appendChild(el("span", { className: "pill", text: "set" }));
+              else if (p.hasGetter && p.hasSetter)  name.appendChild(el("span", { className: "pill", text: "get/set" }));
+              r.body.appendChild(name);
+              if (p.ok) {
+                r.body.appendChild(el("div", { className: "value", text: formatValue(p.value) }));
+                r.body.appendChild(el("div", { className: "meta", text: typeLabel(p.value) }));
+              } else {
+                r.body.appendChild(el("div", { className: "value", text: "⚠ " + p.error }));
+              }
+              frag.appendChild(r.row);
+              emitted++;
+            });
+          });
+          if (!emitted) return el("div", { className: "empty", text: "No properties match the filter." });
+          return frag;
+        }
+
+        function renderMethodGroups(groups) {
+          var sel = getSelections(focusedElement);
+          var frag = document.createDocumentFragment();
+          var emitted = 0;
+          groups.forEach(function(g) {
+            var visible = g.items.filter(function(m) { return passesFilter(m.name); });
+            if (!visible.length) return;
+            frag.appendChild(el("div", { className: "group-head", text: g.source }));
+            visible.forEach(function(m) {
+              var r = makeRow({
+                selectable: true,
+                checked: sel.methods.has(m.name),
+                onToggle: function(checked) {
+                  if (checked) sel.methods.add(m.name); else sel.methods.delete(m.name);
+                  updateCreateCellBar();
+                }
+              });
+              var sig = (m.catalog && m.catalog.params)
+                ? m.name + "(" + m.catalog.params.join(", ") + ")"
+                : m.name + "(" + m.arity + " arg" + (m.arity === 1 ? "" : "s") + ")";
+              var name = el("div", { className: "name", text: sig });
+              if (m.catalog) name.appendChild(el("span", { className: "pill catalog", text: "doc" }));
+              r.body.appendChild(name);
+              if (m.catalog && m.catalog.returns) r.body.appendChild(el("div", { className: "meta", text: "returns " + m.catalog.returns }));
+              if (m.catalog && m.catalog.desc)    r.body.appendChild(el("div", { className: "desc", text: m.catalog.desc }));
+              frag.appendChild(r.row);
+              emitted++;
+            });
+          });
+          if (!emitted) return el("div", { className: "empty", text: "No methods match the filter." });
+          return frag;
+        }
+
+        function syncEventCheckboxes(eventType, checked) {
+          var others = tabContent.querySelectorAll('input.row-check[data-event-type="' + eventType + '"]');
+          for (var i = 0; i < others.length; i++) others[i].checked = checked;
+        }
+
+        function renderEventTab(data) {
+          var sel = getSelections(focusedElement);
+          var frag = document.createDocumentFragment();
+          var emitted = 0;
+
+          frag.appendChild(el("div", { className: "group-head", text: "Handler slots (on*)" }));
+          var anySlot = false;
+          data.slots.forEach(function(g) {
+            g.items.forEach(function(s) {
+              if (!passesFilter(s.name)) return;
+              var r = makeRow({
+                selectable: true,
+                checked: sel.events.has(s.eventType),
+                dataKey: s.eventType,
+                onToggle: function(checked) {
+                  if (checked) sel.events.add(s.eventType); else sel.events.delete(s.eventType);
+                  syncEventCheckboxes(s.eventType, checked);
+                  updateCreateCellBar();
+                }
+              });
+              var name = el("div", { className: "name", text: s.name });
+              if (s.bound) name.appendChild(el("span", { className: "pill bound", text: "bound" }));
+              else         name.appendChild(el("span", { className: "pill", text: "unset" }));
+              r.body.appendChild(name);
+              r.body.appendChild(el("div", { className: "meta", text: "from " + s.source + " · event type \"" + s.eventType + "\"" }));
+              frag.appendChild(r.row);
+              emitted++;
+              anySlot = true;
+            });
+          });
+          if (!anySlot) frag.appendChild(el("div", { className: "empty", text: "No on* handler slots match." }));
+
+          data.catalog.forEach(function(g) {
+            var visible = g.items.filter(function(e) { return passesFilter(e.type); });
+            if (!visible.length) return;
+            frag.appendChild(el("div", { className: "group-head", text: g.source + " — common events" }));
+            visible.forEach(function(ev) {
+              var r = makeRow({
+                selectable: true,
+                checked: sel.events.has(ev.type),
+                dataKey: ev.type,
+                onToggle: function(checked) {
+                  if (checked) sel.events.add(ev.type); else sel.events.delete(ev.type);
+                  syncEventCheckboxes(ev.type, checked);
+                  updateCreateCellBar();
+                }
+              });
+              r.body.appendChild(el("div", { className: "name", text: ev.type }));
+              r.body.appendChild(el("div", { className: "desc", text: ev.desc }));
+              frag.appendChild(r.row);
+              emitted++;
+            });
+          });
+
+          if (!emitted) return el("div", { className: "empty", text: "Nothing matches the filter." });
+          return frag;
+        }
+
+        function updateCreateCellBar() {
+          var n = selectionCount(focusedElement);
+          selectionSummary.innerHTML = "";
+          if (n === 0 || !focusedElement) {
+            selectionSummary.appendChild(document.createTextNode("No items selected."));
+            createCellBtn.disabled = true;
+            return;
+          }
+          var s = selections.get(focusedElement);
+          if (s.attrs.size)   selectionSummary.appendChild(el("span", { className: "selection-pill", text: s.attrs.size + " attr" + (s.attrs.size === 1 ? "" : "s") }));
+          if (s.methods.size) selectionSummary.appendChild(el("span", { className: "selection-pill", text: s.methods.size + " method" + (s.methods.size === 1 ? "" : "s") }));
+          if (s.events.size)  selectionSummary.appendChild(el("span", { className: "selection-pill", text: s.events.size + " event" + (s.events.size === 1 ? "" : "s") }));
+          createCellBtn.disabled = false;
+        }
+
+        function renderInspector() {
+          renderMatchList();
+          renderSelectedSummary();
+
+          if (!focusedElement) {
+            inspectorTabs.innerHTML = "";
+            tabContent.innerHTML = "";
+            filterInput.style.display = "none";
+            createCellBar.style.display = "none";
+            tabContent.appendChild(el("div", { className: "empty", text: "Apply a selector to inspect an element." }));
+            return;
+          }
+
+          filterInput.style.display = "block";
+          createCellBar.style.display = "flex";
+
+          var attrs = buildAttributes(focusedElement);
+          var pm = buildPropertiesAndMethods(focusedElement);
+          var ev = buildEvents(focusedElement);
+
+          var counts = {
+            attributes: attrs.length,
+            properties: pm.properties.reduce(function(n, g) { return n + g.items.length; }, 0),
+            methods:    pm.methods.reduce(function(n, g) { return n + g.items.length; }, 0),
+            events:     ev.slots.reduce(function(n, g) { return n + g.items.length; }, 0)
+                      + ev.catalog.reduce(function(n, g) { return n + g.items.length; }, 0)
+          };
+
+          renderTabBar(counts);
+          tabContent.innerHTML = "";
+          var content;
+          if (activeTab === "attributes")      content = renderAttributes(attrs);
+          else if (activeTab === "properties") content = renderPropertyGroups(pm.properties);
+          else if (activeTab === "methods")    content = renderMethodGroups(pm.methods);
+          else                                 content = renderEventTab(ev);
+
+          var panel = el("div", { className: "tab-panel" });
+          panel.appendChild(content);
+          tabContent.appendChild(panel);
+          updateCreateCellBar();
+        }
+
+        /* ──────────────────────────────────────────────────────────────
+           Top-tab switching
+        ────────────────────────────────────────────────────────────── */
+        function switchTopTab() {
+          var tabs = paneTabs.querySelectorAll(".pane-tab");
+          for (var i = 0; i < tabs.length; i++) {
+            tabs[i].classList.toggle("active", tabs[i].getAttribute("data-top-tab") === topTab);
+          }
+          inspectorView.style.display = topTab === "inspector" ? "block" : "none";
+          executorView.style.display  = topTab === "executor"  ? "block" : "none";
+          paneSubtitle.textContent = topTab === "inspector"
+            ? "Attributes, properties, methods, and events for the focused element."
+            : "Generated code cells. Run, edit, or remove each independently.";
+          if (topTab === "executor") renderCells();
+        }
+
+        function updateCellCount() {
+          cellCountBadge.textContent = String(cells.length);
+        }
+
+        /* ──────────────────────────────────────────────────────────────
+           Cell code generation
+        ────────────────────────────────────────────────────────────── */
+        function attrAccessor(elName, attrName) {
+          if (attrName === "class") return elName + ".className";
+          if (attrName === "for")   return elName + ".htmlFor";
+          if (isJsIdentifier(attrName)) return elName + "." + attrName;
+          return elName + ".getAttribute(" + JSON.stringify(attrName) + ")";
+        }
+
+        function methodSampleCall(elName, methodName) {
+          var cat = METHOD_CATALOG[methodName];
+          if (cat && cat.params) {
+            var args = cat.params.map(function(p) {
+              var clean = p.replace(/\?$/, "").replace(/^\.\.\./, "");
+              if (STRING_PARAMS[clean]) return JSON.stringify(clean);
+              return clean;
+            });
+            return elName + "." + methodName + "(" + args.join(", ") + ");";
+          }
+          return elName + "." + methodName + "();";
+        }
+
+        function handlerNameFor(eventType) {
+          var safe = eventType.replace(/[^a-zA-Z0-9]/g, "");
+          return "handle" + safe.charAt(0).toUpperCase() + safe.slice(1);
+        }
+
+        function appendBodyForOne(lines, elName, cfg, indent) {
+          if (cfg.attrs.length) {
+            lines.push(indent + "// Attribute getters");
+            cfg.attrs.forEach(function(a) {
+              lines.push(indent + "console.log(" + JSON.stringify(a + " =") + ", " + attrAccessor(elName, a) + ");");
+            });
+            lines.push("");
+          }
+          if (cfg.methods.length) {
+            lines.push(indent + "// Method calls (uncomment to run)");
+            cfg.methods.forEach(function(m) {
+              lines.push(indent + "// " + methodSampleCall(elName, m));
+            });
+            lines.push("");
+          }
+          if (cfg.events.length) {
+            lines.push(indent + "// Event listeners (uncomment to attach/detach)");
+            cfg.events.forEach(function(evType) {
+              var hn = handlerNameFor(evType);
+              lines.push(indent + "// " + elName + ".addEventListener(" + JSON.stringify(evType) + ", " + hn + ");");
+              lines.push(indent + "// " + elName + ".removeEventListener(" + JSON.stringify(evType) + ", " + hn + ");");
+            });
+          }
+          // strip trailing blank line
+          while (lines.length && lines[lines.length - 1] === "") lines.pop();
+        }
+
+        function generateCellCode(cfg) {
+          var lines = [];
+
+          // Sample handler functions defined once at top so add/remove share the reference.
+          if (cfg.events.length) {
+            cfg.events.forEach(function(evType) {
+              var hn = handlerNameFor(evType);
+              lines.push("const " + hn + " = (ev) => console.log(" + JSON.stringify(evType + ":") + ", ev.type, ev.target);");
+            });
+            lines.push("");
+          }
+
+          if (cfg.mode === "single") {
+            lines.push("const el = document.querySelector(" + JSON.stringify(cfg.selector) + ");");
+            lines.push("if (!el) { console.warn('No element matched.'); return; }");
+            lines.push("");
+            appendBodyForOne(lines, "el", cfg, "");
+          } else {
+            lines.push("document.querySelectorAll(" + JSON.stringify(cfg.selector) + ").forEach((el, i) => {");
+            lines.push("  console.log(`— [${i}] ${el.tagName.toLowerCase()}${el.id ? '#'+el.id : ''} —`);");
+            appendBodyForOne(lines, "el", cfg, "  ");
+            lines.push("});");
+          }
+
+          return lines.join("\n");
+        }
+
+        /* ──────────────────────────────────────────────────────────────
+           Cell management
+        ────────────────────────────────────────────────────────────── */
+        function createCell() {
+          if (!focusedElement) return;
+          var sel = selections.get(focusedElement);
+          if (!sel || (sel.attrs.size + sel.methods.size + sel.events.size) === 0) return;
+
+          var cfg = {
+            selector: selectorInput.value.trim(),
+            mode: modeSelect.value,
+            attrs:   Array.from(sel.attrs),
+            methods: Array.from(sel.methods),
+            events:  Array.from(sel.events)
+          };
+
+          var code = generateCellCode(cfg);
+          var cell = {
+            id: ++cellIdSeq,
+            selector: cfg.selector,
+            mode: cfg.mode,
+            elementLabel: elementLabel(focusedElement),
+            elementCtor: focusedElement.constructor && focusedElement.constructor.name || "Element",
+            code: code,
+            output: []
+          };
+          cells.push(cell);
+
+          // Wrapping: clear selections for this element so the user can build a new cell fresh.
+          selections.delete(focusedElement);
+          updateCellCount();
+
+          topTab = "executor";
+          switchTopTab();
+          renderInspector();
+        }
+
+        function buildCellElement(cell) {
+          var card = el("div", { className: "cell" });
+
+          var head = el("div", { className: "cell-head" });
+          var meta = el("div", { className: "cell-meta" });
+          meta.appendChild(el("strong", { text: "Cell " + cell.id }));
+          var modeCode = el("code", {
+            text: (cell.mode === "single" ? "querySelector" : "querySelectorAll")
+                + '("' + cell.selector + '")'
+          });
+          meta.appendChild(modeCode);
+          meta.appendChild(el("span", { text: "· " + cell.elementLabel + " (" + cell.elementCtor + ")" }));
+
+          var actions = el("div", { className: "cell-actions" });
+          var runBtn = el("button", { className: "btn-mini run", text: "Run" });
+          runBtn.type = "button";
+          runBtn.addEventListener("click", function() { runCell(cell); });
+          var removeBtn = el("button", { className: "btn-mini remove", text: "Remove" });
+          removeBtn.type = "button";
+          removeBtn.addEventListener("click", function() { removeCell(cell); });
+          actions.appendChild(runBtn);
+          actions.appendChild(removeBtn);
+
+          head.appendChild(meta);
+          head.appendChild(actions);
+          card.appendChild(head);
+
+          if (cellHasUnclosedListeners(cell)) {
+            card.appendChild(el("div", {
+              className: "listener-warning",
+              text: "⚠ This cell currently has uncommented addEventListener calls without matching removeEventListener. Detach before removing the cell."
+            }));
+          }
+
+          var ta = document.createElement("textarea");
+          ta.className = "cell-code";
+          ta.spellcheck = false;
+          ta.value = cell.code;
+          ta.rows = Math.min(24, Math.max(6, cell.code.split("\n").length + 1));
+          ta.addEventListener("input", function() {
+            cell.code = ta.value;
+            // Refresh listener-warning state
+            renderCells();
+          });
+          card.appendChild(ta);
+
+          var output = el("div", { className: "cell-output" });
+          output.id = "cell-output-" + cell.id;
+          card.appendChild(output);
+          renderCellOutput(cell, output);
+
+          return card;
+        }
+
+        function renderCells() {
+          cellsContainer.innerHTML = "";
+          if (cells.length === 0) {
+            cellsContainer.appendChild(el("div", {
+              className: "cells-empty",
+              text: "No cells yet. Tick attributes, methods, or events in the Inspector and click \"Create executor cell\"."
+            }));
+            return;
+          }
+          cells.forEach(function(cell) {
+            cellsContainer.appendChild(buildCellElement(cell));
+          });
+        }
+
+        function renderCellOutput(cell, container) {
+          if (!container) container = document.getElementById("cell-output-" + cell.id);
+          if (!container) return;
+          container.innerHTML = "";
+          if (cell.output.length === 0) {
+            container.appendChild(el("div", { className: "cell-output-empty", text: "No output yet. Click Run." }));
+            return;
+          }
+          cell.output.forEach(function(entry) {
+            container.appendChild(el("div", { className: "cell-output-row " + entry.level, text: entry.text }));
+          });
+          container.scrollTop = container.scrollHeight;
+        }
+
+        function formatArg(a) {
+          if (a === null) return "null";
+          if (a === undefined) return "undefined";
+          var t = typeof a;
+          if (t === "string") return a;
+          if (t === "number" || t === "boolean") return String(a);
+          if (t === "function") return "ƒ " + (a.name || "anonymous");
+          if (a instanceof Element) {
+            var lbl = a.tagName.toLowerCase();
+            if (a.id) lbl += "#" + a.id;
+            return "<" + lbl + ">";
+          }
+          if (typeof Event !== "undefined" && a instanceof Event) {
+            return a.constructor.name + "(" + a.type + ")";
+          }
+          if (a instanceof NodeList || a instanceof HTMLCollection) {
+            return a.constructor.name + "(" + a.length + ")";
+          }
+          try { return JSON.stringify(a); } catch (e) { return String(a); }
+        }
+
+        function makeConsoleShim(cell) {
+          function append(level, args) {
+            cell.output.push({ level: level, text: args.map(formatArg).join(" ") });
+            renderCellOutput(cell);
+          }
+          return {
+            log:   function() { append("log",   Array.prototype.slice.call(arguments)); },
+            info:  function() { append("log",   Array.prototype.slice.call(arguments)); },
+            warn:  function() { append("warn",  Array.prototype.slice.call(arguments)); },
+            error: function() { append("error", Array.prototype.slice.call(arguments)); },
+            dir:   function() { append("log",   Array.prototype.slice.call(arguments)); },
+            table: function() { append("log",   Array.prototype.slice.call(arguments)); }
+          };
+        }
+
+        function runCell(cell) {
+          cell.output = [];
+          cell.output.push({ level: "meta", text: "[run @ " + new Date().toLocaleTimeString() + "]" });
+          renderCellOutput(cell);
+
+          var shim = makeConsoleShim(cell);
+          try {
+            // Wrap to allow `return` and isolate from outer scope.
+            var fn = new Function("console", "(function(){\n" + cell.code + "\n}).call(this);");
+            fn(shim);
+            cell.output.push({ level: "meta", text: "[done]" });
+          } catch (err) {
+            cell.output.push({ level: "error", text: "[Error] " + err.message });
+          }
+          renderCellOutput(cell);
+        }
+
+        function cellHasUnclosedListeners(cell) {
+          var stripped = cell.code.split("\n").map(function(line) {
+            var idx = line.indexOf("//");
+            return idx >= 0 ? line.slice(0, idx) : line;
+          }).join("\n");
+          var adds    = (stripped.match(/\.addEventListener\s*\(/g) || []).length;
+          var removes = (stripped.match(/\.removeEventListener\s*\(/g) || []).length;
+          return adds > removes;
+        }
+
+        function removeCell(cell) {
+          if (cellHasUnclosedListeners(cell)) {
+            var ok = confirm(
+              "Cell " + cell.id + " has uncommented addEventListener calls without matching removeEventListener.\n\n"
+            + "If you remove the cell now, the handler references will be lost — you won't be able to detach those listeners afterwards (they'll stay bound to the elements).\n\n"
+            + "Recommended:\n"
+            + "  1. Edit the cell — comment out the addEventListener line and uncomment removeEventListener.\n"
+            + "  2. Run the cell to detach the listeners.\n"
+            + "  3. Then remove the cell.\n\n"
+            + "Remove anyway?"
+            );
+            if (!ok) return;
+          }
+          var idx = cells.indexOf(cell);
+          if (idx >= 0) cells.splice(idx, 1);
+          updateCellCount();
+          renderCells();
+        }
+
+        /* ──────────────────────────────────────────────────────────────
+           Wiring
+        ────────────────────────────────────────────────────────────── */
+        applyButton.addEventListener("click", applyCurrentSelector);
+        modeSelect.addEventListener("change", applyCurrentSelector);
+        selectorInput.addEventListener("keydown", function(e) {
+          if (e.key === "Enter") { e.preventDefault(); applyCurrentSelector(); }
+        });
+        resetButton.addEventListener("click", function() {
+          selectorInput.value = DEFAULT_SELECTOR;
+          modeSelect.value = "all";
+          applyCurrentSelector();
+        });
+        filterInput.addEventListener("input", function() {
+          filterText = filterInput.value.trim();
+          renderInspector();
+        });
+        paneTabs.addEventListener("click", function(e) {
+          var btn = e.target.closest && e.target.closest(".pane-tab");
+          if (!btn) return;
+          topTab = btn.getAttribute("data-top-tab");
+          switchTopTab();
+        });
+        createCellBtn.addEventListener("click", createCell);
+
+        /* Init */
+        applyCurrentSelector();
+        switchTopTab();
+        updateCellCount();
+      })();
+    </script>
+  </body>
+</html>
