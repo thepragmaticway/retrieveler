@@ -1142,7 +1142,7 @@
         var filterText = "";
         var DEFAULT_SELECTOR = "#projectCard";
 
-        /* element → { attrs:Set, methods:Set, events:Set }  */
+        /* element → { attrs:Set, props:Set, methods:Set, events:Set }  */
         var selections = new WeakMap();
         var cells = [];
         var cellIdSeq = 0;
@@ -1231,7 +1231,7 @@
         function getSelections(node) {
           if (!node) return null;
           if (!selections.has(node)) {
-            selections.set(node, { attrs: new Set(), methods: new Set(), events: new Set() });
+            selections.set(node, { attrs: new Set(), props: new Set(), methods: new Set(), events: new Set() });
           }
           return selections.get(node);
         }
@@ -1240,7 +1240,7 @@
           if (!node) return 0;
           var s = selections.get(node);
           if (!s) return 0;
-          return s.attrs.size + s.methods.size + s.events.size;
+          return s.attrs.size + s.props.size + s.methods.size + s.events.size;
         }
 
         function passesFilter(name) {
@@ -1491,6 +1491,7 @@
         }
 
         function renderPropertyGroups(groups) {
+          var sel = getSelections(focusedElement);
           var frag = document.createDocumentFragment();
           var emitted = 0;
           groups.forEach(function(g) {
@@ -1498,7 +1499,14 @@
             if (!visible.length) return;
             frag.appendChild(el("div", { className: "group-head", text: g.source }));
             visible.forEach(function(p) {
-              var r = makeRow();
+              var r = makeRow({
+                selectable: true,
+                checked: sel.props.has(p.name),
+                onToggle: function(checked) {
+                  if (checked) sel.props.add(p.name); else sel.props.delete(p.name);
+                  updateCreateCellBar();
+                }
+              });
               var name = el("div", { className: "name", text: p.name });
               if (p.hasGetter && !p.hasSetter)      name.appendChild(el("span", { className: "pill", text: "get" }));
               else if (p.hasSetter && !p.hasGetter) name.appendChild(el("span", { className: "pill", text: "set" }));
@@ -1624,6 +1632,7 @@
           }
           var s = selections.get(focusedElement);
           if (s.attrs.size)   selectionSummary.appendChild(el("span", { className: "selection-pill", text: s.attrs.size + " attr" + (s.attrs.size === 1 ? "" : "s") }));
+          if (s.props.size)   selectionSummary.appendChild(el("span", { className: "selection-pill", text: s.props.size + " prop" + (s.props.size === 1 ? "" : "s") }));
           if (s.methods.size) selectionSummary.appendChild(el("span", { className: "selection-pill", text: s.methods.size + " method" + (s.methods.size === 1 ? "" : "s") }));
           if (s.events.size)  selectionSummary.appendChild(el("span", { className: "selection-pill", text: s.events.size + " event" + (s.events.size === 1 ? "" : "s") }));
           createCellBtn.disabled = false;
@@ -1727,6 +1736,13 @@
             });
             lines.push("");
           }
+          if (cfg.props.length) {
+            lines.push(indent + "// Property getters");
+            cfg.props.forEach(function(p) {
+              lines.push(indent + "console.log(" + JSON.stringify(p + " =") + ", " + elName + "." + p + ");");
+            });
+            lines.push("");
+          }
           if (cfg.methods.length) {
             lines.push(indent + "// Method calls (uncomment to run)");
             cfg.methods.forEach(function(m) {
@@ -1779,12 +1795,13 @@
         function createCell() {
           if (!focusedElement) return;
           var sel = selections.get(focusedElement);
-          if (!sel || (sel.attrs.size + sel.methods.size + sel.events.size) === 0) return;
+          if (!sel || (sel.attrs.size + sel.props.size + sel.methods.size + sel.events.size) === 0) return;
 
           var cfg = {
             selector: selectorInput.value.trim(),
             mode: modeSelect.value,
             attrs:   Array.from(sel.attrs),
+            props:   Array.from(sel.props),
             methods: Array.from(sel.methods),
             events:  Array.from(sel.events)
           };
