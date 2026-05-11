@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Regxlab — Retrieveler</title>
+<link rel="stylesheet" href="styles.css" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:        #050d1c;
+  --surface:   #071525;
+  --panel:     #081828;
+  --card:      #0a1e32;
+  --border:    rgba(0,200,239,0.10);
+  --border-md: rgba(0,200,239,0.18);
+  --accent:    #00c8ef;
+  --accent-dim:#0090b0;
+  --accent-soft:rgba(0,200,239,0.07);
+  --accent-glow:rgba(0,200,239,0.15);
+  --amber:     #f0a01e;
+  --purple:    #9966ff;
+  --text:      #cce4f5;
+  --muted:     #3a6880;
+  --dim:       #1e3a50;
+  --good:      #00d084;
+  --bad:       #ff5f5f;
+  --mark-bg:   rgba(0,200,239,0.22);
+  --mark-bdr:  rgba(0,200,239,0.45);
+  --mono:      'JetBrains Mono', ui-monospace, monospace;
+  --sans:      'Outfit', system-ui, sans-serif;
+  --radius:    12px;
+  --radius-lg: 18px;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 15px;
+}
+
+/* ── NAV BAR ─────────────────────────────── */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(5,13,28,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px; height: 52px;
+}
+.topbar-brand {
+  font-family: var(--mono); font-size: 13px; font-weight: 600;
+  letter-spacing: 0.06em; color: var(--muted);
+}
+.topbar-brand span { color: var(--accent); }
+.topbar-links { display: flex; gap: 6px; }
+.topbar-links a {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  color: var(--muted); text-decoration: none;
+  padding: 5px 12px; border-radius: 8px;
+  border: 1px solid transparent; transition: all .15s;
+}
+.topbar-links a:hover { color: var(--accent); border-color: var(--border-md); background: var(--accent-soft); }
+.topbar-links a.active { color: var(--accent); background: var(--accent-soft); border-color: var(--border-md); }
+
+/* ── HERO ─────────────────────────────────── */
+.hero {
+  padding: 60px 32px 48px;
+  max-width: 880px; margin: 0 auto;
+}
+.hero-eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.14em; color: var(--accent-dim); text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.hero h1 {
+  font-size: clamp(2.4rem, 5vw, 3.8rem); font-weight: 900;
+  letter-spacing: -0.04em; line-height: 1.05;
+  color: #eef4ff; margin: 0 0 16px;
+}
+.hero h1 .hl { color: var(--accent); }
+.hero p { font-size: 1.1rem; color: #7aabcc; max-width: 640px; margin: 0; }
+
+/* ── LAYOUT ───────────────────────────────── */
+.page-wrap {
+  max-width: 1180px; margin: 0 auto;
+  padding: 0 24px 80px;
+  display: grid; grid-template-columns: 230px 1fr; gap: 24px;
+  align-items: start;
+}
+@media (max-width: 860px) { .page-wrap { grid-template-columns: 1fr; } }
+
+/* ── SIDEBAR ──────────────────────────────── */
+.sidebar {
+  position: sticky; top: 68px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 14px;
+}
+.sidebar-label {
+  font-family: var(--mono); font-size: 9.5px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--dim); margin: 0 0 10px 6px;
+}
+.sidebar a {
+  display: flex; align-items: center; gap: 9px;
+  text-decoration: none; color: var(--muted);
+  font-size: 13px; font-weight: 500;
+  padding: 8px 10px; border-radius: 9px;
+  transition: all .13s;
+}
+.sidebar a:hover { background: var(--accent-soft); color: var(--accent); }
+.sidebar a .num {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  color: var(--dim); min-width: 16px;
+}
+.sidebar-divider { height: 1px; background: var(--border); margin: 8px 0; }
+
+/* ── CONTENT SECTIONS ─────────────────────── */
+.content { display: flex; flex-direction: column; gap: 20px; }
+
+section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px 28px 24px;
+  position: relative;
+  overflow: hidden;
+}
+section::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+}
+h2 {
+  font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em;
+  color: #d8edff; margin: 0 0 10px;
+}
+h3 {
+  font-size: 1rem; font-weight: 700; color: #a8ccdd;
+  margin: 22px 0 8px;
+}
+p { color: #7aabcc; margin: 8px 0; }
+a { color: var(--accent); }
+
+/* ── IDEA CALLOUT ─────────────────────────── */
+.idea {
+  background: rgba(0,200,239,0.06);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 10px 10px 0;
+  padding: 13px 16px; margin: 16px 0;
+  color: #9ad4e8;
+  font-size: 0.95rem;
+}
+.idea strong { color: var(--accent); }
+
+/* ── HIERARCHY ─────────────────────────────── */
+.hierarchy {
+  display: flex; gap: 0; margin: 20px 0;
+}
+.hier-node {
+  flex: 1; text-align: center; padding: 14px 8px 12px;
+  position: relative;
+}
+.hier-node:not(:last-child)::after {
+  content: '▸'; position: absolute; right: -7px; top: 50%; transform: translateY(-50%);
+  color: var(--dim); font-size: 13px; z-index: 1;
+}
+.hier-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 11px 6px;
+  transition: border-color .15s;
+}
+.hier-node:hover .hier-box { border-color: var(--border-md); }
+.hier-icon { font-size: 20px; margin-bottom: 4px; }
+.hier-name { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--accent); }
+.hier-sub { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+
+/* ── CODE / PRE ───────────────────────────── */
+code {
+  font-family: var(--mono); font-size: 0.875em;
+  background: rgba(0,200,239,0.08); color: var(--accent);
+  padding: 2px 7px; border-radius: 5px;
+  border: 1px solid rgba(0,200,239,0.15);
+}
+pre {
+  font-family: var(--mono); font-size: 0.84rem; line-height: 1.7;
+  background: #030b14; color: #7ab8cf;
+  padding: 18px 20px; border-radius: var(--radius);
+  border: 1px solid rgba(0,200,239,0.12);
+  overflow-x: auto; margin: 14px 0;
+  white-space: pre;
+}
+pre .k { color: #00c8ef; font-weight: 600; }
+pre .s { color: #f0a01e; }
+pre .c { color: #2a5568; }
+pre .g { color: #00d084; }
+
+/* ── COMPARE CARDS ────────────────────────── */
+.compare {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px; margin: 14px 0;
+}
+@media (max-width: 600px) { .compare { grid-template-columns: 1fr; } }
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+}
+.card h3 { margin-top: 0; font-size: 0.9rem; color: var(--accent); }
+
+/* ── TABLE ───────────────────────────────── */
+.tbl-wrap { overflow-x: auto; margin: 14px 0; }
+table { width: 100%; border-collapse: collapse; }
+th, td { border: 1px solid rgba(0,200,239,0.10); padding: 10px 14px; text-align: left; font-size: 0.875rem; }
+th { background: rgba(0,200,239,0.07); color: #5ab0cc; font-family: var(--mono); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em; }
+td { color: #8dbfcf; }
+td code { font-size: 0.82rem; }
+
+/* ── PILLS ───────────────────────────────── */
+.pills { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0; }
+.pill {
+  font-family: var(--mono); font-size: 12px; font-weight: 600;
+  background: rgba(0,200,239,0.09); color: var(--accent);
+  border: 1px solid rgba(0,200,239,0.22); border-radius: 99px;
+  padding: 4px 12px;
+}
+.pill.amber { background: rgba(240,160,30,0.09); color: var(--amber); border-color: rgba(240,160,30,0.22); }
+.pill.purple { background: rgba(153,102,255,0.09); color: var(--purple); border-color: rgba(153,102,255,0.22); }
+
+/* ── CATEGORY GRID ───────────────────────── */
+.cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+@media (max-width: 600px) { .cat-grid { grid-template-columns: 1fr; } }
+.cat-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+}
+.cat-card h4 {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent-dim); margin: 0 0 10px;
+}
+
+/* ── LAB ─────────────────────────────────── */
+.lab {
+  background: #030f1c; border: 1px solid var(--border-md);
+  border-radius: var(--radius); padding: 20px;
+  margin-top: 16px;
+}
+.lab-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+label { display: block; font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.07em; color: var(--muted); margin: 12px 0 6px; text-transform: uppercase; }
+
+input[type=text], textarea, select {
+  width: 100%; font: 500 13px/1.5 var(--mono);
+  background: #020c18; color: var(--accent);
+  border: 1px solid var(--border-md); border-radius: 9px;
+  padding: 10px 14px; outline: none;
+  transition: border-color .15s;
+}
+input[type=text]:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,200,239,0.08); }
+textarea { min-height: 110px; resize: vertical; color: #7ab8cf; }
+select { color: #7ab8cf; cursor: pointer; }
+select option { background: #030b14; }
+
+input[type=checkbox] { accent-color: var(--accent); width: auto; cursor: pointer; }
+.flag-label { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 12px; color: var(--muted); cursor: pointer; }
+.flag-label:hover { color: var(--accent); }
+
+.btn {
+  font-family: var(--mono); font-size: 12px; font-weight: 600;
+  background: var(--accent); color: #000;
+  border: none; border-radius: 99px;
+  padding: 9px 20px; cursor: pointer; transition: opacity .12s;
+}
+.btn:hover { opacity: 0.85; }
+.btn.sec {
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--border-md); padding: 8px 18px;
+}
+.btn.sec:hover { color: var(--accent); border-color: var(--border-md); opacity: 1; background: var(--accent-soft); }
+
+.output {
+  margin-top: 12px; padding: 14px 16px;
+  background: #020a14; border: 1px dashed rgba(0,200,239,0.18);
+  border-radius: 10px; min-height: 50px;
+  font-family: var(--mono); font-size: 13px; line-height: 1.8;
+  color: #6a9ab0; white-space: pre-wrap; word-break: break-all;
+}
+mark {
+  background: var(--mark-bg); color: var(--accent);
+  padding: 1px 2px; border-radius: 3px;
+  box-shadow: 0 0 0 1px var(--mark-bdr);
+  font-weight: 600;
+}
+.feedback { margin-top: 10px; font-family: var(--mono); font-size: 12px; font-weight: 600; }
+.good { color: var(--good); }
+.bad  { color: var(--bad); }
+
+/* ── CHALLENGE ───────────────────────────── */
+.challenge {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; margin: 12px 0;
+}
+.challenge h3 { margin-top: 0; font-size: 1rem; color: #c8e4f4; }
+.hint-box {
+  background: rgba(240,160,30,0.06); border: 1px solid rgba(240,160,30,0.18);
+  border-radius: 8px; padding: 10px 14px; margin-top: 8px;
+  font-family: var(--mono); font-size: 12px; color: #b88030;
+  display: none;
+}
+
+/* ── CHEATSHEET ──────────────────────────── */
+.cheat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 600px) { .cheat-grid { grid-template-columns: 1fr; } }
+.cheat-block { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.cheat-block h4 { font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-dim); margin: 0 0 10px; }
+.cheat-row { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; border-bottom: 1px solid rgba(0,200,239,0.06); font-size: 13px; }
+.cheat-row:last-child { border-bottom: none; }
+.cheat-pat { font-family: var(--mono); color: var(--accent); font-size: 12.5px; }
+.cheat-desc { color: var(--muted); font-size: 12px; }
+
+/* ── SECTION BADGE ────────────────────────── */
+.sec-badge {
+  display: inline-flex; align-items: center;
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent-dim); background: rgba(0,200,239,0.06);
+  border: 1px solid var(--border); border-radius: 99px;
+  padding: 3px 11px; margin-bottom: 10px;
+}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topbar">
+  <div class="topbar-brand">
+    <span>Retrieveler</span>&nbsp;/&nbsp;regxlab
+  </div>
+  <div class="topbar-links">
+    <a href="#mental-model">Mental Model</a>
+    <a href="#string-fns">Strings</a>
+    <a href="#generalize">Generalizes</a>
+    <a href="#categories">Categories</a>
+    <a href="#live-lab">Live Lab</a>
+    <a href="#challenges">Challenges</a>
+    <a href="#cheatsheet">Cheat Sheet</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-eyebrow">Retrieveler · Text Retrieval</div>
+  <h1>Reg<span class="hl">x</span>lab</h1>
+  <p>Learn regular expressions as <strong style="color:#9ad4e8">text structure templates</strong> — from individual characters up through words, sentences, and whole documents. Build intuition, not memorization.</p>
+</header>
+
+<!-- MAIN LAYOUT -->
+<div class="page-wrap">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <p class="sidebar-label">Learning Path</p>
+    <a href="#mental-model"><span class="num">01</span> Mental Model</a>
+    <a href="#string-fns"><span class="num">02</span> String Functions</a>
+    <a href="#generalize"><span class="num">03</span> Regex Generalizes</a>
+    <a href="#categories"><span class="num">04</span> Categories</a>
+    <div class="sidebar-divider"></div>
+    <a href="#live-lab"><span class="num">05</span> Live Lab</a>
+    <a href="#challenges"><span class="num">06</span> Challenges</a>
+    <a href="#cheatsheet"><span class="num">07</span> Cheat Sheet</a>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- ── 1. MENTAL MODEL ─────────────────── -->
+    <section id="mental-model">
+      <div class="sec-badge">01 — Mental Model</div>
+      <h2>Text has structure</h2>
+      <p>Instead of seeing text as a flat stream of characters, see it as a small hierarchy — each level nests inside the one above.</p>
+
+      <div class="hierarchy">
+        <div class="hier-node">
+          <div class="hier-box">
+            <div class="hier-icon">📄</div>
+            <div class="hier-name">Document</div>
+            <div class="hier-sub">whole text</div>
+          </div>
+        </div>
+        <div class="hier-node">
+          <div class="hier-box">
+            <div class="hier-icon">¶</div>
+            <div class="hier-name">Paragraph</div>
+            <div class="hier-sub">line blocks</div>
+          </div>
+        </div>
+        <div class="hier-node">
+          <div class="hier-box">
+            <div class="hier-icon">—</div>
+            <div class="hier-name">Sentence</div>
+            <div class="hier-sub">meaning unit</div>
+          </div>
+        </div>
+        <div class="hier-node">
+          <div class="hier-box">
+            <div class="hier-icon">W</div>
+            <div class="hier-name">Word</div>
+            <div class="hier-sub">token</div>
+          </div>
+        </div>
+        <div class="hier-node">
+          <div class="hier-box">
+            <div class="hier-icon">a</div>
+            <div class="hier-name">Character</div>
+            <div class="hier-sub">letter, digit…</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="idea">
+        <strong>Pragmatic definition:</strong> A regex is a <em>template</em> that describes the shape of text you want to find — not the exact text, but the pattern behind it.
+      </div>
+
+      <pre><span class="c">// Not searching for a specific date:</span>
+<span class="c">// "find 2026-05-11"</span>
+
+<span class="c">// But searching for any date with that shape:</span>
+<span class="k">\d{4}-\d{2}-\d{2}</span>
+<span class="c">// → 4 digits, dash, 2 digits, dash, 2 digits</span></pre>
+    </section>
+
+    <!-- ── 2. STRING FUNCTIONS ─────────────── -->
+    <section id="string-fns">
+      <div class="sec-badge">02 — Strings First</div>
+      <h2>Standard string functions</h2>
+      <p>Before reaching for regex, JavaScript already has tools for exact, fixed-text searches. These are fast and readable for simple cases.</p>
+
+      <div class="compare">
+        <div class="card">
+          <h3>Search exact text</h3>
+          <pre><span class="k">text</span>.includes(<span class="s">"JavaScript"</span>);
+<span class="k">text</span>.startsWith(<span class="s">"I"</span>);
+<span class="k">text</span>.endsWith(<span class="s">"Script"</span>);</pre>
+        </div>
+        <div class="card">
+          <h3>Extract or split</h3>
+          <pre><span class="k">text</span>.slice(7, 17);
+<span class="k">text</span>.substring(7, 17);
+<span class="k">text</span>.split(<span class="s">" "</span>);</pre>
+        </div>
+      </div>
+
+      <h3>Try string functions</h3>
+      <div class="lab">
+        <label for="plainText">Text</label>
+        <textarea id="plainText">Hello learners. Regex is a text structure template. Today is 2026-05-11.</textarea>
+        <label for="plainQuery">Exact text to search</label>
+        <input type="text" id="plainQuery" value="Regex"/>
+        <div style="margin-top:12px">
+          <button class="btn" onclick="runStringDemo()">Run String Search</button>
+        </div>
+        <div id="stringOutput" class="output"></div>
+      </div>
+    </section>
+
+    <!-- ── 3. REGEX GENERALIZES ───────────── -->
+    <section id="generalize">
+      <div class="sec-badge">03 — The Key Shift</div>
+      <h2>Regex generalizes string functions</h2>
+      <p>String methods search for <em>one fixed value</em>. Regex searches for a <em>reusable shape</em> — the same pattern can match millions of different strings.</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>Goal</th><th>String Function</th><th>Regex Template</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Contains exact word</td><td><code>text.includes("cat")</code></td><td><code>/cat/</code></td></tr>
+            <tr><td>Starts with Hello</td><td><code>text.startsWith("Hello")</code></td><td><code>/^Hello/</code></td></tr>
+            <tr><td>Ends with period</td><td><code>text.endsWith(".")</code></td><td><code>/\.$/</code></td></tr>
+            <tr><td>Find any number</td><td>manual loop</td><td><code>/\d+/</code></td></tr>
+            <tr><td>Find date shape</td><td>manual logic</td><td><code>/\d{4}-\d{2}-\d{2}/</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="idea">
+        <strong>Key shift:</strong> From "find this exact value" → to "find anything that fits this shape."
+      </div>
+    </section>
+
+    <!-- ── 4. CATEGORIES ──────────────────── -->
+    <section id="categories">
+      <div class="sec-badge">04 — Categories</div>
+      <h2>Regex in four intuitive categories</h2>
+      <p>Every regex pattern is a combination of these four building blocks.</p>
+
+      <div class="cat-grid">
+        <div class="cat-card">
+          <h4>A · Characters — What kind?</h4>
+          <div class="pills">
+            <span class="pill">\d digit</span>
+            <span class="pill">\w word char</span>
+            <span class="pill">\s whitespace</span>
+            <span class="pill">. any char</span>
+          </div>
+          <pre style="margin:10px 0 0; font-size:0.8rem"><span class="k">\d</span>   → 0–9
+<span class="k">\w</span>   → a–z A–Z 0–9 _
+<span class="k">\s</span>   → space, tab, newline</pre>
+        </div>
+        <div class="cat-card">
+          <h4>B · Quantity — How many?</h4>
+          <div class="pills">
+            <span class="pill amber">+  one or more</span>
+            <span class="pill amber">*  zero or more</span>
+            <span class="pill amber">?  optional</span>
+            <span class="pill amber">{n}  exactly n</span>
+          </div>
+          <pre style="margin:10px 0 0; font-size:0.8rem"><span class="k">\d+</span>    → one or more digits
+<span class="k">\d{4}</span>  → exactly 4 digits
+<span class="k">\d{2,5}</span> → 2 to 5 digits</pre>
+        </div>
+        <div class="cat-card">
+          <h4>C · Groups — Which choices?</h4>
+          <div class="pills">
+            <span class="pill purple">[abc]  set</span>
+            <span class="pill purple">[A-Z]  range</span>
+            <span class="pill purple">(a|b)  or</span>
+          </div>
+          <pre style="margin:10px 0 0; font-size:0.8rem"><span class="k">[aeiou]</span>    → any vowel
+<span class="k">[A-Z]</span>      → uppercase letter
+<span class="k">(cat|dog)</span>  → cat or dog</pre>
+        </div>
+        <div class="cat-card">
+          <h4>D · Position — Where?</h4>
+          <div class="pills">
+            <span class="pill">^  start</span>
+            <span class="pill">$  end</span>
+            <span class="pill">\b  word boundary</span>
+          </div>
+          <pre style="margin:10px 0 0; font-size:0.8rem"><span class="k">^Hello</span>   → line starts with Hello
+<span class="k">\.$</span>      → line ends with period
+<span class="k">\bcat\b</span>  → whole word cat only</pre>
+        </div>
+      </div>
+
+      <h3>Structure levels — what each level looks like as regex</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Level</th><th>Pattern</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Character</td><td><code>/\d/</code></td><td>one digit</td></tr>
+            <tr><td>Word</td><td><code>/\b\w+\b/</code></td><td>one full word</td></tr>
+            <tr><td>Sentence</td><td><code>/[A-Z][^.!?]*[.!?]/</code></td><td>uppercase start → punctuation end</td></tr>
+            <tr><td>Line</td><td><code>/^.+$/gm</code></td><td>each non-empty line</td></tr>
+            <tr><td>Paragraph</td><td><code>/[^\n]+(?:\n(?!\n)[^\n]+)*/g</code></td><td>block separated by blank lines</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── 5. LIVE LAB ────────────────────── -->
+    <section id="live-lab">
+      <div class="sec-badge">05 — Live Lab</div>
+      <h2>Live regex lab</h2>
+      <p>Edit the pattern. Matches highlight in real time. Experiment freely — the feedback is instant.</p>
+
+      <div class="lab">
+        <label for="preset">Quick template presets</label>
+        <select id="preset" onchange="loadPreset()">
+          <option value="\d+">Numbers → \d+</option>
+          <option value="\b\w+\b">Words → \b\w+\b</option>
+          <option value="\b[A-Z][a-z]+\b">Capitalized words</option>
+          <option value="\d{4}-\d{2}-\d{2}">Date → YYYY-MM-DD</option>
+          <option value="[A-Z][^.!?]*[.!?]">Simple sentences</option>
+          <option value="^.+$">Lines → ^.+$</option>
+        </select>
+
+        <label for="regexInput">Pattern</label>
+        <input type="text" id="regexInput" value="\d+" oninput="runLab()"/>
+
+        <div class="lab-row" style="margin-top:10px">
+          <label style="margin:0" class="flag-label">
+            <input type="checkbox" id="flagG" checked onchange="runLab()"/> global
+          </label>
+          <label style="margin:0" class="flag-label">
+            <input type="checkbox" id="flagI" onchange="runLab()"/> ignore case
+          </label>
+          <label style="margin:0" class="flag-label">
+            <input type="checkbox" id="flagM" checked onchange="runLab()"/> multiline
+          </label>
+        </div>
+
+        <label for="labText">Test text</label>
+        <textarea id="labText" oninput="runLab()">Hello learners.
+Regex is a text structure template.
+Today is 2026-05-11.
+There are 3 levels: characters, words, sentences.
+Contact: support@example.com</textarea>
+
+        <div id="labStatus" class="feedback"></div>
+        <div id="labOutput" class="output">Matches will highlight here.</div>
+      </div>
+    </section>
+
+    <!-- ── 6. CHALLENGES ──────────────────── -->
+    <section id="challenges">
+      <div class="sec-badge">06 — Practice</div>
+      <h2>Practice challenges</h2>
+      <p>Write a regex that matches the target structure. Live feedback shows you what your pattern actually catches.</p>
+      <div id="challengeContainer"></div>
+    </section>
+
+    <!-- ── 7. CHEAT SHEET ─────────────────── -->
+    <section id="cheatsheet">
+      <div class="sec-badge">07 — Reference</div>
+      <h2>Cheat sheet</h2>
+
+      <div class="cheat-grid">
+        <div class="cheat-block">
+          <h4>Character classes</h4>
+          <div class="cheat-row"><span class="cheat-pat">\d</span><span class="cheat-desc">digit 0–9</span></div>
+          <div class="cheat-row"><span class="cheat-pat">\w</span><span class="cheat-desc">letter, digit, or _</span></div>
+          <div class="cheat-row"><span class="cheat-pat">\s</span><span class="cheat-desc">whitespace</span></div>
+          <div class="cheat-row"><span class="cheat-pat">.</span><span class="cheat-desc">any char (except newline)</span></div>
+          <div class="cheat-row"><span class="cheat-pat">[A-Z]</span><span class="cheat-desc">uppercase letter range</span></div>
+          <div class="cheat-row"><span class="cheat-pat">[^abc]</span><span class="cheat-desc">not a, b, or c</span></div>
+        </div>
+        <div class="cheat-block">
+          <h4>Quantity</h4>
+          <div class="cheat-row"><span class="cheat-pat">+</span><span class="cheat-desc">one or more</span></div>
+          <div class="cheat-row"><span class="cheat-pat">*</span><span class="cheat-desc">zero or more</span></div>
+          <div class="cheat-row"><span class="cheat-pat">?</span><span class="cheat-desc">zero or one (optional)</span></div>
+          <div class="cheat-row"><span class="cheat-pat">{n}</span><span class="cheat-desc">exactly n times</span></div>
+          <div class="cheat-row"><span class="cheat-pat">{m,n}</span><span class="cheat-desc">between m and n times</span></div>
+        </div>
+        <div class="cheat-block">
+          <h4>Position anchors</h4>
+          <div class="cheat-row"><span class="cheat-pat">^</span><span class="cheat-desc">start of line / text</span></div>
+          <div class="cheat-row"><span class="cheat-pat">$</span><span class="cheat-desc">end of line / text</span></div>
+          <div class="cheat-row"><span class="cheat-pat">\b</span><span class="cheat-desc">word boundary</span></div>
+        </div>
+        <div class="cheat-block">
+          <h4>Common templates</h4>
+          <div class="cheat-row"><span class="cheat-pat">\d+</span><span class="cheat-desc">any number</span></div>
+          <div class="cheat-row"><span class="cheat-pat">\b\w+\b</span><span class="cheat-desc">whole word</span></div>
+          <div class="cheat-row"><span class="cheat-pat">\d{4}-\d{2}-\d{2}</span><span class="cheat-desc">date YYYY-MM-DD</span></div>
+          <div class="cheat-row"><span class="cheat-pat">^\S+@\S+\.\S+$</span><span class="cheat-desc">email shape</span></div>
+          <div class="cheat-row"><span class="cheat-pat">\bcat\b</span><span class="cheat-desc">whole word "cat"</span></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer style="text-align:center; padding:30px; color:#1e3a50; font-family:var(--mono); font-size:11px; letter-spacing:0.05em;">
+  Retrieveler · Regxlab — learn by experimenting: change patterns, observe matches, build intuition
+</footer>
+
+<script>
+function esc(v) {
+  return v
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function runStringDemo() {
+  const text = document.getElementById('plainText').value;
+  const query = document.getElementById('plainQuery').value;
+  const out = document.getElementById('stringOutput');
+  if (!query) { out.textContent = 'Enter text to search.'; return; }
+  out.textContent =
+    `includes():    ${text.includes(query)}\n` +
+    `startsWith():  ${text.startsWith(query)}\n` +
+    `endsWith():    ${text.endsWith(query)}\n` +
+    `indexOf():     ${text.indexOf(query)}\n` +
+    `count:         ${(text.match(new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'g')) || []).length}`;
+}
+
+function getFlags() {
+  let f = '';
+  if (document.getElementById('flagG').checked) f += 'g';
+  if (document.getElementById('flagI').checked) f += 'i';
+  if (document.getElementById('flagM').checked) f += 'm';
+  return f;
+}
+
+function highlightMatches(text, pattern, flags) {
+  let result = '', last = 0;
+  const re = new RegExp(pattern, flags.includes('g') ? flags : flags + 'g');
+  text.replace(re, (match, ...args) => {
+    const idx = args[args.length - 2];
+    result += esc(text.slice(last, idx));
+    result += `<mark>${esc(match)}</mark>`;
+    last = idx + match.length;
+  });
+  result += esc(text.slice(last));
+  return result;
+}
+
+function runLab() {
+  const pat = document.getElementById('regexInput').value;
+  const text = document.getElementById('labText').value;
+  const status = document.getElementById('labStatus');
+  const out = document.getElementById('labOutput');
+  const flags = getFlags();
+  try {
+    const re = new RegExp(pat, flags.includes('g') ? flags : flags + 'g');
+    const matches = [...text.matchAll(re)];
+    status.className = 'feedback good';
+    status.textContent = `✓ Valid pattern · ${matches.length} match${matches.length !== 1 ? 'es' : ''} found`;
+    if (matches.length === 0) { out.textContent = 'No matches.'; return; }
+    out.innerHTML = highlightMatches(text, pat, flags);
+  } catch (e) {
+    status.className = 'feedback bad';
+    status.textContent = `✗ ${e.message}`;
+    out.textContent = 'Fix the pattern and try again.';
+  }
+}
+
+function loadPreset() {
+  document.getElementById('regexInput').value = document.getElementById('preset').value;
+  runLab();
+}
+
+const CHALLENGES = [
+  {
+    title: 'Find all numbers',
+    text: 'There are 12 apples, 5 oranges, and 300 bananas.',
+    answer: String.raw`\d+`,
+    hint: 'Use the digit character class \\d with the one-or-more quantifier +.'
+  },
+  {
+    title: 'Match a date — YYYY-MM-DD',
+    text: 'The event date is 2026-05-11.',
+    answer: String.raw`\d{4}-\d{2}-\d{2}`,
+    hint: 'Think: 4 digits, literal dash, 2 digits, literal dash, 2 digits.'
+  },
+  {
+    title: 'Find the whole word "cat" only',
+    text: 'cat category educate cat',
+    answer: String.raw`\bcat\b`,
+    hint: 'Wrap the word with \\b on both sides to anchor to word boundaries.'
+  },
+  {
+    title: 'Find capitalized words',
+    text: 'Alice and Bob learn regex in Bangkok.',
+    answer: String.raw`\b[A-Z][a-z]+\b`,
+    hint: 'One uppercase letter [A-Z], then one or more lowercase [a-z]+, bounded by \\b.'
+  },
+  {
+    title: 'Find email addresses',
+    text: 'Contact us at support@example.com or admin.team2026@school.org. Invalid: hello@, @domain.com',
+    answer: String.raw`\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b`,
+    hint: 'Think: username + @ + domain + dot + extension (2+ letters). This is a practical learning pattern, not a perfect validator.'
+  },
+  {
+    title: 'Find HTTP / HTTPS URLs only',
+    text: 'Visit http://example.com, https://pragmaticway.dev/learn-regex, or ftp://old.example.com.',
+    answer: String.raw`https?:\/\/[A-Za-z0-9.-]+\.[A-Za-z]{2,}(\/[A-Za-z0-9._\/-]*)?`,
+    hint: 'https? matches http or https. Then :// + domain + extension + optional path. ftp:// should not match.'
+  }
+];
+
+function renderChallenges() {
+  const c = document.getElementById('challengeContainer');
+  c.innerHTML = CHALLENGES.map((ch, i) => `
+    <div class="challenge">
+      <h3>${i + 1}. ${ch.title}</h3>
+      <label for="ctext-${i}">Editable test text</label>
+      <textarea id="ctext-${i}" oninput="checkChallenge(${i})">${esc(ch.text)}</textarea>
+      <label for="cinput-${i}">Your regex pattern</label>
+      <input type="text" id="cinput-${i}" placeholder="e.g. \\d+" oninput="checkChallenge(${i})"/>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn sec" onclick="showHint(${i})">Show hint</button>
+      </div>
+      <div class="hint-box" id="hint-${i}"></div>
+      <div id="cfb-${i}" class="feedback"></div>
+      <div id="chl-${i}" class="output" style="min-height:40px"></div>
+    </div>
+  `).join('');
+}
+
+function showHint(i) {
+  const el = document.getElementById(`hint-${i}`);
+  el.style.display = 'block';
+  el.textContent = CHALLENGES[i].hint;
+}
+
+function checkChallenge(i) {
+  const input = document.getElementById(`cinput-${i}`).value.trim();
+  const text = document.getElementById(`ctext-${i}`).value;
+  const fb = document.getElementById(`cfb-${i}`);
+  const hl = document.getElementById(`chl-${i}`);
+  const ch = CHALLENGES[i];
+
+  if (!input) { fb.textContent = ''; hl.textContent = 'Write a regex to test this text.'; return; }
+  try {
+    const uRe = new RegExp(input, 'g');
+    const eRe = new RegExp(ch.answer, 'g');
+    const uM = text.match(uRe) || [];
+    const eM = text.match(eRe) || [];
+    const ok = JSON.stringify(uM) === JSON.stringify(eM);
+    fb.className = 'feedback ' + (ok ? 'good' : 'bad');
+    fb.textContent = ok
+      ? `✓ Correct! Matches: ${uM.join(', ')}`
+      : `✗ Not yet. Your matches: ${uM.length ? uM.join(', ') : 'none'}`;
+    hl.innerHTML = uM.length ? highlightMatches(text, input, 'g') : 'No matches.';
+  } catch (e) {
+    fb.className = 'feedback bad';
+    fb.textContent = `✗ Invalid: ${e.message}`;
+    hl.textContent = 'Fix the pattern.';
+  }
+}
+
+runStringDemo();
+runLab();
+renderChallenges();
+</script>
+</body>
+</html>
