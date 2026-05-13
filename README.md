@@ -37,20 +37,23 @@ When to use it:
 
 Nature:
 
-- Data is organized as nested parent-child relationships.
-- There is a single root and branching nodes.
-- Best for tree-like documents and nested content.
+- Data is organized as nested parent-child relationships through a DOM-like tree.
+- Retrieval uses relationships: descendant chains, direct child selection, and sibling navigation.
+- Selectors can also filter by class, ID, attributes, position, and state for precise targeting.
+- Best for document-like data, user interface hierarchies, and tree-structured content.
 
-Concrete examples:
+Concrete examples from the CSS Selector Learner:
 
-- HTML, XML or JSON documents, where elements contain child elements.
-- File systems, where folders contain subfolders and files.
-- A family tree or human genealogy, where generations are represented as parent-child branches.
-- Organization charts, where a CEO is at the root and departments branch downward.
+- **Basic selectors**: Match all elements of a type or class (e.g., all `article` elements or `.sample-card` containers).
+- **Relationship selectors**: Navigate the tree using descendant chains (`section article`), direct children (`.sample-card > h4`), and siblings (`h4 + p`, `h4 ~ p`).
+- **Identity and class selectors**: Target specific named elements by ID (`#feedbackForm`) or class group (`.badge`, `.metric`).
+- **Attribute selectors**: Filter by metadata like `data-*` attributes, type attributes, and presence checks (`[data-panel]`, `input[type="checkbox"]`, `[disabled]`).
+- **Structural selectors**: Select by position (`:first-child`, `:nth-child(2)`, `:last-child`) and conditions (`:not([open])`, `:has(time)`).
+- **State selectors**: Match UI states like `:checked`, `:disabled`, and `:enabled` for dynamic content.
 
 When to use it:
 
-- Content trees, web page DOM, configuration files, and nested object structures.
+- HTML/DOM structures, XML/JSON documents, file systems, and any nested data requiring path-based or relationship-based retrieval.
 
 ### Graph Data Structure
 
@@ -70,12 +73,35 @@ When to use it:
 
 - Networks, connected data, recommendations, route planning, and relationship-heavy domains.
 
+## Data Security
+
+Effective data management goes beyond retrieval—it requires secure handling at every stage:
+
+### Data Storage Security
+- Protecting data at rest using encryption and secure file permissions
+- Ensuring only authorized parties can access stored information
+- Examples: encrypted databases, secure backups, access control lists
+
+### Data Transfer Security
+- Protecting data in transit using encryption protocols
+- Preventing interception and unauthorized access during transmission
+- Examples: HTTPS/TLS, VPN tunnels, secure APIs
+
+### Data Retrieval Security
+- Ensuring only authorized users can retrieve specific data
+- Implementing authentication and fine-grained access controls
+- Auditing and logging retrieval activities
+- Examples: role-based access control, query logging, secure APIs
+
+Understanding these security principles is essential for building trustworthy systems that safely manage sensitive information.
+
 ## Learning Approach
 
-Retrieveler aims to make these structures easy to grasp by showing how each one fits different data types and retrieval patterns. The project emphasizes:
+Retrieveler aims to make these concepts easy to grasp by showing how each one fits different data types and retrieval patterns. The project emphasizes:
 
 - recognizing which structure matches a given dataset
 - comparing how retrieval works in each model
+- understanding security at every stage of data lifecycle
 - practicing with concrete examples and intuitive visuals
 
 ## CSS Selector Learner
@@ -101,6 +127,68 @@ Learners can use this page to see how data retrieval works when the data is orga
 - how structural relationships like parent/child and ancestor/descendant affect retrieval results
 
 This session is designed to make hierarchical structure intuitive by letting learners explore and practice on a real HTML document model.
+
+## Object Lab
+
+The Object Lab is a live DOM inspector that helps learners explore how nested HTML structures map to object properties, methods, and event hooks.
+
+What it is:
+
+- a query builder for `querySelectorAll` and `querySelector` against a sample DOM
+- a rendered stage with cards like "Modern interface review", a feedback form, and quick notes
+- an inspector pane that shows matched elements, attributes, properties, methods, and events
+- an executor area where learners can turn selected elements into code cells for deeper inspection
+
+How to use it:
+
+- enter selectors and choose whether to inspect one element or all matching elements
+- watch matched DOM nodes highlight in the sample stage and update match counts instantly
+- inspect form controls, details panels, buttons, and nested sections to see how objects expose properties and relationships
+- use the inspector tabs to examine attributes, methods like `querySelector`, and event handling support
+
+This session makes it concrete how hierarchical HTML content becomes a navigable object graph in the browser.
+
+## Regex Lab
+
+The Regex Lab teaches text retrieval through a structured, interactive exploration of regular expressions.
+
+What it is:
+
+- a mental model that treats text as a nested hierarchy of document → paragraph → sentence → word → character
+- a comparison of standard string functions versus reusable regex templates
+- a category-driven guide for characters, quantity, grouping, and positional anchors
+- a live editing lab with quick presets for numbers, words, dates, lines, and sentences
+
+How to use it:
+
+- start from the mental model and see how regex describes text structure rather than fixed text
+- practice with exact string search examples, then generalize with regex patterns like `\d+`, `\b\w+\b`, and `\d{4}-\d{2}-\d{2}`
+- use the live lab to edit patterns and see matching text highlight in real time
+- explore challenges and the built-in cheatsheet to build confidence with regex building blocks
+
+This session shows how pattern-based retrieval can extract structured information from unstructured text with immediate feedback.
+
+## Crypto Lab
+
+The Crypto Lab walks learners through practical cryptographic building blocks and an interactive browser-based security workflow.
+
+What it is:
+
+- a tabbed lab covering XOR cipher, one-way functions, modulo/trapdoor behavior, hash functions, and the Web Crypto API
+- a playground for XOR encryption/decryption with bit-level breakdowns
+- demonstrations of why one-way functions and modulo arithmetic are useful for secure storage
+- a hand-built hash demo showing determinism, fixed output size, and avalanche behavior
+- a Web Crypto API simulation for SHA-256 hashing, salted password storage, registration, and login verification
+
+How to use it:
+
+- experiment with message/key pairs in the XOR tab and watch same-key encryption/decryption restore the text
+- explore one-way functions and modulo collisions to see why some operations are hard to reverse
+- type text into the hash playground and observe how tiny input changes produce dramatically different hashes
+- use the Web Crypto tab to simulate salt generation, password hashing, and secure credential verification without storing plain-text passwords
+- examine which values are stored (salt, hash, username) and which are intentionally never persisted (raw password)
+
+This session reinforces that secure data retrieval depends on strong encryption, one-way storage, and careful transfer and verification practices.
 
 ## Why this project matters
 

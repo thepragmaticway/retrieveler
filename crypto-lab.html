@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crypto Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #070b0f;
+  --bg2:      #0d1318;
+  --bg3:      #121920;
+  --bg4:      #1a2330;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.12);
+  --text:     #d4e0ec;
+  --muted:    #4a6070;
+  --muted2:   #6a8090;
+  --green:    #00ff88;
+  --green2:   #00cc6a;
+  --greendim: rgba(0,255,136,0.08);
+  --greenbrd: rgba(0,255,136,0.2);
+  --amber:    #ffb347;
+  --amberdim: rgba(255,179,71,0.08);
+  --amberbrd: rgba(255,179,71,0.2);
+  --blue:     #4db8ff;
+  --bluedim:  rgba(77,184,255,0.08);
+  --bluebrd:  rgba(77,184,255,0.2);
+  --red:      #ff6b6b;
+  --reddim:   rgba(255,107,107,0.08);
+  --redbrd:   rgba(255,107,107,0.2);
+  --purple:   #c084fc;
+  --mono:     'JetBrains Mono', monospace;
+  --display:  'Syne', sans-serif;
+  --radius:   8px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Header ── */
+.header {
+  padding: 20px 32px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.header-title {
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+.header-sub {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+.tab {
+  padding: 14px 20px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  user-select: none;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+/* ── Layout ── */
+.panels {
+  display: none;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  height: calc(100vh - 97px);
+}
+.panels.active { display: grid; }
+
+.panel {
+  padding: 28px 32px;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+}
+.panel:last-child { border-right: none; }
+
+/* ── Panel headings ── */
+.panel-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+  margin-bottom: 8px;
+}
+.panel-title span { color: var(--green); }
+
+.concept-block {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 14px;
+}
+.concept-block-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 10px;
+}
+.concept-block p {
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--muted2);
+}
+.concept-block p + p { margin-top: 10px; }
+.concept-block em { color: var(--text); font-style: normal; }
+.concept-block code {
+  background: var(--bg4);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--green);
+}
+
+/* ── Truth table / grids ── */
+.truth-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 12px;
+}
+.truth-table th {
+  padding: 7px 12px;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border2);
+}
+.truth-table td {
+  padding: 7px 12px;
+  text-align: center;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+.truth-table tr:last-child td { border-bottom: none; }
+.truth-table td.hi { color: var(--green); font-weight: 600; }
+
+/* ── Playground controls ── */
+.pg-section {
+  margin-bottom: 18px;
+}
+.pg-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+  display: block;
+}
+.pg-input {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.pg-input:focus { border-color: var(--greenbrd); }
+.pg-input::placeholder { color: var(--muted); }
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+.btn {
+  padding: 9px 18px;
+  background: var(--greendim);
+  border: 1px solid var(--greenbrd);
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn:hover { background: rgba(0,255,136,0.14); }
+.btn.amber {
+  background: var(--amberdim);
+  border-color: var(--amberbrd);
+  color: var(--amber);
+}
+.btn.amber:hover { background: rgba(255,179,71,0.14); }
+.btn.blue {
+  background: var(--bluedim);
+  border-color: var(--bluebrd);
+  color: var(--blue);
+}
+.btn.blue:hover { background: rgba(77,184,255,0.14); }
+.btn.red {
+  background: var(--reddim);
+  border-color: var(--redbrd);
+  color: var(--red);
+}
+
+.output-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted2);
+  min-height: 48px;
+  word-break: break-all;
+}
+.output-box .val { color: var(--green); font-weight: 500; }
+.output-box .val-amber { color: var(--amber); font-weight: 500; }
+.output-box .val-blue { color: var(--blue); font-weight: 500; }
+.output-box .val-red { color: var(--red); font-weight: 500; }
+.output-box .val-purple { color: var(--purple); font-weight: 500; }
+.output-box .dim { color: var(--muted); }
+.output-box .row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.output-box .row:last-child { margin-bottom: 0; }
+
+/* ── Bit breakdown ── */
+.bit-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 10px;
+}
+.bit-cell {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 10px;
+  line-height: 1.5;
+  text-align: center;
+  min-width: 52px;
+}
+.bit-cell .bc-char { color: var(--text); font-size: 13px; display: block; }
+.bit-cell .bc-bits { color: var(--muted); font-size: 9px; display: block; }
+.bit-cell .bc-result { color: var(--green); font-size: 9px; display: block; border-top: 1px solid var(--border); margin-top: 3px; padding-top: 3px; }
+
+/* ── Slider ── */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+}
+.slider-row input[type=range] {
+  flex: 1;
+  accent-color: var(--green);
+  height: 4px;
+}
+.slider-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--green);
+  min-width: 40px;
+  text-align: right;
+}
+
+/* ── Analogy diagram ── */
+.analogy {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 12px;
+}
+.analogy-cell {
+  flex: 1;
+  padding: 14px 12px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted2);
+  border-right: 1px solid var(--border);
+}
+.analogy-cell:last-child { border-right: none; }
+.analogy-cell .big { font-size: 22px; display: block; margin-bottom: 6px; }
+.analogy-arrow {
+  padding: 0 8px;
+  color: var(--green);
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+/* ── Clock visual ── */
+.clock-demo {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-top: 12px;
+}
+.clock-face {
+  width: 80px;
+  height: 80px;
+  border: 2px solid var(--greenbrd);
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+}
+.clock-nums {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--muted);
+}
+.clock-hand {
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  width: 2px;
+  height: 32px;
+  background: var(--green);
+  transform-origin: bottom center;
+  transform: translateX(-50%) rotate(0deg);
+  transition: transform 0.4s ease;
+  border-radius: 2px;
+}
+.clock-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 6px; height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.clock-label {
+  font-size: 12px;
+  color: var(--muted2);
+  line-height: 1.7;
+}
+.clock-label em { color: var(--green); font-style: normal; }
+
+/* ── Brute force bar ── */
+.brute-bar-wrap {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  height: 8px;
+  margin-top: 8px;
+}
+.brute-bar {
+  height: 100%;
+  background: var(--green);
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+/* ── Avalanche rows ── */
+.av-row {
+  display: grid;
+  grid-template-columns: 1fr 80px;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.av-hash {
+  font-size: 11px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 10px;
+  word-break: break-all;
+  color: var(--muted2);
+}
+.av-diff {
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* ── User store list ── */
+.user-list {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 10px;
+}
+.user-row {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.user-row:last-child { border-bottom: none; }
+.user-row .ur-name { color: var(--text); font-weight: 500; }
+.user-row .ur-data { color: var(--muted); word-break: break-all; }
+.user-row .ur-data span { color: var(--amber); }
+
+/* ── Status badge ── */
+.status {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-top: 6px;
+}
+.status.ok  { background: var(--greendim); color: var(--green); border: 1px solid var(--greenbrd); }
+.status.err { background: var(--reddim);   color: var(--red);   border: 1px solid var(--redbrd); }
+.status.inf { background: var(--bluedim);  color: var(--blue);  border: 1px solid var(--bluebrd); }
+
+/* ── Divider ── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 18px 0;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">Crypto Lab</div>
+  <div class="header-sub">Fundamental cryptography concepts — interactive exploration</div>
+</div>
+
+<a href="index.html" class="home-link" style="display:inline-block;margin:16px 32px 0;color:var(--green);text-decoration:none;font-family:var(--mono);font-size:0.9rem;">← Back to overview</a>
+
+<div class="tabs">
+  <div class="tab active" data-tab="0">01 · XOR Cipher</div>
+  <div class="tab" data-tab="1">02 · One-Way Functions</div>
+  <div class="tab" data-tab="2">03 · Modulo</div>
+  <div class="tab" data-tab="3">04 · Hash Function</div>
+  <div class="tab" data-tab="4">05 · Web Crypto API</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+  TAB 1 — XOR CIPHER
+══════════════════════════════════════════════════════ -->
+<div class="panels active" id="panel-0">
+
+  <!-- Concept -->
+  <div class="panel">
+    <div class="panel-label">Concept · 01</div>
+    <div class="panel-title">XOR <span>Cipher</span></div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">What is XOR?</div>
+      <p>XOR (exclusive OR) is a bitwise operation. Given two bits, it outputs <em>1</em> if the bits are different and <em>0</em> if they are the same. Think of it as "one or the other, but not both."</p>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">Truth Table</div>
+      <table class="truth-table">
+        <tr><th>A</th><th>B</th><th>A XOR B</th></tr>
+        <tr><td>0</td><td>0</td><td class="hi">0</td></tr>
+        <tr><td>0</td><td>1</td><td class="hi">1</td></tr>
+        <tr><td>1</td><td>0</td><td class="hi">1</td></tr>
+        <tr><td>1</td><td>1</td><td class="hi">0</td></tr>
+      </table>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">The Magic Property</div>
+      <p>XOR is its own inverse. If you XOR a value with a key, then XOR the result with the same key again, you get the original value back:</p>
+      <p><code>message XOR key = ciphertext</code></p>
+      <p><code>ciphertext XOR key = message</code></p>
+      <p>This means the same operation encrypts <em>and</em> decrypts. The key is both the lock and the key.</p>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">One-Time Pad Rule</div>
+      <p>For XOR encryption to be unbreakable, three rules must hold: the key must be <em>truly random</em>, at least as long as the message, and <em>never reused</em>. Breaking any rule leaks information about the message. This scheme is called a one-time pad.</p>
+    </div>
+  </div>
+
+  <!-- Playground -->
+  <div class="panel">
+    <div class="panel-label">Playground · 01</div>
+
+    <div class="pg-section">
+      <label class="pg-label">Message</label>
+      <input class="pg-input" id="xor-message" type="text" placeholder="Hello" value="Hello">
+    </div>
+    <div class="pg-section">
+      <label class="pg-label">Key (will repeat if shorter than message)</label>
+      <input class="pg-input" id="xor-key" type="text" placeholder="Key" value="Key">
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="xor-encrypt-btn">Encrypt</button>
+      <button class="btn amber" id="xor-decrypt-btn">Decrypt cipher</button>
+      <button class="btn blue" id="xor-reset-btn">Reset</button>
+    </div>
+
+    <div class="output-box" id="xor-output">
+      Press <span class="val">Encrypt</span> to begin.
+    </div>
+
+    <hr class="divider">
+
+    <div class="pg-section">
+      <label class="pg-label">Bit-level breakdown (first 4 characters)</label>
+      <div class="bit-grid" id="xor-bits"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+  TAB 2 — ONE-WAY FUNCTIONS
+══════════════════════════════════════════════════════ -->
+<div class="panels" id="panel-1">
+
+  <!-- Concept -->
+  <div class="panel">
+    <div class="panel-label">Concept · 02</div>
+    <div class="panel-title">One-Way <span>Functions</span></div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">Definition</div>
+      <p>A one-way function is easy to compute in one direction but computationally infeasible to reverse. Given <em>x</em>, computing <em>f(x)</em> is fast. Given <em>f(x)</em>, finding <em>x</em> is practically impossible.</p>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">Real World: Diode (AC → DC)</div>
+      <p>A diode lets current flow in only one direction. Feed it alternating current (AC, which swings positive and negative) and it outputs direct current (DC, positive only). You cannot reconstruct the original AC wave from the DC output — information is permanently lost.</p>
+      <div class="analogy">
+        <div class="analogy-cell"><span class="big">〜</span>AC wave (input)</div>
+        <div class="analogy-arrow">→</div>
+        <div class="analogy-cell"><span class="big">⊢</span>Diode</div>
+        <div class="analogy-arrow">→</div>
+        <div class="analogy-cell"><span class="big">⎍</span>DC (output)</div>
+      </div>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">Real World: Mixing Paint</div>
+      <p>Mixing blue and yellow paint produces green. Given the green paint, you cannot separate it back into the original blue and yellow. The forward operation is trivial; the reverse is impossible.</p>
+      <div class="analogy">
+        <div class="analogy-cell"><span class="big">🔵</span>Blue</div>
+        <div class="analogy-arrow">+</div>
+        <div class="analogy-cell"><span class="big">🟡</span>Yellow</div>
+        <div class="analogy-arrow">→</div>
+        <div class="analogy-cell"><span class="big">🟢</span>Green — irreversible</div>
+      </div>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">Why This Matters in Crypto</div>
+      <p>If we can find a mathematical one-way function, we can store a transformed version of a password. The server can verify a login by applying the same function to the submitted password and comparing outputs — without ever needing to store or recover the original password.</p>
+    </div>
+  </div>
+
+  <!-- Playground -->
+  <div class="panel">
+    <div class="panel-label">Playground · 02</div>
+
+    <div class="pg-section">
+      <label class="pg-label">Demo 1 — Squaring (not truly one-way)</label>
+      <input class="pg-input" id="sq-input" type="number" placeholder="5" value="5">
+      <div class="output-box" id="sq-output"></div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="pg-section">
+      <label class="pg-label">Demo 2 — Modulo (many inputs, same output)</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label class="pg-label" style="margin-top:8px">Value (x)</label>
+          <input class="pg-input" id="mod-x" type="number" value="14">
+        </div>
+        <div>
+          <label class="pg-label" style="margin-top:8px">Modulus (n)</label>
+          <input class="pg-input" id="mod-n" type="number" value="12">
+        </div>
+      </div>
+      <div class="output-box" id="mod-output" style="margin-top:10px"></div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="pg-section">
+      <label class="pg-label">Collision finder — inputs that produce same result (x mod n)</label>
+      <div class="output-box" id="mod-collisions"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+  TAB 3 — MODULO
+══════════════════════════════════════════════════════ -->
+<div class="panels" id="panel-2">
+
+  <!-- Concept -->
+  <div class="panel">
+    <div class="panel-label">Concept · 03</div>
+    <div class="panel-title">Modulo &amp; <span>Trapdoors</span></div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">Modulo — the remainder</div>
+      <p><code>a mod n</code> is the remainder after dividing <em>a</em> by <em>n</em>. It is like a clock: after reaching 12 it wraps back to 1. Knowing the current time tells you nothing about how many full rotations occurred.</p>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">Clock Analogy</div>
+      <p>14:00 on a 12-hour clock shows <em>2</em>. But <em>2</em> could have come from hour 2, 14, 26, 38... You know the remainder, not the original value. This is the same ambiguity that makes modulo useful in cryptography.</p>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">Why Exponentials Grow So Fast</div>
+      <p>Imagine folding a piece of paper in half repeatedly. Each fold doubles the thickness. After 10 folds it is about as thick as a hand. After 30 folds it is taller than Mount Everest. After 42 folds it reaches the Moon. The thickness grows as <em>2^n</em> — exponentially.</p>
+      <p>The same explosive growth applies to <em>g^x</em>. With <code>g=2</code>: <code>2^10 = 1,024</code>. <code>2^30 = 1,073,741,824</code>. <code>2^100 ≈ 10^30</code>. The number of possible values of <em>x</em> an attacker must search also grows exponentially — which is exactly what makes brute-force reversal infeasible.</p>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">Real World: Compound Interest</div>
+      <p>A bank account earning 10% per year doubles roughly every 7 years. After 70 years, $1 becomes $1,024. After 700 years it becomes $10^29. The forward calculation — how much do I have after x years? — is trivial. The reverse — how many years did it take to reach this exact balance? — requires logarithms, and with modular arithmetic even logarithms do not help directly.</p>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">Modular Exponentiation — the Trapdoor</div>
+      <p><code>g^x mod p</code> combines exponential growth with modular wrapping. The wrapping destroys information about how many full cycles occurred, just like the clock. Even though <em>g^x</em> grows enormously, the output is always a small number between 0 and p−1.</p>
+      <p>Concrete example: <code>3^7 mod 23</code>. Without mod: <code>3^7 = 2187</code>. With mod: <code>2187 mod 23 = 4</code>. Given only <em>g=3</em>, <em>p=23</em>, and result <em>4</em>, finding <em>x=7</em> requires trying every candidate — there is no shortcut formula.</p>
+      <p>This asymmetry — fast forward, no reverse shortcut — is called a <em>trapdoor</em> and is the foundation of Diffie-Hellman key exchange.</p>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">Why Large Primes Matter</div>
+      <p>With <code>p = 12</code>, an attacker can try all 12 possible values of <em>x</em> in milliseconds. With <code>p = 2^2048</code> (a real cryptographic prime), the number of candidates exceeds the atoms in the observable universe. No computer can brute-force it.</p>
+    </div>
+  </div>
+
+  <!-- Playground -->
+  <div class="panel">
+    <div class="panel-label">Playground · 03</div>
+
+    <div class="clock-demo" id="clock-demo">
+      <div class="clock-face">
+        <div class="clock-hand" id="clock-hand"></div>
+        <div class="clock-center"></div>
+        <div class="clock-nums">12</div>
+      </div>
+      <div class="clock-label" id="clock-label">
+        Enter a value below to see it on the clock.
+      </div>
+    </div>
+
+    <div class="pg-section" style="margin-top:16px">
+      <label class="pg-label">Value — watch the clock wrap at 12</label>
+      <div class="slider-row">
+        <input type="range" id="clock-slider" min="0" max="48" value="14">
+        <div class="slider-val" id="clock-slider-val">14</div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="pg-section">
+      <label class="pg-label">Modular exponentiation — g^x mod p</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div>
+          <label class="pg-label" style="margin-top:6px">Base (g)</label>
+          <input class="pg-input" id="me-g" type="number" value="3" min="2" max="20">
+        </div>
+        <div>
+          <label class="pg-label" style="margin-top:6px">Exponent (x)</label>
+          <input class="pg-input" id="me-x" type="number" value="7" min="1" max="30">
+        </div>
+        <div>
+          <label class="pg-label" style="margin-top:6px">Modulus (p)</label>
+          <input class="pg-input" id="me-p" type="number" value="23" min="2" max="97">
+        </div>
+      </div>
+      <div class="output-box" id="me-output" style="margin-top:10px"></div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="pg-section">
+      <label class="pg-label">Brute-force reversal — how hard is it to find x?</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+        <div>
+          <label class="pg-label" style="margin-top:6px">Base (g)</label>
+          <input class="pg-input" id="bf-g" type="number" value="3" min="2">
+        </div>
+        <div>
+          <label class="pg-label" style="margin-top:6px">Exponent (x)</label>
+          <input class="pg-input" id="bf-x" type="number" value="7" min="1">
+        </div>
+        <div>
+          <label class="pg-label" style="margin-top:6px">Modulus (p) — try large values</label>
+          <input class="pg-input" id="bf-p-input" type="text" value="23" placeholder="e.g. 999983">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn red" id="bf-btn">Try brute-force</button>
+        <button class="btn" id="bf-stop-btn" style="display:none">Stop</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+        <div class="brute-bar-wrap" style="flex:1"><div class="brute-bar" id="brute-bar"></div></div>
+        <div id="bf-progress-label" style="font-size:11px;color:var(--muted);min-width:80px;text-align:right"></div>
+      </div>
+      <div class="output-box" id="bf-output" style="margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+  TAB 4 — HASH FUNCTION
+══════════════════════════════════════════════════════ -->
+<div class="panels" id="panel-3">
+
+  <!-- Concept -->
+  <div class="panel">
+    <div class="panel-label">Concept · 04</div>
+    <div class="panel-title">Hash <span>Function</span></div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">Three Core Properties</div>
+      <p><em>Deterministic</em> — the same input always produces exactly the same output. Hash("hello") is always the same value, everywhere, every time.</p>
+      <p><em>Avalanche effect</em> — changing even one character in the input produces a completely different output. "hello" and "hellO" have unrecognisably different hashes.</p>
+      <p><em>Fixed output size</em> — no matter how long or short the input is, the output is always the same length. A single character and a 10,000-word document produce hashes of identical size.</p>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">How a Simple Hash Works</div>
+      <p>This lab uses a hand-built hash based on the djb2 algorithm. It maintains a single <em>running state</em> that is updated once per character:</p>
+      <p><code>state = (state × 33) XOR charCode</code></p>
+      <p>The critical word is <em>running</em>. The state after step 3 is not just a function of character 3 — it is a function of every character before it combined, because it was built up cumulatively. Each step multiplies the entire accumulated history by 33 before mixing in the next character.</p>
+      <p>This is fundamentally different from a weighted sum like <code>c[0]×p⁰ + c[1]×p¹ + ...</code> where each character contributes independently. In a sum, changing one character affects only its own term. In a running state, changing character 0 produces a different state at step 0, which feeds into step 1, which feeds into step 2 — the difference compounds through every subsequent step. By the last character the change has touched every multiplication, producing an unrecognisably different result.</p>
+      <p>The constant 33 is not a prime — it is 3 × 11. It is chosen because <code>state × 33</code> can be computed as <code>(state &lt;&lt; 5) + state</code> using fast bit shifts, and it happens to produce good distribution in practice. Real constants are chosen empirically, not theoretically.</p>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">Why Not Store Passwords as Plain Text?</div>
+      <p>If the database is stolen, every password is immediately exposed. With hashes, the attacker gets a list of hash values, not passwords. To recover a password they must find an input that produces the same hash — which is the one-way function problem from Tab 2.</p>
+    </div>
+  </div>
+
+  <!-- Playground -->
+  <div class="panel">
+    <div class="panel-label">Playground · 04</div>
+
+    <div class="pg-section">
+      <label class="pg-label">Input — hash updates as you type</label>
+      <input class="pg-input" id="hash-input" type="text" placeholder="type something..." value="hello">
+      <div class="output-box" id="hash-output"></div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="pg-section">
+      <label class="pg-label">Avalanche effect — last character flipped by +1</label>
+      <div class="av-row">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Original input</div>
+          <div class="av-hash" id="av-orig"></div>
+        </div>
+        <div class="av-diff" id="av-diff-orig"></div>
+      </div>
+      <div class="av-row">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Last char + 1</div>
+          <div class="av-hash" id="av-modified"></div>
+        </div>
+        <div class="av-diff" id="av-diff-mod"></div>
+      </div>
+      <div class="output-box" id="av-diff-summary" style="margin-top:6px"></div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="pg-section">
+      <label class="pg-label">Character contribution breakdown</label>
+      <div class="output-box" id="hash-breakdown" style="font-size:11px"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+  TAB 5 — WEB CRYPTO API
+══════════════════════════════════════════════════════ -->
+<div class="panels" id="panel-4">
+
+  <!-- Concept -->
+  <div class="panel">
+    <div class="panel-label">Concept · 05</div>
+    <div class="panel-title">Web Crypto <span>API</span></div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">From hand-built to SHA-256</div>
+      <p>The hash in Tab 4 demonstrates the idea but is trivially breakable. Real applications use <em>SHA-256</em>, a standardised algorithm designed by the NSA and vetted by decades of public cryptanalysis. The output is always 256 bits (64 hex characters).</p>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">Why crypto.subtle is async</div>
+      <p>The browser offloads <code>crypto.subtle</code> operations to native code outside the JavaScript thread. This keeps the UI responsive during expensive operations. The function returns a <em>Promise</em> — you must use <code>await</code> (or <code>.then()</code>) to get the result.</p>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">Three operations for Feature 8</div>
+      <p><em>Generate salt</em> — <code>crypto.getRandomValues(new Uint8Array(16))</code> produces 16 cryptographically random bytes. Convert to hex for storage.</p>
+      <p><em>Hash with salt</em> — concatenate salt + password, encode to bytes with <code>TextEncoder</code>, pass to <code>crypto.subtle.digest('SHA-256', ...)</code>.</p>
+      <p><em>Verify</em> — on login, retrieve the stored salt, hash the submitted password with it, compare hex strings. Never compare passwords directly.</p>
+    </div>
+
+    <div class="concept-block">
+      <div class="concept-block-label">What is stored vs what is never stored</div>
+      <p>Stored in localStorage: <em>displayName</em>, <em>username</em>, <em>salt</em> (plain text), <em>hash</em> (hex string). Never stored: the original password. It exists only in memory for the duration of the function call, then is gone.</p>
+    </div>
+  </div>
+
+  <!-- Playground -->
+  <div class="panel">
+    <div class="panel-label">Playground · 05</div>
+
+    <div class="pg-section">
+      <label class="pg-label">SHA-256 — live hash</label>
+      <input class="pg-input" id="sha-input" type="text" placeholder="type to hash..." value="password123">
+      <div class="output-box" id="sha-output"><span class="dim">Waiting...</span></div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="pg-section">
+      <label class="pg-label">Signup simulation — register a user</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <label class="pg-label" style="margin-top:6px">Username</label>
+          <input class="pg-input" id="reg-user" type="text" value="alice@test.com">
+        </div>
+        <div>
+          <label class="pg-label" style="margin-top:6px">Password</label>
+          <input class="pg-input" id="reg-pass" type="password" value="Abc$1234">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="reg-btn">Register</button>
+        <button class="btn red" id="reg-clear-btn">Clear store</button>
+      </div>
+      <div class="output-box" id="reg-output" style="margin-top:8px"><span class="dim">No users registered yet.</span></div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="pg-section">
+      <label class="pg-label">Login simulation — verify credentials</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <label class="pg-label" style="margin-top:6px">Username</label>
+          <input class="pg-input" id="login-user" type="text" value="alice@test.com">
+        </div>
+        <div>
+          <label class="pg-label" style="margin-top:6px">Password</label>
+          <input class="pg-input" id="login-pass" type="password" value="Abc$1234">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn blue" id="login-btn">Verify login</button>
+      </div>
+      <div class="output-box" id="login-output"><span class="dim">Register a user first.</span></div>
+    </div>
+
+    <!-- Stored users display -->
+    <div style="margin-top:4px">
+      <div class="pg-label">What is stored in localStorage</div>
+      <div id="store-display"><div class="output-box"><span class="dim">Empty.</span></div></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* ============================================================
+  TAB SWITCHER
+============================================================ */
+(function() {
+  var tabs   = document.querySelectorAll('.tab');
+  var panels = document.querySelectorAll('.panels');
+
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var idx = tab.dataset.tab;
+      tabs.forEach(function(t)   { t.classList.remove('active'); });
+      panels.forEach(function(p) { p.classList.remove('active'); });
+      tab.classList.add('active');
+      document.getElementById('panel-' + idx).classList.add('active');
+    });
+  });
+})();
+
+
+/* ============================================================
+  TAB 1 — XOR CIPHER
+============================================================ */
+(function() {
+  var msgEl    = document.getElementById('xor-message');
+  var keyEl    = document.getElementById('xor-key');
+  var encBtn   = document.getElementById('xor-encrypt-btn');
+  var decBtn   = document.getElementById('xor-decrypt-btn');
+  var resetBtn = document.getElementById('xor-reset-btn');
+  var outEl    = document.getElementById('xor-output');
+  var bitsEl   = document.getElementById('xor-bits');
+
+  var lastCipher = null;
+
+  function xorBytes(text, key) {
+    var result = [];
+    for (var i = 0; i < text.length; i++) {
+      result.push(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    }
+    return result;
+  }
+
+  function toHex(bytes) {
+    return bytes.map(function(b) {
+      return b.toString(16).padStart(2, '0');
+    }).join(' ');
+  }
+
+  function toBin(n) {
+    return n.toString(2).padStart(8, '0');
+  }
+
+  function renderBits(msg, key, result) {
+    bitsEl.innerHTML = '';
+    var count = Math.min(4, msg.length);
+    for (var i = 0; i < count; i++) {
+      var mc = msg.charCodeAt(i);
+      var kc = key.charCodeAt(i % key.length);
+      var rc = result[i];
+      var cell = document.createElement('div');
+      cell.className = 'bit-cell';
+      cell.innerHTML =
+        '<span class="bc-char">' + msg[i] + ' XOR ' + key[i % key.length] + '</span>' +
+        '<span class="bc-bits">' + toBin(mc) + '</span>' +
+        '<span class="bc-bits">' + toBin(kc) + '</span>' +
+        '<span class="bc-result">' + toBin(rc) + ' = 0x' + rc.toString(16).padStart(2,'0') + '</span>';
+      bitsEl.appendChild(cell);
+    }
+    if (msg.length > 4) {
+      var more = document.createElement('div');
+      more.className = 'bit-cell';
+      more.style.color = 'var(--muted)';
+      more.style.fontSize = '11px';
+      more.style.alignSelf = 'center';
+      more.textContent = '+' + (msg.length - 4) + ' more';
+      bitsEl.appendChild(more);
+    }
+  }
+
+  encBtn.addEventListener('click', function() {
+    var msg = msgEl.value;
+    var key = keyEl.value;
+    if (!msg || !key) { outEl.innerHTML = '<span class="val-red">Both message and key are required.</span>'; return; }
+    var bytes = xorBytes(msg, key);
+    lastCipher = bytes;
+    var hex = toHex(bytes);
+    outEl.innerHTML =
+      '<div class="row"><span class="dim">message &nbsp;</span><span class="val">' + msg + '</span></div>' +
+      '<div class="row"><span class="dim">key &nbsp;&nbsp;&nbsp;&nbsp;</span><span class="val-amber">' + key + '</span></div>' +
+      '<div class="row"><span class="dim">cipher &nbsp;</span><span class="val-blue">' + hex + '</span></div>';
+    renderBits(msg, key, bytes);
+  });
+
+  decBtn.addEventListener('click', function() {
+    if (!lastCipher) { outEl.innerHTML = '<span class="val-red">Encrypt something first.</span>'; return; }
+    var key = keyEl.value;
+    if (!key) { outEl.innerHTML = '<span class="val-red">Key is required.</span>'; return; }
+    var bytes = lastCipher.map(function(b, i) {
+      return b ^ key.charCodeAt(i % key.length);
+    });
+    var decoded = bytes.map(function(b) { return String.fromCharCode(b); }).join('');
+    outEl.innerHTML =
+      '<div class="row"><span class="dim">cipher &nbsp;</span><span class="val-blue">' + toHex(lastCipher) + '</span></div>' +
+      '<div class="row"><span class="dim">key &nbsp;&nbsp;&nbsp;&nbsp;</span><span class="val-amber">' + key + '</span></div>' +
+      '<div class="row"><span class="dim">decoded </span><span class="val">' + decoded + '</span></div>';
+  });
+
+  resetBtn.addEventListener('click', function() {
+    msgEl.value = 'Hello';
+    keyEl.value = 'Key';
+    lastCipher = null;
+    outEl.innerHTML = 'Press <span class="val">Encrypt</span> to begin.';
+    bitsEl.innerHTML = '';
+  });
+})();
+
+
+/* ============================================================
+  TAB 2 — ONE-WAY FUNCTIONS
+============================================================ */
+(function() {
+  var sqInput  = document.getElementById('sq-input');
+  var sqOutput = document.getElementById('sq-output');
+  var modX     = document.getElementById('mod-x');
+  var modN     = document.getElementById('mod-n');
+  var modOut   = document.getElementById('mod-output');
+  var modColl  = document.getElementById('mod-collisions');
+
+  function updateSq() {
+    var x = parseFloat(sqInput.value);
+    if (isNaN(x)) { sqOutput.innerHTML = '<span class="val-red">Enter a number.</span>'; return; }
+    var result = x * x;
+    sqOutput.innerHTML =
+      '<div class="row"><span class="dim">f(x) = x²</span></div>' +
+      '<div class="row"><span class="dim">f(' + x + ') =</span><span class="val"> ' + result + '</span></div>' +
+      '<div class="row"><span class="dim">reverse? √' + result + ' = ±' + Math.abs(x) + '</span> <span class="val-amber">Two answers — not truly one-way.</span></div>';
+  }
+
+  function updateMod() {
+    var x = parseInt(modX.value);
+    var n = parseInt(modN.value);
+    if (isNaN(x) || isNaN(n) || n < 1) { modOut.innerHTML = '<span class="val-red">Enter valid integers.</span>'; return; }
+    var result = ((x % n) + n) % n;
+    modOut.innerHTML =
+      '<div class="row"><span class="dim">' + x + ' mod ' + n + ' =</span><span class="val"> ' + result + '</span></div>' +
+      '<div class="row"><span class="dim">= ' + Math.floor(x / n) + ' full cycles + remainder </span><span class="val">' + result + '</span></div>';
+
+    // collisions
+    var collisions = [];
+    var start = Math.max(0, x - 40);
+    var end   = x + 40;
+    for (var i = start; i <= end; i++) {
+      if (i !== x && ((i % n + n) % n) === result) collisions.push(i);
+    }
+    modColl.innerHTML =
+      '<div class="row"><span class="dim">Other values that also give <span class="val">' + result + '</span> mod ' + n + ':</span></div>' +
+      (collisions.length
+        ? '<div class="row"><span class="val">' + collisions.slice(0, 10).join(', ') + (collisions.length > 10 ? ', ...' : '') + '</span></div>' +
+          '<div class="row"><span class="dim val-amber">→ Reversal is ambiguous. Many inputs share one output.</span></div>'
+        : '<div class="row"><span class="dim">(none found in range ±40 — try a smaller modulus)</span></div>');
+  }
+
+  sqInput.addEventListener('input', updateSq);
+  modX.addEventListener('input', updateMod);
+  modN.addEventListener('input', updateMod);
+  updateSq();
+  updateMod();
+})();
+
+
+/* ============================================================
+  TAB 3 — MODULO / TRAPDOOR
+============================================================ */
+(function() {
+  var clockSlider    = document.getElementById('clock-slider');
+  var clockSliderVal = document.getElementById('clock-slider-val');
+  var clockHand      = document.getElementById('clock-hand');
+  var clockLabel     = document.getElementById('clock-label');
+  var meG            = document.getElementById('me-g');
+  var meX            = document.getElementById('me-x');
+  var meP            = document.getElementById('me-p');
+  var meOut          = document.getElementById('me-output');
+  var bfG            = document.getElementById('bf-g');
+  var bfX            = document.getElementById('bf-x');
+  var bfPInput       = document.getElementById('bf-p-input');
+  var bfBtn          = document.getElementById('bf-btn');
+  var bfStopBtn      = document.getElementById('bf-stop-btn');
+  var bfOut          = document.getElementById('bf-output');
+  var bruteBar       = document.getElementById('brute-bar');
+  var bfProgressLabel= document.getElementById('bf-progress-label');
+
+  var bfRunning = false;
+
+  function updateClock() {
+    var v = parseInt(clockSlider.value);
+    clockSliderVal.textContent = v;
+    var mod12 = v % 12;
+    var deg = mod12 * 30;
+    clockHand.style.transform = 'translateX(-50%) rotate(' + deg + 'deg)';
+    clockLabel.innerHTML =
+      '<em>' + v + '</em> mod 12 = <em>' + mod12 + '</em><br>' +
+      'Full rotations: ' + Math.floor(v / 12) + '<br>' +
+      'Remainder: <em>' + mod12 + '</em><br><br>' +
+      '<span style="color:var(--muted);font-size:11px">Knowing the hand position (' + mod12 + ') does not tell you how many full rounds occurred.</span>';
+  }
+
+  function modPowBig(base, exp, mod) {
+    // BigInt modular exponentiation — handles arbitrarily large p
+    var result = 1n;
+    base = base % mod;
+    for (var i = 0n; i < exp; i++) { result = (result * base) % mod; }
+    return result;
+  }
+
+  function updateME() {
+    var g = parseInt(meG.value);
+    var x = parseInt(meX.value);
+    var p = parseInt(meP.value);
+    if (isNaN(g) || isNaN(x) || isNaN(p) || p < 2) return;
+    var result = modPowBig(BigInt(g), BigInt(x), BigInt(p));
+    meOut.innerHTML =
+      '<div class="row"><span class="dim">' + g + '^' + x + ' mod ' + p + ' =</span><span class="val"> ' + result.toString() + '</span></div>' +
+      '<div class="row"><span class="dim">Forward (easy): compute g^x mod p in milliseconds.</span></div>' +
+      '<div class="row"><span class="dim">Reverse (hard): given ' + result.toString() + ', find x. Try the brute-force below.</span></div>';
+  }
+
+  function formatNum(n) {
+    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  // ── Web Worker source (inlined as a Blob so the file stays standalone) ──
+  var workerSrc = `
+    function modPowBig(base, exp, mod) {
+      var result = 1n;
+      base = base % mod;
+      for (var i = 0n; i < exp; i++) { result = (result * base) % mod; }
+      return result;
+    }
+
+    var running = false;
+    var g, p, target, i, start;
+    var CHUNK = 1000n;
+
+    function runChunk() {
+      if (!running) {
+        self.postMessage({ type: 'stopped', attempts: i.toString(), p: p.toString(), elapsed: ((Date.now()-start)/1000).toFixed(2) });
+        return;
+      }
+
+      var limit = i + CHUNK;
+      var found = -1n;
+      while (i < limit && i <= p) {
+        if (modPowBig(g, i, p) === target) { found = i; break; }
+        i++;
+      }
+
+      if (found >= 0n) {
+        running = false;
+        self.postMessage({ type: 'done', found: found.toString(), attempts: i.toString(), p: p.toString(), elapsed: ((Date.now()-start)/1000).toFixed(2) });
+        return;
+      }
+
+      if (i > p) {
+        running = false;
+        self.postMessage({ type: 'exhausted', found: null, attempts: i.toString(), p: p.toString(), elapsed: ((Date.now()-start)/1000).toFixed(2) });
+        return;
+      }
+
+      // Report progress then yield — this yield is what lets the stop message through
+      self.postMessage({ type: 'progress', attempts: i.toString(), p: p.toString() });
+      setTimeout(runChunk, 0);
+    }
+
+    self.onmessage = function(e) {
+      if (e.data.cmd === 'stop') {
+        running = false;
+        return;
+      }
+      if (e.data.cmd === 'start') {
+        g      = BigInt(e.data.g);
+        p      = BigInt(e.data.p);
+        target = BigInt(e.data.target);
+        i      = 1n;
+        start  = Date.now();
+        running = true;
+        setTimeout(runChunk, 0);
+      }
+    };
+  `;
+
+  var workerBlob = new Blob([workerSrc], { type: 'application/javascript' });
+  var workerURL  = URL.createObjectURL(workerBlob);
+  var worker     = null;
+
+  bfBtn.addEventListener('click', function() {
+    var g = parseInt(bfG.value);
+    var x = parseInt(bfX.value);
+    var pRaw = bfPInput.value.trim().replace(/,/g, '');
+    var pBig;
+    try { pBig = BigInt(pRaw); } catch(e) {
+      bfOut.innerHTML = '<span class="val-red">Invalid value for p.</span>'; return;
+    }
+    if (pBig < 2n) { bfOut.innerHTML = '<span class="val-red">p must be at least 2.</span>'; return; }
+    if (isNaN(g) || isNaN(x)) { bfOut.innerHTML = '<span class="val-red">Enter valid g and x.</span>'; return; }
+
+    // Compute target in main thread (fast)
+    var gBig   = BigInt(g);
+    var xBig   = BigInt(x);
+    var target = modPowBig(gBig, xBig, pBig);
+
+    // Terminate any previous worker
+    if (worker) { worker.terminate(); worker = null; }
+    worker = new Worker(workerURL);
+
+    bfRunning = true;
+    bfBtn.style.display    = 'none';
+    bfStopBtn.style.display = '';
+    bruteBar.style.width    = '0%';
+    bfProgressLabel.textContent = '';
+    bfOut.innerHTML = '<span class="dim">Worker started — searching for x such that ' + g + '^x mod ' + formatNum(pBig) + ' = ' + target.toString() + '</span>';
+
+    worker.onmessage = function(e) {
+      var d = e.data;
+      var attBig = BigInt(d.attempts);
+      var pct    = Number((attBig * 100n) / pBig);
+      bruteBar.style.width        = Math.min(100, pct) + '%';
+      bfProgressLabel.textContent = formatNum(attBig) + ' tried';
+
+      if (d.type === 'progress') {
+        bfOut.innerHTML =
+          '<div class="row"><span class="dim">Target: </span><span class="val">' + g + '^x mod ' + formatNum(pBig) + ' = ' + target.toString() + '</span></div>' +
+          '<div class="row"><span class="dim">Checked x = 1 … </span><span class="val-amber">' + formatNum(attBig) + '</span><span class="dim"> of ' + formatNum(pBig) + '</span></div>' +
+          '<div class="row"><span class="dim">No match found in first </span><span class="val-amber">' + formatNum(attBig) + '</span><span class="dim"> candidates — still searching...</span></div>';
+        return;
+      }
+
+      // Final result
+      bfRunning = false;
+      bfBtn.style.display    = '';
+      bfStopBtn.style.display = 'none';
+      worker = null;
+
+      bfOut.innerHTML =
+        '<div class="row"><span class="dim">Target: </span><span class="val">' + g + '^x mod ' + formatNum(pBig) + ' = ' + target.toString() + '</span></div>' +
+        '<div class="row"><span class="dim">Attempts: </span><span class="val-amber">' + formatNum(attBig) + ' of ' + formatNum(pBig) + '</span></div>' +
+        '<div class="row"><span class="dim">Time: </span><span class="val-amber">' + d.elapsed + 's</span></div>' +
+        (d.type === 'stopped'
+          ? '<div class="row"><span class="val-amber">⏹ Stopped by user.</span></div>'
+          : d.found
+            ? '<div class="row"><span class="dim">Found x = </span><span class="val">' + d.found + '</span></div>'
+            : '<div class="row"><span class="val-red">Exhausted all candidates — no solution in range.</span></div>') +
+        '<div class="row"><span class="dim" style="font-size:11px">With p = 2048-bit prime: candidates ≈ 10^617 — computationally impossible.</span></div>';
+    };
+
+    worker.postMessage({ cmd: 'start', g: g.toString(), p: pRaw, target: target.toString() });
+  });
+
+  bfStopBtn.addEventListener('click', function() {
+    if (worker) { worker.postMessage({ cmd: 'stop' }); }
+  });
+
+  clockSlider.addEventListener('input', updateClock);
+  meG.addEventListener('input', updateME);
+  meX.addEventListener('input', updateME);
+  meP.addEventListener('input', updateME);
+  updateClock();
+  updateME();
+})();
+
+
+/* ============================================================
+  TAB 4 — HASH FUNCTION (hand-rolled)
+============================================================ */
+(function() {
+  var hashInput     = document.getElementById('hash-input');
+  var hashOutput    = document.getElementById('hash-output');
+  var avOrig        = document.getElementById('av-orig');
+  var avMod         = document.getElementById('av-modified');
+  var avDiffOrig    = document.getElementById('av-diff-orig');
+  var avDiffMod     = document.getElementById('av-diff-mod');
+  var avSummary     = document.getElementById('av-diff-summary');
+  var breakdown     = document.getElementById('hash-breakdown');
+
+  var PRIME = 1000003;
+  var OUTPUT_SIZE = Math.pow(2, 24); // 6 hex chars per segment
+
+  function simpleHash(text) {
+    if (!text) return '0000000000000000';
+    var h1 = 5381, h2 = 52711;
+    for (var i = 0; i < text.length; i++) {
+      var c = text.charCodeAt(i);
+      h1 = (((h1 << 5) + h1) ^ c) >>> 0;
+      h2 = (((h2 << 7) + h2) ^ (c * (i + 1))) >>> 0;
+    }
+    return (h1.toString(16).padStart(8,'0') + h2.toString(16).padStart(8,'0'));
+  }
+
+  function hexDiff(a, b) {
+    var diff = 0;
+    for (var i = 0; i < Math.min(a.length, b.length); i++) {
+      if (a[i] !== b[i]) diff++;
+    }
+    return diff;
+  }
+
+  function colorByDiff(pct) {
+    if (pct > 0.6) return 'var(--green)';
+    if (pct > 0.3) return 'var(--amber)';
+    return 'var(--red)';
+  }
+
+  function getBreakdown(text) {
+    var lines = [];
+    var running = 5381;
+    for (var i = 0; i < Math.min(text.length, 8); i++) {
+      var c = text.charCodeAt(i);
+      running = (((running << 5) + running) ^ c) >>> 0;
+      lines.push(
+        '<span class="dim">step ' + (i+1) + ':</span> char="<span class="val">' + text[i] +
+        '</span>" code=<span class="val-amber">' + c +
+        '</span> → running=<span class="val-blue">' + running + '</span>'
+      );
+    }
+    if (text.length > 8) lines.push('<span class="dim">... (' + (text.length - 8) + ' more steps)</span>');
+    return lines.join('<br>');
+  }
+
+  function update() {
+    var text = hashInput.value;
+    var h = simpleHash(text);
+
+    // main output
+    hashOutput.innerHTML =
+      '<div class="row"><span class="dim">input &nbsp;</span><span class="val">' + (text || '(empty)') + '</span></div>' +
+      '<div class="row"><span class="dim">length  </span><span class="val-amber">' + text.length + ' chars</span></div>' +
+      '<div class="row"><span class="dim">hash &nbsp;&nbsp; </span><span class="val-blue">' + h + '</span><span class="dim"> (' + (h.length * 4) + ' bits)</span></div>';
+
+    // avalanche
+    var modText = text.length > 0 ? text.slice(0, -1) + String.fromCharCode(text.charCodeAt(text.length - 1) + 1) : 'a';
+    var hMod = simpleHash(modText);
+    var diff = hexDiff(h, hMod);
+    var pct = diff / h.length;
+
+    avOrig.textContent = h;
+    avMod.textContent  = hMod;
+    avDiffOrig.innerHTML = '<span style="color:var(--blue)">' + h.length + ' chars</span>';
+    avDiffMod.innerHTML  = '<span style="color:' + colorByDiff(pct) + '">' + diff + ' changed</span>';
+    avSummary.innerHTML  =
+      '<div class="row"><span class="dim">Chars changed in hash: </span><span style="color:' + colorByDiff(pct) + '">' + diff + ' / ' + h.length + ' (' + Math.round(pct * 100) + '%)</span></div>' +
+      '<div class="row"><span class="dim">Modified input: </span><span class="val-amber">' + modText + '</span></div>' +
+      (pct > 0.4
+        ? '<div class="row"><span class="val">✓ Strong avalanche effect.</span></div>'
+        : '<div class="row"><span class="val-amber">⚠ Weak avalanche — real hash functions achieve ~50%.</span></div>');
+
+    // breakdown
+    breakdown.innerHTML = text ? getBreakdown(text) : '<span class="dim">Type something to see the breakdown.</span>';
+  }
+
+  hashInput.addEventListener('input', update);
+  update();
+})();
+
+
+/* ============================================================
+  TAB 5 — WEB CRYPTO API
+============================================================ */
+(function() {
+  var shaInput    = document.getElementById('sha-input');
+  var shaOutput   = document.getElementById('sha-output');
+  var regUser     = document.getElementById('reg-user');
+  var regPass     = document.getElementById('reg-pass');
+  var regBtn      = document.getElementById('reg-btn');
+  var regClear    = document.getElementById('reg-clear-btn');
+  var regOutput   = document.getElementById('reg-output');
+  var loginUser   = document.getElementById('login-user');
+  var loginPass   = document.getElementById('login-pass');
+  var loginBtn    = document.getElementById('login-btn');
+  var loginOutput = document.getElementById('login-output');
+  var storeDisplay= document.getElementById('store-display');
+
+  // In-memory store (mirrors Feature 8 localStorage pattern)
+  var userStore = [];
+
+  async function sha256(message) {
+    var encoder = new TextEncoder();
+    var data     = encoder.encode(message);
+    var hashBuf  = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hashBuf))
+      .map(function(b) { return b.toString(16).padStart(2, '0'); })
+      .join('');
+  }
+
+  function generateSalt() {
+    var bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes).map(function(b) { return b.toString(16).padStart(2,'0'); }).join('');
+  }
+
+  // Live SHA-256 as user types
+  var shaDebounce;
+  shaInput.addEventListener('input', function() {
+    clearTimeout(shaDebounce);
+    shaOutput.innerHTML = '<span class="dim">Computing...</span>';
+    shaDebounce = setTimeout(async function() {
+      var h = await sha256(shaInput.value);
+      shaOutput.innerHTML =
+        '<div class="row"><span class="dim">input  </span><span class="val">' + shaInput.value + '</span></div>' +
+        '<div class="row"><span class="dim">SHA-256</span><span class="val-blue">' + h + '</span></div>' +
+        '<div class="row"><span class="dim">length </span><span class="val-amber">256 bits (64 hex chars) — always</span></div>';
+    }, 150);
+  });
+  // trigger initial
+  shaInput.dispatchEvent(new Event('input'));
+
+  function renderStore() {
+    if (userStore.length === 0) {
+      storeDisplay.innerHTML = '<div class="output-box"><span class="dim">Empty.</span></div>';
+      return;
+    }
+    var html = '<div class="user-list">';
+    userStore.forEach(function(u) {
+      html +=
+        '<div class="user-row">' +
+        '<div class="ur-name">' + u.username + '</div>' +
+        '<div class="ur-data">salt: <span>' + u.salt + '</span></div>' +
+        '<div class="ur-data">hash: <span>' + u.hash + '</span></div>' +
+        '<div class="ur-data" style="color:var(--green);font-size:10px">✓ password not stored</div>' +
+        '</div>';
+    });
+    html += '</div>';
+    storeDisplay.innerHTML = html;
+  }
+
+  regBtn.addEventListener('click', async function() {
+    var username = regUser.value.trim();
+    var password = regPass.value;
+    if (!username || !password) {
+      regOutput.innerHTML = '<span class="val-red">Both fields required.</span>'; return;
+    }
+    var exists = userStore.find(function(u) { return u.username === username; });
+    if (exists) {
+      regOutput.innerHTML = '<span class="val-amber">Username already registered.</span>'; return;
+    }
+    regOutput.innerHTML = '<span class="dim">Generating salt and hashing...</span>';
+    var salt = generateSalt();
+    var hash = await sha256(salt + password);
+    userStore.push({ username: username, salt: salt, hash: hash });
+    regOutput.innerHTML =
+      '<div class="row"><span class="dim">username </span><span class="val">' + username + '</span></div>' +
+      '<div class="row"><span class="dim">salt &nbsp;&nbsp;&nbsp;&nbsp; </span><span class="val-amber">' + salt + '</span></div>' +
+      '<div class="row"><span class="dim">hash &nbsp;&nbsp;&nbsp;&nbsp; </span><span class="val-blue">' + hash + '</span></div>' +
+      '<div><span class="status ok">Registered</span></div>';
+    renderStore();
+  });
+
+  regClear.addEventListener('click', function() {
+    userStore = [];
+    regOutput.innerHTML = '<span class="dim">Store cleared.</span>';
+    loginOutput.innerHTML = '<span class="dim">Register a user first.</span>';
+    renderStore();
+  });
+
+  loginBtn.addEventListener('click', async function() {
+    var username = loginUser.value.trim();
+    var password = loginPass.value;
+    if (!username || !password) {
+      loginOutput.innerHTML = '<span class="val-red">Both fields required.</span>'; return;
+    }
+    var user = userStore.find(function(u) { return u.username === username; });
+    if (!user) {
+      loginOutput.innerHTML =
+        '<div class="row"><span class="val-red">User not found.</span></div>' +
+        '<div><span class="status err">Login failed</span></div>';
+      return;
+    }
+    loginOutput.innerHTML = '<span class="dim">Hashing submitted password with stored salt...</span>';
+    var hash = await sha256(user.salt + password);
+    var match = hash === user.hash;
+    loginOutput.innerHTML =
+      '<div class="row"><span class="dim">stored hash &nbsp;&nbsp;</span><span class="val-blue">' + user.hash + '</span></div>' +
+      '<div class="row"><span class="dim">computed hash </span><span class="val-' + (match ? 'blue' : 'red') + '">' + hash + '</span></div>' +
+      '<div class="row"><span class="dim">match? </span><span class="val-' + (match ? '' : 'red') + '">' + (match ? '✓ yes' : '✗ no') + '</span></div>' +
+      '<div><span class="status ' + (match ? 'ok' : 'err') + '">' + (match ? 'Login successful' : 'Incorrect password') + '</span></div>';
+  });
+
+  renderStore();
+})();
+</script>
+</body>
+</html>

@@ -49,8 +49,20 @@ body {
   background: rgba(5,13,28,0.92);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 32px; height: 52px;
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  height: 52px;
+}
+.topbar-inner {
+  width: min(1180px, calc(100% - 48px));
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  min-height: 52px;
 }
 .topbar-brand {
   font-family: var(--mono); font-size: 13px; font-weight: 600;
@@ -87,12 +99,19 @@ body {
 
 /* ── LAYOUT ───────────────────────────────── */
 .page-wrap {
-  max-width: 1180px; margin: 0 auto;
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
   padding: 0 24px 80px;
-  display: grid; grid-template-columns: 230px 1fr; gap: 24px;
+  display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 28px;
   align-items: start;
 }
-@media (max-width: 860px) { .page-wrap { grid-template-columns: 1fr; } }
+@media (max-width: 980px) {
+  .page-wrap {
+    width: min(100%, calc(100% - 32px));
+    padding: 0 0 72px;
+    grid-template-columns: 1fr;
+  }
+}
 
 /* ── SIDEBAR ──────────────────────────────── */
 .sidebar {
@@ -100,7 +119,10 @@ body {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 16px 14px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .sidebar-label {
   font-family: var(--mono); font-size: 9.5px; font-weight: 600;
@@ -120,9 +142,35 @@ body {
   color: var(--dim); min-width: 16px;
 }
 .sidebar-divider { height: 1px; background: var(--border); margin: 8px 0; }
+.sidebar-note {
+  margin-top: 6px;
+  padding: 14px 14px 12px;
+  background: rgba(0,200,239,0.04);
+  border: 1px solid rgba(0,200,239,0.12);
+  border-radius: 14px;
+}
+.sidebar-note strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #d8edff;
+  font-size: 0.95rem;
+}
+.sidebar-note p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+@media (max-width: 980px) {
+  .sidebar { position: static; }
+}
 
 /* ── CONTENT SECTIONS ─────────────────────── */
-.content { display: flex; flex-direction: column; gap: 20px; }
+.content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
 
 section {
   background: var(--panel);
@@ -332,24 +380,38 @@ mark {
   border: 1px solid var(--border); border-radius: 99px;
   padding: 3px 11px; margin-bottom: 10px;
 }
+@media (max-width: 980px) {
+  .topbar-links {
+    overflow-x: auto;
+    white-space: nowrap;
+    max-width: 62vw;
+    scrollbar-width: none;
+  }
+  .topbar-links::-webkit-scrollbar {
+    display: none;
+  }
+}
 </style>
 </head>
 <body>
 
 <!-- TOP NAV -->
 <nav class="topbar">
-  <div class="topbar-brand">
-    <span>Retrieveler</span>&nbsp;/&nbsp;regxlab
-  </div>
-  <div class="topbar-links">
-    <a href="index.html" class="home-link">← Back to overview</a>
-    <a href="#mental-model">Mental Model</a>
-    <a href="#string-fns">Strings</a>
-    <a href="#generalize">Generalizes</a>
-    <a href="#categories">Categories</a>
-    <a href="#live-lab">Live Lab</a>
-    <a href="#challenges">Challenges</a>
-    <a href="#cheatsheet">Cheat Sheet</a>
+  <div class="topbar-inner">
+    <div class="topbar-brand">
+      <span>Retrieveler</span>&nbsp;/&nbsp;regxlab
+    </div>
+    <div class="topbar-links">
+      <a href="index.html" class="home-link">← Back to overview</a>
+      <a href="crypto-lab.html">Crypto Lab</a>
+      <a href="#mental-model">Mental Model</a>
+      <a href="#string-fns">Strings</a>
+      <a href="#generalize">Generalizes</a>
+      <a href="#categories">Categories</a>
+      <a href="#live-lab">Live Lab</a>
+      <a href="#challenges">Challenges</a>
+      <a href="#cheatsheet">Cheat Sheet</a>
+    </div>
   </div>
 </nav>
 
@@ -370,16 +432,20 @@ mark {
     <a href="#string-fns"><span class="num">02</span> String Functions</a>
     <a href="#generalize"><span class="num">03</span> Regex Generalizes</a>
     <a href="#categories"><span class="num">04</span> Categories</a>
-    <div class="sidebar-divider"></div>
     <a href="#live-lab"><span class="num">05</span> Live Lab</a>
     <a href="#challenges"><span class="num">06</span> Challenges</a>
     <a href="#cheatsheet"><span class="num">07</span> Cheat Sheet</a>
-  </aside>
-
-  <!-- CONTENT -->
-  <main class="content">
+    <div class="sidebar-divider"></div>
+    <a href="crypto-lab.html"><span class="num">00</span> Crypto Lab</a>
+    <div class="sidebar-note">
+      <strong>Learn by shape</strong>
+      <p>Read the structure, try the pattern, then verify it in the live lab.</p>
+    </div>
 
     <!-- ── 1. MENTAL MODEL ─────────────────── -->
+  </aside>
+
+  <main class="content">
     <section id="mental-model">
       <div class="sec-badge">01 — Mental Model</div>
       <h2>Text has structure</h2>
