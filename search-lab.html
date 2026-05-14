@@ -533,6 +533,124 @@ body {
   color: var(--muted2);
   line-height: 1.8;
 }
+.appendix-grid {
+  display: grid;
+  gap: 10px;
+}
+.appendix-ladder {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 6px;
+}
+.appendix-ladder th {
+  padding: 7px 10px;
+  text-align: left;
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border2);
+}
+.appendix-ladder td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted2);
+}
+.appendix-ladder td:first-child,
+.appendix-ladder td:nth-child(2) {
+  color: var(--text);
+}
+.appendix-ladder tr:last-child td {
+  border-bottom: none;
+}
+.appendix-note {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--greenbrd);
+  background: var(--greendim);
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.75;
+}
+.appendix-practice {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.appendix-card {
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.03);
+}
+.appendix-card strong {
+  color: var(--text);
+}
+.appendix-subtabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+.appendix-subtab {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.03);
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.appendix-subtab.active {
+  color: var(--text);
+  border-color: var(--greenbrd);
+  background: var(--greendim);
+}
+.appendix-subpanel {
+  display: none;
+}
+.appendix-subpanel.active {
+  display: block;
+}
+.appendix-quiz-list {
+  display: grid;
+  gap: 10px;
+}
+.appendix-quiz-item {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.03);
+}
+.appendix-quiz-item p {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--muted2);
+}
+.appendix-quiz-answer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+.appendix-quiz-answer.dual {
+  grid-template-columns: 1fr auto auto;
+}
+.appendix-quiz-feedback {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--muted2);
+}
+.appendix-quiz-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
 </style>
 </head>
 <body>
@@ -548,7 +666,9 @@ body {
   <div class="tab" data-tab="1">02 · Binary Search</div>
   <div class="tab" data-tab="2">03 · Hash Search</div>
   <div class="tab" data-tab="3">04 · Summary</div>
+  <div class="tab" data-tab="4">05 · Appendix</div>
 </div>
+
 
 <!-- ══════════════════════════════════════
   TAB 1 — LINEAR SEARCH
@@ -1119,6 +1239,199 @@ var match = getFromTable(table, "grace");</code></pre>
     </div>
 
     <div class="output-box" id="sum-summary" style="margin-top:14px"><span class="dim">Comparison summary will appear here.</span></div>
+  </div>
+</div>
+
+
+<div class="panels" id="panel-4">
+
+  <div class="panel">
+    <div class="panel-label">Concept · 05</div>
+    <div class="panel-title">Log₂ <span>Appendix</span></div>
+
+    <div class="cb">
+      <div class="cb-label">The core meaning</div>
+      <p><code>log₂(x)</code> means: <em>"what exponent do I put on 2 to get x?"</em> If <code>2^7 = 128</code>, then <code>log₂(128) = 7</code>. The log value is not a separate mysterious number. It is just the exponent.</p>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">What to memorize</div>
+      <p>You do not need an infinite table in your head. For binary search and computer-size intuition, memorize the ladder from <code>0</code> to <code>9</code>, then the decade anchors <code>10</code>, <code>20</code>, <code>30</code>, and <code>40</code>.</p>
+
+      <table class="appendix-ladder">
+        <tr><th>log₂(x)</th><th>x = 2^log₂(x)</th><th>Memory cue</th></tr>
+        <tr><td>0</td><td>1</td><td>start</td></tr>
+        <tr><td>1</td><td>2</td><td>double once</td></tr>
+        <tr><td>2</td><td>4</td><td>double twice</td></tr>
+        <tr><td>3</td><td>8</td><td>small byte-ish chunk</td></tr>
+        <tr><td>4</td><td>16</td><td>half of 32</td></tr>
+        <tr><td>5</td><td>32</td><td>common machine step</td></tr>
+        <tr><td>6</td><td>64</td><td>common word size</td></tr>
+        <tr><td>7</td><td>128</td><td>2 × 64</td></tr>
+        <tr><td>8</td><td>256</td><td>2 × 128</td></tr>
+        <tr><td>9</td><td>512</td><td>half of 1K</td></tr>
+        <tr><td>10</td><td>1,024</td><td><strong>K</strong> in CS, about a thousand in common speech</td></tr>
+        <tr><td>20</td><td>1,048,576</td><td><strong>M</strong>, about a million</td></tr>
+        <tr><td>30</td><td>1,073,741,824</td><td><strong>G</strong>, about a billion</td></tr>
+        <tr><td>40</td><td>1,099,511,627,776</td><td><strong>T</strong>, about a trillion</td></tr>
+      </table>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">Why +10 in log means ×1024 in x</div>
+      <p>The jump is always the same because <code>2^(n+10) = 2^n × 2^10</code>. And <code>2^10 = 1,024</code>. So every time the log value increases by 10, the actual data size increases by <em>1,024 times</em>.</p>
+      <div class="appendix-note">
+        <div><strong>Example 1:</strong> from <code>log₂(x) = 10</code> to <code>20</code> means going from <code>1,024</code> to <code>1,048,576</code>.</div>
+        <div><strong>Example 2:</strong> from <code>20</code> to <code>30</code> means multiplying again by <code>1,024</code>.</div>
+        <div><strong>Example 3:</strong> from <code>30</code> to <code>40</code> means multiplying again by <code>1,024</code>.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">Practice · 05</div>
+
+    <div class="appendix-subtabs">
+      <button class="appendix-subtab active" data-appendix-tab="practice">Practice</button>
+      <button class="appendix-subtab" data-appendix-tab="quiz">Quiz</button>
+    </div>
+
+    <div class="appendix-subpanel active" id="appendix-practice">
+      <div class="cb">
+        <div class="cb-label">Recognition pattern</div>
+        <p>Read log and exponent in both directions until they feel identical:</p>
+        <div class="appendix-practice">
+          <div class="appendix-card"><strong>If</strong> <code>log₂(x) = 8</code>, <strong>then</strong> <code>x = 256</code>.</div>
+          <div class="appendix-card"><strong>If</strong> <code>x = 512</code>, <strong>then</strong> <code>log₂(x) = 9</code>.</div>
+          <div class="appendix-card"><strong>If</strong> <code>log₂(x) = 20</code>, <strong>then</strong> <code>x ≈ 1M</code>.</div>
+          <div class="appendix-card"><strong>If</strong> <code>x ≈ 1B</code>, <strong>then</strong> <code>log₂(x) ≈ 30</code>.</div>
+        </div>
+      </div>
+
+      <div class="cb">
+        <div class="cb-label">Fast drills</div>
+        <div class="appendix-practice">
+          <div class="appendix-card"><strong>Drill 1:</strong> <code>log₂(x) = 6</code> → <strong>64</strong></div>
+          <div class="appendix-card"><strong>Drill 2:</strong> <code>x = 128</code> → <strong>7</strong></div>
+          <div class="appendix-card"><strong>Drill 3:</strong> <code>log₂(x)</code> goes from <code>10</code> to <code>20</code> → <strong>x multiplies by 1,024</strong></div>
+          <div class="appendix-card"><strong>Drill 4:</strong> <code>log₂(x)</code> goes from <code>20</code> to <code>40</code> → <strong>x multiplies by 1,024 × 1,024 = 1,048,576</strong></div>
+        </div>
+      </div>
+
+      <div class="cb">
+        <div class="cb-label">Binary search intuition</div>
+        <p>This is why binary search stays small even when data gets huge. If the dataset is around <code>1K</code>, worst-case steps are about <code>10</code>. At <code>1M</code>, they are about <code>20</code>. At <code>1B</code>, about <code>30</code>. At <code>1T</code>, about <code>40</code>.</p>
+        <p>The data size explodes by factors of <code>1,024</code>, but the number of binary-search decisions only rises by <code>10</code> each decade. That is the entire power of <code>O(log n)</code> in one mental picture.</p>
+      </div>
+    </div>
+
+    <div class="appendix-subpanel" id="appendix-quiz">
+      <div class="cb">
+        <div class="cb-label">Quiz</div>
+        <p>Ten real-world scale questions. When the answer is an actual size, enter the numeric part and choose a suffix. Use <code>None</code> when the answer is a plain number.</p>
+
+        <div class="appendix-quiz-list">
+          <div class="appendix-quiz-item" data-mode="log" data-answer="10">
+            <p><strong>1. Photo backup:</strong> A small image folder takes <code>1,024</code> bytes. Which power-of-two step is that?</p>
+            <div class="appendix-quiz-answer">
+              <input class="pg-input appendix-quiz-value" type="number" placeholder="step number">
+              <button class="btn amber appendix-quiz-check">Check</button>
+            </div>
+            <div class="appendix-quiz-feedback"></div>
+          </div>
+
+          <div class="appendix-quiz-item" data-mode="x" data-answer="512" data-suffix="None">
+            <p><strong>2. Photo album:</strong> A gallery app labels an album as the <code>9th</code> power-of-two size. What actual size is that?</p>
+            <div class="appendix-quiz-answer dual">
+              <input class="pg-input appendix-quiz-value" type="number" placeholder="numeric part">
+              <select class="pg-input appendix-quiz-suffix"><option>None</option><option>K</option><option>G</option><option>T</option></select>
+              <button class="btn amber appendix-quiz-check">Check</button>
+            </div>
+            <div class="appendix-quiz-feedback"></div>
+          </div>
+
+          <div class="appendix-quiz-item" data-mode="x" data-answer="1" data-suffix="K">
+            <p><strong>3. Contact list:</strong> A phone can store names at the <code>10th</code> power-of-two step. Enter the actual size with a suffix.</p>
+            <div class="appendix-quiz-answer dual">
+              <input class="pg-input appendix-quiz-value" type="number" placeholder="numeric part">
+              <select class="pg-input appendix-quiz-suffix"><option>None</option><option>K</option><option>G</option><option>T</option></select>
+              <button class="btn amber appendix-quiz-check">Check</button>
+            </div>
+            <div class="appendix-quiz-feedback"></div>
+          </div>
+
+          <div class="appendix-quiz-item" data-mode="log" data-answer="20">
+            <p><strong>4. City event tickets:</strong> A ticketing campaign reaches about <code>1,048,576</code> people. Which power-of-two step is that?</p>
+            <div class="appendix-quiz-answer">
+              <input class="pg-input appendix-quiz-value" type="number" placeholder="step number">
+              <button class="btn amber appendix-quiz-check">Check</button>
+            </div>
+            <div class="appendix-quiz-feedback"></div>
+          </div>
+
+          <div class="appendix-quiz-item" data-mode="x" data-answer="1" data-suffix="G">
+            <p><strong>5. Video views:</strong> A viral clip reaches the <code>30th</code> power-of-two scale. Enter the actual size with a suffix.</p>
+            <div class="appendix-quiz-answer dual">
+              <input class="pg-input appendix-quiz-value" type="number" placeholder="numeric part">
+              <select class="pg-input appendix-quiz-suffix"><option>None</option><option>K</option><option>G</option><option>T</option></select>
+              <button class="btn amber appendix-quiz-check">Check</button>
+            </div>
+            <div class="appendix-quiz-feedback"></div>
+          </div>
+
+          <div class="appendix-quiz-item" data-mode="log" data-answer="40">
+            <p><strong>6. Online shopping receipts:</strong> A long-running marketplace has about <code>1.1T</code> receipts in its archive. Which memorized power-of-two anchor is this closest to?</p>
+            <div class="appendix-quiz-answer">
+              <input class="pg-input appendix-quiz-value" type="number" placeholder="step number">
+              <button class="btn amber appendix-quiz-check">Check</button>
+            </div>
+            <div class="appendix-quiz-feedback"></div>
+          </div>
+
+          <div class="appendix-quiz-item" data-mode="scale" data-answer="1024">
+            <p><strong>7. School photo archive:</strong> If the collection grows from the <code>10th</code> to the <code>20th</code> power-of-two step, by what factor does the actual collection size increase?</p>
+            <div class="appendix-quiz-answer">
+              <input class="pg-input appendix-quiz-value" type="number" placeholder="growth factor">
+              <button class="btn amber appendix-quiz-check">Check</button>
+            </div>
+            <div class="appendix-quiz-feedback"></div>
+          </div>
+
+          <div class="appendix-quiz-item" data-mode="scale" data-answer="1048576">
+            <p><strong>8. Music streaming catalog:</strong> If the library grows from the <code>20th</code> to the <code>40th</code> power-of-two step, by what factor does the real catalog size increase?</p>
+            <div class="appendix-quiz-answer">
+              <input class="pg-input appendix-quiz-value" type="number" placeholder="growth factor">
+              <button class="btn amber appendix-quiz-check">Check</button>
+            </div>
+            <div class="appendix-quiz-feedback"></div>
+          </div>
+
+          <div class="appendix-quiz-item" data-mode="log" data-answer="7">
+            <p><strong>9. Theater seats:</strong> A small hall has <code>128</code> seats. Which power-of-two step is that?</p>
+            <div class="appendix-quiz-answer">
+              <input class="pg-input appendix-quiz-value" type="number" placeholder="step number">
+              <button class="btn amber appendix-quiz-check">Check</button>
+            </div>
+            <div class="appendix-quiz-feedback"></div>
+          </div>
+
+          <div class="appendix-quiz-item" data-mode="x" data-answer="64" data-suffix="None">
+            <p><strong>10. Chess tournament:</strong> A bracket reaches the <code>6th</code> power-of-two size. How many players is that?</p>
+            <div class="appendix-quiz-answer dual">
+              <input class="pg-input appendix-quiz-value" type="number" placeholder="numeric part">
+              <select class="pg-input appendix-quiz-suffix"><option>None</option><option>K</option><option>G</option><option>T</option></select>
+              <button class="btn amber appendix-quiz-check">Check</button>
+            </div>
+            <div class="appendix-quiz-feedback"></div>
+          </div>
+        </div>
+        <div class="appendix-quiz-actions">
+          <button class="btn blue" id="appendix-quiz-grade">Grade all 10</button>
+          <button class="btn" id="appendix-quiz-reset">Reset</button>
+        </div>
+        <div class="output-box" id="appendix-quiz-summary" style="margin-top:12px"><span class="dim">Quiz score will appear here.</span></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1702,9 +2015,101 @@ var match = getFromTable(table, "grace");</code></pre>
 
   syncFromInput();
 })();
+
+
+/* ============================================================
+  TAB 5 - APPENDIX
+============================================================ */
+(function () {
+  var subTabs = Array.prototype.slice.call(document.querySelectorAll('.appendix-subtab'));
+  var practicePanel = document.getElementById('appendix-practice');
+  var quizPanel = document.getElementById('appendix-quiz');
+  var quizItems = Array.prototype.slice.call(document.querySelectorAll('.appendix-quiz-item'));
+  var gradeBtn = document.getElementById('appendix-quiz-grade');
+  var resetBtn = document.getElementById('appendix-quiz-reset');
+  var summaryEl = document.getElementById('appendix-quiz-summary');
+
+  function switchSubtab(target) {
+    subTabs.forEach(function (tab) {
+      tab.classList.toggle('active', tab.dataset.appendixTab === target);
+    });
+    practicePanel.classList.toggle('active', target === 'practice');
+    quizPanel.classList.toggle('active', target === 'quiz');
+  }
+
+  function normalizeNumberInput(value) {
+    return String(parseInt(value, 10) || 0);
+  }
+
+  function checkItem(item) {
+    var mode = item.dataset.mode;
+    var expected = item.dataset.answer;
+    var feedback = item.querySelector('.appendix-quiz-feedback');
+    var valueEl = item.querySelector('.appendix-quiz-value');
+    var suffixEl = item.querySelector('.appendix-quiz-suffix');
+    var ok = false;
+
+    if (mode === 'x') {
+      var actualValue = normalizeNumberInput(valueEl.value);
+      var actualSuffix = suffixEl ? suffixEl.value : 'None';
+      ok = actualValue === expected && actualSuffix === item.dataset.suffix;
+      feedback.innerHTML = ok
+        ? '<span class="status ok">Correct</span> <span class="dim">' + actualValue + (actualSuffix === 'None' ? '' : actualSuffix) + '</span>'
+        : '<span class="status err">Try again</span> <span class="dim">Expected ' + expected + (item.dataset.suffix === 'None' ? '' : item.dataset.suffix) + '</span>';
+    } else {
+      var actual = normalizeNumberInput(valueEl.value);
+      ok = actual === expected;
+      feedback.innerHTML = ok
+        ? '<span class="status ok">Correct</span> <span class="dim">' + actual + '</span>'
+        : '<span class="status err">Try again</span> <span class="dim">Expected ' + expected + '</span>';
+    }
+
+    item.dataset.correct = ok ? '1' : '0';
+    return ok;
+  }
+
+  subTabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      switchSubtab(tab.dataset.appendixTab);
+    });
+  });
+
+  quizItems.forEach(function (item) {
+    var checkBtn = item.querySelector('.appendix-quiz-check');
+    checkBtn.addEventListener('click', function () {
+      checkItem(item);
+    });
+  });
+
+  gradeBtn.addEventListener('click', function () {
+    var score = 0;
+    quizItems.forEach(function (item) {
+      if (checkItem(item)) score++;
+    });
+    summaryEl.innerHTML =
+      '<div class="row"><span class="dim">score</span><span class="summary-metric">' + score + ' / ' + quizItems.length + '</span></div>' +
+      '<div class="summary-caption">Focus on the memorized ladder: 0-9, then 10, 20, 30, 40. The main shortcut is that every +10 in log2 means x multiplies by 1,024.</div>';
+  });
+
+  resetBtn.addEventListener('click', function () {
+    quizItems.forEach(function (item) {
+      item.dataset.correct = '0';
+      item.querySelector('.appendix-quiz-value').value = '';
+      var suffixEl = item.querySelector('.appendix-quiz-suffix');
+      if (suffixEl) suffixEl.value = 'None';
+      item.querySelector('.appendix-quiz-feedback').innerHTML = '';
+    });
+    summaryEl.innerHTML = '<span class="dim">Quiz score will appear here.</span>';
+  });
+})();
 </script>
 </body>
 </html>
+
+
+
+
+
 
 
 
