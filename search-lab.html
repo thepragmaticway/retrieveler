@@ -420,6 +420,119 @@ body {
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+.summary-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.summary-range {
+  width: 100%;
+  accent-color: var(--green);
+}
+.summary-chart-shell {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 12px;
+  align-items: stretch;
+  min-height: 320px;
+}
+.summary-y-axis {
+  position: relative;
+  min-height: 320px;
+}
+.summary-y-tick {
+  position: absolute;
+  right: 0;
+  transform: translateY(50%);
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.summary-chart {
+  position: relative;
+  min-height: 320px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)),
+    var(--bg2);
+  padding: 16px 18px 20px;
+  overflow: hidden;
+}
+.summary-grid-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed rgba(255,255,255,0.08);
+}
+.summary-x-axis {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.summary-svg {
+  position: absolute;
+  inset: 16px 18px 20px;
+  width: calc(100% - 36px);
+  height: calc(100% - 36px);
+  overflow: visible;
+}
+.summary-line {
+  fill: none;
+  stroke-width: 3;
+}
+.summary-line.linear { stroke: #ff6b6b; }
+.summary-line.binary { stroke: #4db8ff; }
+.summary-line.hash   { stroke: #00ff88; }
+.summary-dot {
+  stroke: #071014;
+  stroke-width: 2;
+}
+.summary-dot.linear { fill: #ff6b6b; }
+.summary-dot.binary { fill: #4db8ff; }
+.summary-dot.hash   { fill: #00ff88; }
+.summary-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.summary-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 10px;
+  color: var(--muted2);
+  background: rgba(255,255,255,0.03);
+}
+.summary-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+.summary-legend-swatch.linear { background: #ff6b6b; }
+.summary-legend-swatch.binary { background: #4db8ff; }
+.summary-legend-swatch.hash   { background: #00ff88; }
+.summary-metric {
+  display: inline-block;
+  margin-left: 6px;
+  color: var(--text);
+}
+.summary-caption {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--muted2);
+  line-height: 1.8;
+}
 </style>
 </head>
 <body>
@@ -434,8 +547,8 @@ body {
   <div class="tab active" data-tab="0">01 · Linear Search</div>
   <div class="tab" data-tab="1">02 · Binary Search</div>
   <div class="tab" data-tab="2">03 · Hash Search</div>
+  <div class="tab" data-tab="3">04 · Summary</div>
 </div>
-
 
 <!-- ══════════════════════════════════════
   TAB 1 — LINEAR SEARCH
@@ -944,6 +1057,72 @@ var match = getFromTable(table, "grace");</code></pre>
 </div>
 
 
+<div class="panels" id="panel-3">
+
+  <div class="panel">
+    <div class="panel-label">Concept · 04</div>
+    <div class="panel-title">Search <span>Summary</span></div>
+
+    <div class="cb">
+      <div class="cb-label">What this compares</div>
+      <p>This panel compares the three search strategies against the same dataset size <code>n</code>. Linear search grows directly with the number of records, binary search grows with the number of halvings needed, and hash lookup stays nearly flat for exact-match average-case retrieval.</p>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">How to read the graph</div>
+      <p>The y-axis shows <em>concrete operation counts</em> for the selected dataset size. Each bar also shows the matching Big O label, so you can connect the abstract complexity class to a real number of comparisons or slot checks.</p>
+      <p>For this summary view, the comparison uses representative costs: linear worst-case <code>n</code>, binary worst-case <code>ceil(log2(n))</code>, and hash average-case <code>1</code>. Hash collision worst-cases still exist, but they are intentionally excluded here because they are not the normal operating case of a healthy hash table.</p>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">What changes as n grows</div>
+      <p>Moving from <code>1,024</code> records to <code>1 trillion</code> records barely changes binary search and almost does nothing to hash lookup, but it makes linear search explode. That contrast is the main reason production systems sort data, build indexes, or use hash maps instead of scanning raw lists repeatedly.</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">Playground · 04</div>
+
+    <div class="pg-section">
+      <label class="pg-label">Number of records</label>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end">
+        <input class="pg-input" id="sum-records" type="number" min="1024" max="1000000000000" step="1" value="1048576">
+        <div class="output-box" id="sum-records-out" style="min-width:180px"><span class="dim">1,048,576 records</span></div>
+      </div>
+      <input class="summary-range" id="sum-records-slider" type="range" min="10" max="40" step="1" value="20">
+      <div class="summary-scale">
+        <span>2^10 = 1,024</span>
+        <span>2^40 ≈ 1.1T</span>
+      </div>
+      <div class="summary-caption">Use the slider for exponential jumps across the full range, or type an exact record count manually.</div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="pg-section">
+      <label class="pg-label">Comparative cost graph — record count on x, log-scale operations on y</label>
+      <div class="summary-chart-shell">
+        <div class="summary-y-axis" id="sum-y-axis"></div>
+        <div class="summary-chart" id="sum-chart"></div>
+      </div>
+      <div class="summary-x-axis">
+        <span>2^10 = 1,024</span>
+        <span>2^20 = 1,048,576</span>
+        <span>2^30 ≈ 1.07B</span>
+        <span>2^40 ≈ 1.1T</span>
+      </div>
+      <div class="summary-legend">
+        <div class="summary-legend-item"><span class="summary-legend-swatch linear"></span><span>Linear · O(n)</span></div>
+        <div class="summary-legend-item"><span class="summary-legend-swatch binary"></span><span>Binary · O(log n)</span></div>
+        <div class="summary-legend-item"><span class="summary-legend-swatch hash"></span><span>Hash · O(1)</span></div>
+      </div>
+    </div>
+
+    <div class="output-box" id="sum-summary" style="margin-top:14px"><span class="dim">Comparison summary will appear here.</span></div>
+  </div>
+</div>
+
+
 <script>
 /* ============================================================
   TAB SWITCHER
@@ -1382,6 +1561,151 @@ var match = getFromTable(table, "grace");</code></pre>
   // Initialise on load
   initTable(11);
 })();
+
+
+/* ============================================================
+  TAB 4 - SUMMARY
+============================================================ */
+(function () {
+  var recordsEl   = document.getElementById('sum-records');
+  var sliderEl    = document.getElementById('sum-records-slider');
+  var recordsOut  = document.getElementById('sum-records-out');
+  var chartEl     = document.getElementById('sum-chart');
+  var axisEl      = document.getElementById('sum-y-axis');
+  var summaryEl   = document.getElementById('sum-summary');
+  var MIN_RECORDS = 1024;
+  var MAX_RECORDS = 1000000000000;
+
+  function fmt(n) {
+    return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  function compact(n) {
+    if (n >= 1000000000000) return (n / 1000000000000).toFixed(2).replace(/\.00$/, '') + 'T';
+    if (n >= 1000000000) return (n / 1000000000).toFixed(2).replace(/\.00$/, '') + 'B';
+    if (n >= 1000000) return (n / 1000000).toFixed(2).replace(/\.00$/, '') + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(2).replace(/\.00$/, '') + 'K';
+    return fmt(n);
+  }
+
+  function clampRecords(n) {
+    return Math.max(MIN_RECORDS, Math.min(MAX_RECORDS, Math.floor(n || MIN_RECORDS)));
+  }
+
+  function nearestExponent(n) {
+    var exp = Math.round(Math.log(n) / Math.log(2));
+    return Math.max(10, Math.min(40, exp));
+  }
+
+  function recordMetrics(n) {
+    return [
+      { key: 'linear', name: 'Linear', bigO: 'O(n)', value: n, tone: 'linear' },
+      { key: 'binary', name: 'Binary', bigO: 'O(log n)', value: Math.max(1, Math.ceil(Math.log(n) / Math.log(2))), tone: 'binary' },
+      { key: 'hash', name: 'Hash', bigO: 'O(1)', value: 1, tone: 'hash' }
+    ];
+  }
+
+  function chartSeries() {
+    var exponents = [10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40];
+    return exponents.map(function (exp) {
+      var n = Math.pow(2, exp);
+      return { exp: exp, n: n, metrics: recordMetrics(n) };
+    });
+  }
+
+  function pointX(exp) {
+    return ((exp - 10) / 30) * 100;
+  }
+
+  function pointY(value) {
+    return 100 - ((Math.log(value) / Math.log(10)) / 12) * 100;
+  }
+
+  function buildPath(points) {
+    return points.map(function (point, index) {
+      return (index === 0 ? 'M' : 'L') + point.x.toFixed(2) + ' ' + point.y.toFixed(2);
+    }).join(' ');
+  }
+
+  function renderAxis() {
+    var ticks = [1, 10, 100, 1000, 1000000, 1000000000, 1000000000000];
+    var html = '';
+    ticks.forEach(function (value) {
+      html += '<div class="summary-y-tick" style="bottom:' + pointY(value) + '%">' + compact(value) + '</div>';
+    });
+    axisEl.innerHTML = html;
+  }
+
+  function renderChart(n) {
+    var metrics = recordMetrics(n);
+    var series = chartSeries();
+    var gridHtml = '';
+    var svgParts = [];
+    var keys = [
+      { key: 'linear', tone: 'linear' },
+      { key: 'binary', tone: 'binary' },
+      { key: 'hash', tone: 'hash' }
+    ];
+
+    renderAxis();
+
+    [1, 10, 100, 1000, 1000000, 1000000000, 1000000000000].forEach(function (value) {
+      gridHtml += '<div class="summary-grid-line" style="bottom:' + pointY(value) + '%"></div>';
+    });
+
+    keys.forEach(function (entry) {
+      var points = series.map(function (item) {
+        var metric = item.metrics.filter(function (m) { return m.key === entry.key; })[0];
+        return { x: pointX(item.exp), y: pointY(metric.value), value: metric.value };
+      });
+
+      svgParts.push('<path class="summary-line ' + entry.tone + '" d="' + buildPath(points) + '"></path>');
+      points.forEach(function (point) {
+        svgParts.push('<circle class="summary-dot ' + entry.tone + '" cx="' + point.x.toFixed(2) + '" cy="' + point.y.toFixed(2) + '" r="1.8"></circle>');
+      });
+    });
+
+    var highlightExp = nearestExponent(n);
+    var highlightX = pointX(highlightExp);
+    svgParts.push('<line x1="' + highlightX.toFixed(2) + '" y1="0" x2="' + highlightX.toFixed(2) + '" y2="100" stroke="rgba(255,255,255,0.16)" stroke-dasharray="3 3"></line>');
+
+    chartEl.innerHTML = gridHtml + '<svg class="summary-svg" viewBox="0 0 100 100" preserveAspectRatio="none">' + svgParts.join('') + '</svg>';
+
+    recordsOut.innerHTML =
+      '<div class="row"><span class="dim">records</span><span class="summary-metric">' + fmt(n) + '</span></div>' +
+      '<div class="row"><span class="dim">scale</span><span class="summary-metric">2^' + nearestExponent(n) + ' approx ' + compact(Math.pow(2, nearestExponent(n))) + '</span></div>';
+
+    summaryEl.innerHTML =
+      '<div class="row"><span class="dim">linear worst-case</span><span class="v">' + fmt(metrics[0].value) + ' comparisons</span></div>' +
+      '<div class="row"><span class="dim">binary worst-case</span><span class="va">' + fmt(metrics[1].value) + ' midpoint checks</span></div>' +
+      '<div class="row"><span class="dim">hash average-case</span><span class="vb">' + fmt(metrics[2].value) + ' slot check</span></div>' +
+      '<div class="summary-caption">The line chart uses record count on the x-axis and a log-scale operation count on the y-axis. Linear climbs fastest, binary rises slowly, and hash stays nearly flat.</div>';
+  }
+
+  function syncFromSlider() {
+    var exp = parseInt(sliderEl.value, 10);
+    var n = Math.pow(2, exp);
+    recordsEl.value = n;
+    renderChart(n);
+  }
+
+  function syncFromInput() {
+    var n = clampRecords(parseFloat(recordsEl.value));
+    recordsEl.value = n;
+    sliderEl.value = nearestExponent(n);
+    renderChart(n);
+  }
+
+  sliderEl.addEventListener('input', syncFromSlider);
+  recordsEl.addEventListener('input', syncFromInput);
+  recordsEl.addEventListener('change', syncFromInput);
+
+  syncFromInput();
+})();
 </script>
 </body>
 </html>
+
+
+
+
