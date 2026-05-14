@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search Algorithm Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #070b0f;
+  --bg2:       #0d1318;
+  --bg3:       #121920;
+  --bg4:       #1a2330;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.12);
+  --text:      #d4e0ec;
+  --muted:     #4a6070;
+  --muted2:    #6a8090;
+  --green:     #00ff88;
+  --greendim:  rgba(0,255,136,0.08);
+  --greenbrd:  rgba(0,255,136,0.22);
+  --amber:     #ffb347;
+  --amberdim:  rgba(255,179,71,0.08);
+  --amberbrd:  rgba(255,179,71,0.22);
+  --blue:      #4db8ff;
+  --bluedim:   rgba(77,184,255,0.08);
+  --bluebrd:   rgba(77,184,255,0.22);
+  --red:       #ff6b6b;
+  --reddim:    rgba(255,107,107,0.08);
+  --redbrd:    rgba(255,107,107,0.22);
+  --purple:    #c084fc;
+  --mono:      'JetBrains Mono', monospace;
+  --display:   'Syne', sans-serif;
+  --radius:    8px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Header ── */
+.header {
+  padding: 18px 32px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.header-title {
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+.header-sub {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+.home-link {
+  margin-left: auto;
+  color: var(--green);
+  text-decoration: none;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+.home-link:hover { color: var(--text); }
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+.tab {
+  padding: 13px 22px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color .15s, border-color .15s;
+  user-select: none;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+/* ── Two-panel layout ── */
+.panels {
+  display: none;
+  grid-template-columns: 1fr 1fr;
+  height: calc(100vh - 93px);
+}
+.panels.active { display: grid; }
+
+.panel {
+  padding: 26px 30px;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+}
+.panel:last-child { border-right: none; }
+
+/* ── Panel labels ── */
+.panel-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+.panel-title {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 16px;
+}
+.panel-title span { color: var(--green); }
+
+/* ── Concept blocks ── */
+.cb {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.cb-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 9px;
+}
+.cb p {
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--muted2);
+}
+.cb p + p { margin-top: 8px; }
+.cb em { color: var(--text); font-style: normal; }
+.cb code {
+  background: var(--bg4);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--green);
+}
+
+/* ── Complexity table ── */
+.cplx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 10px;
+}
+.cplx-table th {
+  padding: 7px 10px;
+  text-align: left;
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border2);
+}
+.cplx-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted2);
+}
+.cplx-table td:first-child { color: var(--text); }
+.cplx-table tr:last-child td { border-bottom: none; }
+.hi-green { color: var(--green) !important; font-weight: 600; }
+.hi-amber { color: var(--amber) !important; font-weight: 600; }
+.hi-red   { color: var(--red)   !important; font-weight: 600; }
+
+/* ── Controls ── */
+.pg-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+.pg-input {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 9px 13px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s;
+}
+.pg-input:focus { border-color: var(--greenbrd); }
+.pg-input::placeholder { color: var(--muted); }
+
+.pg-section { margin-bottom: 18px; }
+
+.btn-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.btn {
+  padding: 8px 16px;
+  background: var(--greendim);
+  border: 1px solid var(--greenbrd);
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--green);
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn:hover { background: rgba(0,255,136,.15); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn.amber { background: var(--amberdim); border-color: var(--amberbrd); color: var(--amber); }
+.btn.amber:hover { background: rgba(255,179,71,.15); }
+.btn.blue  { background: var(--bluedim);  border-color: var(--bluebrd);  color: var(--blue); }
+.btn.blue:hover  { background: rgba(77,184,255,.15); }
+.btn.red   { background: var(--reddim);   border-color: var(--redbrd);   color: var(--red); }
+
+.output-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 13px 15px;
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted2);
+  min-height: 44px;
+  word-break: break-all;
+}
+.output-box .row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px; }
+.output-box .row:last-child { margin-bottom: 0; }
+.v  { color: var(--green);  font-weight: 500; }
+.va { color: var(--amber);  font-weight: 500; }
+.vb { color: var(--blue);   font-weight: 500; }
+.vr { color: var(--red);    font-weight: 500; }
+.vp { color: var(--purple); font-weight: 500; }
+.dim { color: var(--muted); }
+
+.status {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-top: 5px;
+}
+.status.ok  { background: var(--greendim); color: var(--green); border: 1px solid var(--greenbrd); }
+.status.err { background: var(--reddim);   color: var(--red);   border: 1px solid var(--redbrd); }
+.status.inf { background: var(--bluedim);  color: var(--blue);  border: 1px solid var(--bluebrd); }
+.status.wrn { background: var(--amberdim); color: var(--amber); border: 1px solid var(--amberbrd); }
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+/* ── Linear search scan bar ── */
+.scan-track {
+  width: 100%;
+  height: 28px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  margin-top: 8px;
+}
+.scan-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(77,184,255,.25), rgba(77,184,255,.5));
+  width: 0%;
+  transition: width .1s linear;
+  border-right: 2px solid var(--blue);
+}
+.scan-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--text);
+  pointer-events: none;
+}
+
+/* ── Binary search bar ── */
+.bs-track-wrap {
+  margin-top: 10px;
+  position: relative;
+}
+.bs-track {
+  width: 100%;
+  height: 36px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+.bs-seg {
+  position: absolute;
+  top: 0; bottom: 0;
+  transition: left .35s ease, width .35s ease, background .35s;
+}
+.bs-seg.eliminated { background: rgba(255,107,107,.12); }
+.bs-seg.active     { background: rgba(77,184,255,.18); border-left: 2px solid var(--blue); border-right: 2px solid var(--blue); }
+.bs-mid-marker {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: var(--amber);
+  transition: left .35s ease;
+  z-index: 2;
+}
+.bs-mid-label {
+  position: absolute;
+  top: -18px;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: var(--amber);
+  white-space: nowrap;
+}
+.bs-found-marker {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 3px;
+  background: var(--green);
+  z-index: 3;
+  display: none;
+}
+
+/* ── Hash map slots ── */
+.hm-grid {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+}
+.hm-slot {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.hm-slot.active  { border-color: var(--amberbrd); box-shadow: 0 0 0 2px var(--amberdim); }
+.hm-slot.hit     { border-color: var(--greenbrd); box-shadow: 0 0 0 2px var(--greendim); }
+.hm-slot.occupied{ border-color: rgba(77,184,255,.3); }
+.hm-slot-idx {
+  background: var(--bg4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 600;
+  border-right: 1px solid var(--border);
+}
+.hm-slot.active   .hm-slot-idx { color: var(--amber); }
+.hm-slot.hit      .hm-slot-idx { color: var(--green); }
+.hm-slot.occupied .hm-slot-idx { color: var(--blue); }
+.hm-slot-body {
+  padding: 7px 11px;
+  background: var(--bg2);
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">Search Lab</div>
+  <div class="header-sub">Linear · Binary · Hash — interactive algorithm exploration</div>
+  <a href="index.html" class="home-link">← Back to overview</a>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="0">01 · Linear Search</div>
+  <div class="tab" data-tab="1">02 · Binary Search</div>
+  <div class="tab" data-tab="2">03 · Hash Search</div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+  TAB 1 — LINEAR SEARCH
+══════════════════════════════════════ -->
+<div class="panels active" id="panel-0">
+
+  <div class="panel">
+    <div class="panel-label">Concept · 01</div>
+    <div class="panel-title">Linear <span>Search</span></div>
+
+    <div class="cb">
+      <div class="cb-label">What is it?</div>
+      <p>Linear search scans every element from the start until the target is found or the list is exhausted. It requires no sorting and no pre-processing. It is the simplest possible search strategy.</p>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">Real World: Finding a Name in an Unsorted Register</div>
+      <p>Imagine a paper registration list for a conference of 50,000 attendees written in the order people registered — not alphabetically. To find "Zaw Hein Htet" you must read every name from the top until you reach his. On average you read half the list (25,000 names). In the worst case you read all 50,000.</p>
+      <p>A social network with <em>1 billion users</em> stored in insertion order would require up to 1 billion comparisons per login — roughly 4 seconds of CPU time per search at 250 million comparisons/second. At 1 million logins per second, that is 4 million CPU-seconds per second. Impossible.</p>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">Real World: Virus Scanner</div>
+      <p>An antivirus scanner checking every byte of a 4 GB drive against a signature list is performing linear search. With no index, it must inspect every byte. This is why full scans take hours — and why indexes and bloom filters are added to accelerate real scanners.</p>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">Complexity</div>
+      <table class="cplx-table">
+        <tr><th>Case</th><th>Comparisons</th><th>Real example (n = 1 billion)</th></tr>
+        <tr><td>Best</td><td class="hi-green">O(1)</td><td class="dim">Target is the first element</td></tr>
+        <tr><td>Average</td><td class="hi-amber">O(n/2)</td><td class="dim">500 million comparisons</td></tr>
+        <tr><td>Worst</td><td class="hi-red">O(n)</td><td class="dim">1 billion comparisons — ~4 seconds</td></tr>
+      </table>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">When to use it</div>
+      <p>Linear search is appropriate when the dataset is <em>small</em> (under ~1,000 elements), <em>unsorted</em> and sorting is too expensive, or the search happens only once. For any repeated search over large data, a sorted structure or hash map is always faster.</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">Playground · 01</div>
+
+    <div class="pg-section">
+      <label class="pg-label">Dataset size</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <input class="pg-input" id="ls-size" type="number" value="10000" min="100" max="5000000" placeholder="e.g. 10000">
+        <button class="btn" id="ls-gen-btn" style="margin-top:0">Generate dataset</button>
+      </div>
+      <div class="output-box" id="ls-gen-out"><span class="dim">Click Generate to create a dataset of random user IDs.</span></div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="pg-section">
+      <label class="pg-label">Search key</label>
+      <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end">
+        <input class="pg-input" id="ls-key" type="text" placeholder="Enter ID or leave blank for random">
+        <button class="btn blue" id="ls-random-btn">Random</button>
+        <button class="btn" id="ls-search-btn">Search</button>
+      </div>
+    </div>
+
+    <div class="pg-section">
+      <label class="pg-label">Scan progress</label>
+      <div class="scan-track">
+        <div class="scan-fill" id="ls-fill"></div>
+        <div class="scan-label" id="ls-scan-label">—</div>
+      </div>
+    </div>
+
+    <div class="output-box" id="ls-result"><span class="dim">Generate a dataset then run a search.</span></div>
+
+    <hr class="divider">
+
+    <div class="pg-section">
+      <label class="pg-label">Worst-case time estimate by dataset size</label>
+      <div class="output-box" id="ls-scale-out" style="font-size:11px;line-height:1.9">
+        <div class="row"><span class="dim">1,000 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;records →</span><span class="va">~0.004 ms</span></div>
+        <div class="row"><span class="dim">100,000 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;records →</span><span class="va">~0.4 ms</span></div>
+        <div class="row"><span class="dim">1,000,000 &nbsp;&nbsp;&nbsp;records →</span><span class="va">~4 ms</span></div>
+        <div class="row"><span class="dim">100,000,000 &nbsp;records →</span><span class="va">~400 ms</span></div>
+        <div class="row"><span class="dim">1,000,000,000 records →</span><span class="vr">~4,000 ms (4 seconds per query)</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+  TAB 2 — BINARY SEARCH
+══════════════════════════════════════ -->
+<div class="panels" id="panel-1">
+
+  <div class="panel">
+    <div class="panel-label">Concept · 02</div>
+    <div class="panel-title">Binary <span>Search</span></div>
+
+    <div class="cb">
+      <div class="cb-label">What is it?</div>
+      <p>Binary search works on a <em>sorted</em> dataset. At each step it picks the middle element. If the target is smaller, it discards the right half. If larger, it discards the left half. Each comparison eliminates half the remaining candidates.</p>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">Real World: Dictionary Lookup</div>
+      <p>Nobody starts at page 1 of a dictionary to find "zebra." You open near the end, see "M," realise the target is to the right, open further right, see "U," narrow again. You find a 300,000-word dictionary in about 18 page-opens — <code>log₂(300,000) ≈ 18</code>.</p>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">Real World: Git bisect</div>
+      <p>Git's <code>bisect</code> command finds which commit introduced a bug using binary search over commit history. With 1 million commits, it finds the culprit in at most 20 tests — not 1 million. Every developer uses this without necessarily knowing the name of the algorithm.</p>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">Complexity</div>
+      <table class="cplx-table">
+        <tr><th>Case</th><th>Comparisons</th><th>Real example (n = 1 billion)</th></tr>
+        <tr><td>Best</td><td class="hi-green">O(1)</td><td class="dim">Target is the midpoint</td></tr>
+        <tr><td>Average</td><td class="hi-green">O(log n)</td><td class="dim">~30 comparisons</td></tr>
+        <tr><td>Worst</td><td class="hi-green">O(log n)</td><td class="dim">30 comparisons — microseconds</td></tr>
+      </table>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">The cost: sorting</div>
+      <p>Binary search requires a sorted array. Sorting <em>n</em> elements costs <code>O(n log n)</code>. This upfront cost is paid once; every subsequent search costs only <code>O(log n)</code>. For any dataset searched more than once, the trade-off is always worth it.</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">Playground · 02</div>
+
+    <div class="pg-section">
+      <label class="pg-label">Dataset — sorted integers</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <input class="pg-input" id="bs-size" type="number" value="64" min="8" max="512" placeholder="Records (max 512)">
+        <button class="btn" id="bs-gen-btn">Generate &amp; sort</button>
+      </div>
+      <div class="output-box" id="bs-gen-out"><span class="dim">Generate a sorted dataset to begin.</span></div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="pg-section">
+      <label class="pg-label">Search key</label>
+      <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:end">
+        <input class="pg-input" id="bs-key" type="text" placeholder="Value or leave blank for random">
+        <button class="btn blue" id="bs-random-btn">Random</button>
+        <button class="btn" id="bs-search-btn">Search</button>
+      </div>
+    </div>
+
+    <div class="pg-section">
+      <label class="pg-label">Search space — narrowing each iteration</label>
+      <div class="bs-track-wrap">
+        <div class="bs-track" id="bs-track">
+          <div class="bs-seg" id="bs-left-elim"  style="left:0;width:0;background:rgba(255,107,107,.12)"></div>
+          <div class="bs-seg" id="bs-right-elim" style="right:0;width:0;background:rgba(255,107,107,.12);left:auto"></div>
+          <div class="bs-seg active" id="bs-active" style="left:0;width:100%"></div>
+          <div class="bs-mid-marker" id="bs-mid" style="left:50%;display:none">
+            <div class="bs-mid-label" id="bs-mid-label">mid</div>
+          </div>
+          <div class="bs-found-marker" id="bs-found"></div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:10px;color:var(--muted)">
+        <span id="bs-range-left">—</span>
+        <span id="bs-range-right">—</span>
+      </div>
+    </div>
+
+    <div class="output-box" id="bs-step-log" style="max-height:200px;overflow-y:auto"><span class="dim">Steps will appear here.</span></div>
+
+    <div class="output-box" id="bs-result" style="margin-top:8px"><span class="dim">Run a search to see the result.</span></div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+  TAB 3 — HASH SEARCH
+══════════════════════════════════════ -->
+<div class="panels" id="panel-2">
+
+  <div class="panel">
+    <div class="panel-label">Concept · 03</div>
+    <div class="panel-title">Hash <span>Search</span></div>
+
+    <div class="cb">
+      <div class="cb-label">What is it?</div>
+      <p>Hash search converts the key directly to an array index using a hash function. Rather than scanning (linear) or narrowing (binary), it jumps to the exact slot in <em>one step</em>. Average case is <code>O(1)</code> — constant time regardless of dataset size.</p>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">Real World: Database Index</div>
+      <p>When you run <code>SELECT * FROM users WHERE username = 'alice'</code>, a hash index on the username column converts 'alice' to a slot number and retrieves the row directly — no row-by-row scan. PostgreSQL, MySQL, and Redis all use hash indexes for exact-match lookups.</p>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">Real World: DNS Resolution</div>
+      <p>Your browser converts "google.com" to an IP address using a local DNS cache — a hash map of domain → IP. The lookup is instant regardless of how many domains are cached, because the domain name is hashed directly to a cache slot.</p>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">The three steps</div>
+      <p><em>Step 1 — Hash the key:</em> convert the key string to a number by summing or combining char codes.</p>
+      <p><em>Step 2 — Division method:</em> <code>slot = hash(key) mod slotCount</code> — clamp the hash to a valid array index.</p>
+      <p><em>Step 3 — Check the slot:</em> if the slot contains the key, return the value. If empty, the key does not exist. If occupied by a different key, a <em>collision</em> occurred — probe the next slot.</p>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">Complexity</div>
+      <table class="cplx-table">
+        <tr><th>Case</th><th>Steps</th><th>Note</th></tr>
+        <tr><td>Best / Average</td><td class="hi-green">O(1)</td><td class="dim">Direct slot hit, no collision</td></tr>
+        <tr><td>Collision</td><td class="hi-amber">O(k)</td><td class="dim">k = chain length at that slot</td></tr>
+        <tr><td>Worst (all collide)</td><td class="hi-red">O(n)</td><td class="dim">Degrades to linear — rare with good hash</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">Playground · 03</div>
+
+    <div class="pg-section">
+      <label class="pg-label">Hash table configuration</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <label class="pg-label" style="margin-top:6px">Slot count (default 11 — prime)</label>
+          <input class="pg-input" id="hs-slots" type="number" value="11" min="2" max="64">
+        </div>
+        <div>
+          <label class="pg-label" style="margin-top:6px"></label>
+          <button class="btn" id="hs-init-btn" style="width:100%;margin-top:20px">Initialise table</button>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="pg-section">
+      <label class="pg-label">Insert keys into table</label>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end">
+        <input class="pg-input" id="hs-insert-key" type="text" placeholder="e.g. alice, bob, carol">
+        <button class="btn" id="hs-insert-btn">Insert</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn amber" id="hs-bulk-btn">Insert 5 sample names</button>
+        <button class="btn red" id="hs-clear-btn">Clear table</button>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="pg-section">
+      <label class="pg-label">Search key</label>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end">
+        <input class="pg-input" id="hs-search-key" type="text" placeholder="Key to search for">
+        <button class="btn blue" id="hs-search-btn">Search</button>
+      </div>
+    </div>
+
+    <div class="output-box" id="hs-steps" style="margin-bottom:10px;min-height:80px"><span class="dim">Insert keys then search.</span></div>
+
+    <label class="pg-label">Hash table slots</label>
+    <div class="hm-grid" id="hs-grid"></div>
+  </div>
+</div>
+
+
+<script>
+/* ============================================================
+  TAB SWITCHER
+============================================================ */
+(function () {
+  var tabs   = document.querySelectorAll('.tab');
+  var panels = document.querySelectorAll('.panels');
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      tabs.forEach(function (t)   { t.classList.remove('active'); });
+      panels.forEach(function (p) { p.classList.remove('active'); });
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+})();
+
+
+/* ============================================================
+  TAB 1 — LINEAR SEARCH
+============================================================ */
+(function () {
+  var sizeEl    = document.getElementById('ls-size');
+  var genBtn    = document.getElementById('ls-gen-btn');
+  var keyEl     = document.getElementById('ls-key');
+  var randomBtn = document.getElementById('ls-random-btn');
+  var searchBtn = document.getElementById('ls-search-btn');
+  var genOut    = document.getElementById('ls-gen-out');
+  var fill      = document.getElementById('ls-fill');
+  var scanLabel = document.getElementById('ls-scan-label');
+  var resultEl  = document.getElementById('ls-result');
+
+  var dataset   = [];
+  var searching = false;
+  var stopFlag  = false;
+
+  function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+  genBtn.addEventListener('click', function () {
+    var n = Math.max(100, Math.min(5000000, parseInt(sizeEl.value) || 10000));
+    sizeEl.value = n;
+    dataset = [];
+    // Generate unique numeric user IDs
+    var set = new Set();
+    while (set.size < n) {
+      set.add(Math.floor(Math.random() * n * 10) + 1);
+    }
+    dataset = Array.from(set);
+    fill.style.width  = '0%';
+    scanLabel.textContent = '—';
+    resultEl.innerHTML = '<span class="dim">Dataset ready.</span>';
+    genOut.innerHTML =
+      '<div class="row"><span class="dim">records &nbsp;</span><span class="v">' + fmt(n) + '</span></div>' +
+      '<div class="row"><span class="dim">range &nbsp;&nbsp;&nbsp;</span><span class="va">1 – ' + fmt(n * 10) + '</span></div>' +
+      '<div class="row"><span class="dim">order &nbsp;&nbsp;&nbsp;</span><span class="vb">insertion (unsorted)</span></div>' +
+      '<div class="row"><span class="dim">preview &nbsp;</span><span class="dim">' + dataset.slice(0, 5).join(', ') + ' ...</span></div>';
+  });
+
+  randomBtn.addEventListener('click', function () {
+    if (!dataset.length) { resultEl.innerHTML = '<span class="vr">Generate a dataset first.</span>'; return; }
+    var idx = Math.floor(Math.random() * dataset.length);
+    keyEl.value = dataset[idx];
+  });
+
+  // Web Worker for non-blocking linear search
+  var lsWorkerSrc = `
+    self.onmessage = function(e) {
+      var dataset = e.data.dataset;
+      var target  = e.data.target;
+      var n       = dataset.length;
+      var t0      = performance.now();
+      var found   = -1;
+      var REPORT  = Math.max(1, Math.floor(n / 200)); // ~200 progress updates
+
+      for (var i = 0; i < n; i++) {
+        if (dataset[i] == target) { found = i; break; }
+        if (i % REPORT === 0) {
+          self.postMessage({ type: 'progress', i: i, n: n });
+        }
+      }
+      var elapsed = performance.now() - t0;
+      self.postMessage({ type: 'done', found: found, elapsed: elapsed, n: n,
+                         value: found >= 0 ? dataset[found] : null });
+    };
+  `;
+  var lsBlob   = new Blob([lsWorkerSrc], { type: 'application/javascript' });
+  var lsWURL   = URL.createObjectURL(lsBlob);
+  var lsWorker = null;
+
+  searchBtn.addEventListener('click', function () {
+    if (!dataset.length) { resultEl.innerHTML = '<span class="vr">Generate a dataset first.</span>'; return; }
+    var key = keyEl.value.trim();
+    if (!key) { resultEl.innerHTML = '<span class="vr">Enter a key or click Random.</span>'; return; }
+
+    if (lsWorker) { lsWorker.terminate(); }
+    lsWorker = new Worker(lsWURL);
+    fill.style.width = '0%';
+    scanLabel.textContent = 'Scanning…';
+    resultEl.innerHTML = '<span class="dim">Searching for <span class="v">' + key + '</span>…</span>';
+    searchBtn.disabled = true;
+
+    lsWorker.onmessage = function (e) {
+      var d = e.data;
+      if (d.type === 'progress') {
+        var pct = (d.i / d.n * 100).toFixed(1);
+        fill.style.width = pct + '%';
+        scanLabel.textContent = fmt(d.i) + ' / ' + fmt(d.n) + ' (' + pct + '%)';
+        return;
+      }
+      // done
+      fill.style.width = d.found >= 0 ? ((d.found / d.n) * 100).toFixed(1) + '%' : '100%';
+      scanLabel.textContent = d.found >= 0 ? 'Found at index ' + fmt(d.found) : 'Not found — scanned all ' + fmt(d.n);
+      var ms = d.elapsed.toFixed(3);
+      resultEl.innerHTML =
+        '<div class="row"><span class="dim">key &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="v">' + key + '</span></div>' +
+        '<div class="row"><span class="dim">dataset &nbsp;</span><span class="va">' + fmt(d.n) + ' records</span></div>' +
+        (d.found >= 0
+          ? '<div class="row"><span class="dim">index &nbsp;&nbsp;&nbsp;</span><span class="v">' + fmt(d.found) + '</span></div>' +
+            '<div class="row"><span class="dim">comparisons</span><span class="va">' + fmt(d.found + 1) + '</span></div>'
+          : '<div class="row"><span class="dim">comparisons</span><span class="vr">' + fmt(d.n) + ' (all)</span></div>') +
+        '<div class="row"><span class="dim">time &nbsp;&nbsp;&nbsp;&nbsp;</span><span class="vb">' + ms + ' ms</span></div>' +
+        '<div><span class="status ' + (d.found >= 0 ? 'ok' : 'err') + '">' + (d.found >= 0 ? 'Found' : 'Not found') + '</span></div>';
+      searchBtn.disabled = false;
+      lsWorker = null;
+    };
+
+    lsWorker.postMessage({ dataset: dataset, target: key });
+  });
+})();
+
+
+/* ============================================================
+  TAB 2 — BINARY SEARCH
+============================================================ */
+(function () {
+  var sizeEl    = document.getElementById('bs-size');
+  var genBtn    = document.getElementById('bs-gen-btn');
+  var keyEl     = document.getElementById('bs-key');
+  var randomBtn = document.getElementById('bs-random-btn');
+  var searchBtn = document.getElementById('bs-search-btn');
+  var genOut    = document.getElementById('bs-gen-out');
+  var stepLog   = document.getElementById('bs-step-log');
+  var resultEl  = document.getElementById('bs-result');
+  var track     = document.getElementById('bs-track');
+  var bsMid     = document.getElementById('bs-mid');
+  var bsMidLbl  = document.getElementById('bs-mid-label');
+  var bsFound   = document.getElementById('bs-found');
+  var bsActive  = document.getElementById('bs-active');
+  var bsRangeL  = document.getElementById('bs-range-left');
+  var bsRangeR  = document.getElementById('bs-range-right');
+
+  var dataset   = [];
+  var steps     = [];
+  var stepIdx   = 0;
+  var animTimer = null;
+
+  function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+  genBtn.addEventListener('click', function () {
+    var n = Math.max(8, Math.min(512, parseInt(sizeEl.value) || 64));
+    sizeEl.value = n;
+    var set = new Set();
+    while (set.size < n) { set.add(Math.floor(Math.random() * n * 3) + 1); }
+    dataset = Array.from(set).sort(function (a, b) { return a - b; });
+
+    // Reset visuals
+    bsMid.style.display = 'none';
+    bsFound.style.display = 'none';
+    bsActive.style.left  = '0'; bsActive.style.width = '100%';
+    bsRangeL.textContent = dataset[0];
+    bsRangeR.textContent = dataset[dataset.length - 1];
+    stepLog.innerHTML  = '<span class="dim">Steps will appear here.</span>';
+    resultEl.innerHTML = '<span class="dim">Dataset generated and sorted. Enter a key to search.</span>';
+
+    genOut.innerHTML =
+      '<div class="row"><span class="dim">records </span><span class="v">' + fmt(n) + '</span></div>' +
+      '<div class="row"><span class="dim">range &nbsp;&nbsp;</span><span class="va">' + dataset[0] + ' – ' + dataset[dataset.length - 1] + '</span></div>' +
+      '<div class="row"><span class="dim">order &nbsp;&nbsp;</span><span class="vb">sorted ascending</span></div>' +
+      '<div class="row"><span class="dim">preview </span><span class="dim">' + dataset.slice(0, 6).join(', ') + ' ...</span></div>';
+  });
+
+  randomBtn.addEventListener('click', function () {
+    if (!dataset.length) return;
+    // 70% chance to pick a value that exists, 30% random miss
+    if (Math.random() < 0.7) {
+      keyEl.value = dataset[Math.floor(Math.random() * dataset.length)];
+    } else {
+      keyEl.value = Math.floor(Math.random() * dataset[dataset.length - 1]) + 1;
+    }
+  });
+
+  // Pre-compute all steps
+  function computeSteps(arr, target) {
+    var result = [];
+    var lo = 0, hi = arr.length - 1;
+    while (lo <= hi) {
+      var mid = Math.floor((lo + hi) / 2);
+      result.push({ lo: lo, hi: hi, mid: mid, val: arr[mid] });
+      if (arr[mid] === target)  { result.push({ lo: lo, hi: hi, mid: mid, val: arr[mid], found: true }); break; }
+      else if (arr[mid] < target) { lo = mid + 1; }
+      else                        { hi = mid - 1; }
+    }
+    if (result.length === 0 || !result[result.length - 1].found) {
+      result.push({ notFound: true });
+    }
+    return result;
+  }
+
+  function renderStep(step, n) {
+    if (step.notFound) return;
+    var loP  = (step.lo  / n) * 100;
+    var hiP  = ((step.hi + 1) / n) * 100;
+    var midP = ((step.mid + 0.5) / n) * 100;
+
+    bsActive.style.left  = loP  + '%';
+    bsActive.style.width = (hiP - loP) + '%';
+    bsMid.style.left     = midP + '%';
+    bsMid.style.display  = 'block';
+    bsMidLbl.textContent = 'mid=' + step.val;
+    bsRangeL.textContent = dataset[step.lo];
+    bsRangeR.textContent = dataset[step.hi];
+
+    if (step.found) {
+      bsFound.style.left    = midP + '%';
+      bsFound.style.display = 'block';
+      bsActive.style.background = 'rgba(0,255,136,.15)';
+    }
+  }
+
+  function animateSteps() {
+    if (stepIdx >= steps.length) return;
+    var step = steps[stepIdx];
+    var n    = dataset.length;
+
+    renderStep(step, n);
+
+    // Append log entry
+    var entry = document.createElement('div');
+    entry.className = 'row';
+    if (step.notFound) {
+      entry.innerHTML = '<span class="vr">✗ Not found — search space exhausted</span>';
+    } else if (step.found) {
+      entry.innerHTML =
+        '<span class="dim">Step ' + (stepIdx + 1) + ':</span>' +
+        '<span class="dim">mid[' + step.mid + ']=</span><span class="v">' + step.val + '</span>' +
+        '<span class="v"> ✓ Found!</span>';
+    } else {
+      var dir = '';
+      if (stepIdx + 1 < steps.length && !steps[stepIdx + 1].notFound) {
+        dir = steps[stepIdx + 1].lo > step.lo
+          ? '<span class="vb"> → go right</span>'
+          : '<span class="va"> → go left</span>';
+      }
+      entry.innerHTML =
+        '<span class="dim">Step ' + (stepIdx + 1) + ':</span>' +
+        '<span class="dim">lo=' + step.lo + ' hi=' + step.hi + ' mid[' + step.mid + ']=</span>' +
+        '<span class="va">' + step.val + '</span>' + dir;
+    }
+    stepLog.appendChild(entry);
+    stepLog.scrollTop = stepLog.scrollHeight;
+
+    stepIdx++;
+    if (stepIdx < steps.length) {
+      animTimer = setTimeout(animateSteps, 600);
+    } else {
+      var last = steps[steps.length - 1];
+      if (last.found) {
+        resultEl.innerHTML =
+          '<div class="row"><span class="dim">target &nbsp;&nbsp;&nbsp;</span><span class="v">' + keyEl.value.trim() + '</span></div>' +
+          '<div class="row"><span class="dim">index &nbsp;&nbsp;&nbsp;&nbsp;</span><span class="v">' + last.mid + '</span></div>' +
+          '<div class="row"><span class="dim">steps &nbsp;&nbsp;&nbsp;&nbsp;</span><span class="va">' + (steps.length - 1) + '</span><span class="dim"> vs linear worst-case </span><span class="vr">' + fmt(dataset.length) + '</span></div>' +
+          '<div><span class="status ok">Found</span></div>';
+      } else {
+        resultEl.innerHTML =
+          '<div class="row"><span class="dim">target </span><span class="vr">' + keyEl.value.trim() + ' not in dataset</span></div>' +
+          '<div class="row"><span class="dim">steps &nbsp;</span><span class="va">' + (steps.length - 1) + '</span></div>' +
+          '<div><span class="status err">Not found</span></div>';
+      }
+      searchBtn.disabled = false;
+    }
+  }
+
+  searchBtn.addEventListener('click', function () {
+    if (!dataset.length) { resultEl.innerHTML = '<span class="vr">Generate a dataset first.</span>'; return; }
+    var key = parseInt(keyEl.value.trim());
+    if (isNaN(key)) { resultEl.innerHTML = '<span class="vr">Enter a numeric key.</span>'; return; }
+
+    if (animTimer) clearTimeout(animTimer);
+    stepIdx = 0;
+    steps   = computeSteps(dataset, key);
+
+    // Reset visuals
+    bsActive.style.left  = '0'; bsActive.style.width = '100%';
+    bsActive.style.background = 'rgba(77,184,255,.18)';
+    bsFound.style.display = 'none';
+    bsMid.style.display   = 'none';
+    stepLog.innerHTML = '';
+    resultEl.innerHTML = '<span class="dim">Searching…</span>';
+    searchBtn.disabled = true;
+
+    animTimer = setTimeout(animateSteps, 300);
+  });
+})();
+
+
+/* ============================================================
+  TAB 3 — HASH SEARCH
+============================================================ */
+(function () {
+  var slotsEl    = document.getElementById('hs-slots');
+  var initBtn    = document.getElementById('hs-init-btn');
+  var insertKey  = document.getElementById('hs-insert-key');
+  var insertBtn  = document.getElementById('hs-insert-btn');
+  var bulkBtn    = document.getElementById('hs-bulk-btn');
+  var clearBtn   = document.getElementById('hs-clear-btn');
+  var searchKey  = document.getElementById('hs-search-key');
+  var searchBtn  = document.getElementById('hs-search-btn');
+  var stepsEl    = document.getElementById('hs-steps');
+  var gridEl     = document.getElementById('hs-grid');
+
+  var table      = [];   // array of arrays (chaining)
+  var slotCount  = 11;
+
+  function charHash(str) {
+    var h = 0;
+    for (var i = 0; i < str.length; i++) { h = (h * 31 + str.charCodeAt(i)) >>> 0; }
+    return h;
+  }
+
+  function getSlot(key, size) {
+    return charHash(key) % size;
+  }
+
+  function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+  function initTable(n) {
+    slotCount = n;
+    table = [];
+    for (var i = 0; i < n; i++) { table.push([]); }
+    renderGrid(-1, false);
+    stepsEl.innerHTML = '<span class="dim">Table initialised with ' + n + ' slots.</span>';
+  }
+
+  function renderGrid(activeSlot, isHit) {
+    gridEl.innerHTML = '';
+    for (var i = 0; i < table.length; i++) {
+      var slot = table[i];
+      var cls  = 'hm-slot';
+      if (i === activeSlot && isHit)  cls += ' hit';
+      else if (i === activeSlot)       cls += ' active';
+      else if (slot.length > 0)        cls += ' occupied';
+
+      var body = slot.length === 0
+        ? '<span class="dim">—</span>'
+        : slot.map(function (e) {
+            return '<span class="vb">"' + e + '"</span>';
+          }).join(' <span class="dim">→</span> ');
+
+      var div = document.createElement('div');
+      div.className = cls;
+      div.innerHTML =
+        '<div class="hm-slot-idx">' + i + '</div>' +
+        '<div class="hm-slot-body">' + body + '</div>';
+      gridEl.appendChild(div);
+    }
+  }
+
+  function buildStepHTML(key, hashVal, slot, action, found, isCollision) {
+    var breakdown = key.split('').map(function (c) {
+      return '"' + c + '"(' + c.charCodeAt(0) + ')';
+    }).join(' + ');
+    var html =
+      '<div class="row"><span class="dim">key &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="v">"' + key + '"</span></div>' +
+      '<div class="row"><span class="dim">hash &nbsp;&nbsp;&nbsp;&nbsp;</span><span class="dim">char codes: </span><span class="va">' + breakdown + '</span></div>' +
+      '<div class="row"><span class="dim">hash val &nbsp;</span><span class="va">' + hashVal + '</span></div>' +
+      '<div class="row"><span class="dim">division &nbsp;</span><span class="va">' + hashVal + '</span><span class="dim"> mod </span><span class="vb">' + slotCount + '</span><span class="dim"> = </span><span class="v">' + slot + '</span></div>' +
+      '<div class="row"><span class="dim">slot &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="v">' + slot + '</span></div>';
+    if (isCollision)  html += '<div><span class="status wrn">Collision — chained at slot ' + slot + '</span></div>';
+    else if (found)   html += '<div><span class="status ok">' + action + '</span></div>';
+    else              html += '<div><span class="status err">' + action + '</span></div>';
+    return html;
+  }
+
+  initBtn.addEventListener('click', function () {
+    var n = Math.max(2, Math.min(64, parseInt(slotsEl.value) || 11));
+    slotsEl.value = n;
+    initTable(n);
+  });
+
+  insertBtn.addEventListener('click', function () {
+    var key = insertKey.value.trim();
+    if (!key) { stepsEl.innerHTML = '<span class="vr">Enter a key to insert.</span>'; return; }
+    var h    = charHash(key);
+    var slot = getSlot(key, slotCount);
+    var isCollision = table[slot].length > 0 && !table[slot].includes(key);
+    if (!table[slot].includes(key)) { table[slot].push(key); }
+    stepsEl.innerHTML = buildStepHTML(key, h, slot, 'Inserted', true, isCollision);
+    renderGrid(slot, false);
+    insertKey.value = '';
+  });
+
+  bulkBtn.addEventListener('click', function () {
+    var names = ['alice', 'bob', 'carol', 'dave', 'eve'];
+    var lastSlot = -1;
+    names.forEach(function (name) {
+      var slot = getSlot(name, slotCount);
+      if (!table[slot].includes(name)) { table[slot].push(name); }
+      lastSlot = slot;
+    });
+    stepsEl.innerHTML = '<span class="dim">Inserted: </span><span class="v">alice, bob, carol, dave, eve</span><br><span class="dim">Check slots for any collisions (chained entries).</span>';
+    renderGrid(-1, false);
+  });
+
+  clearBtn.addEventListener('click', function () {
+    initTable(slotCount);
+  });
+
+  searchBtn.addEventListener('click', function () {
+    var key = searchKey.value.trim();
+    if (!key) { stepsEl.innerHTML = '<span class="vr">Enter a key to search.</span>'; return; }
+    var h    = charHash(key);
+    var slot = getSlot(key, slotCount);
+    var found = table[slot].includes(key);
+    var chainLen = table[slot].length;
+
+    stepsEl.innerHTML = buildStepHTML(key, h, slot,
+      found
+        ? 'Found "' + key + '" at slot ' + slot + (chainLen > 1 ? ' (chain len=' + chainLen + ')' : '')
+        : '"' + key + '" not in table — slot ' + slot + ' ' + (chainLen === 0 ? 'is empty' : 'has different keys'),
+      found,
+      false
+    );
+    renderGrid(slot, found);
+  });
+
+  // Initialise on load
+  initTable(11);
+})();
+</script>
+</body>
+</html>
