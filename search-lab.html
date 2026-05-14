@@ -163,6 +163,32 @@ body {
 }
 
 /* ── Complexity table ── */
+.cb pre {
+  margin-top: 10px;
+  background: #0a1015;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  overflow-x: auto;
+  color: #cfe3f3;
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+.cb pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+  font-size: inherit;
+}
+.cb ul {
+  margin: 10px 0 0 18px;
+  color: var(--muted2);
+  font-size: 12.5px;
+  line-height: 1.75;
+}
+.cb li + li { margin-top: 6px; }
+
 .cplx-table {
   width: 100%;
   border-collapse: collapse;
@@ -450,6 +476,90 @@ body {
       <div class="cb-label">When to use it</div>
       <p>Linear search is appropriate when the dataset is <em>small</em> (under ~1,000 elements), <em>unsorted</em> and sorting is too expensive, or the search happens only once. For any repeated search over large data, a sorted structure or hash map is always faster.</p>
     </div>
+
+    <div class="cb">
+      <div class="cb-label">JScript Implementation Styles</div>
+      <p>All four examples below implement the same linear-search idea: inspect items one by one until the target is found. The difference is <em>control style</em>. The right choice depends on whether you need index access, early exit, a returned element, or a teaching-friendly implementation.</p>
+
+      <p><em>1. JScript <code>for</code> loop:</em> use this when you need the index, maximum control, or the clearest step-by-step form of the algorithm.</p>
+      <pre><code>var users = ["Ada", "Linus", "Grace", "Margaret"];
+var target = "Grace";
+var foundIndex = -1;
+
+for (var i = 0; i &lt; users.length; i++) {
+  if (users[i] === target) {
+    foundIndex = i;
+    break;
+  }
+}
+
+// foundIndex === 2</code></pre>
+      <ul>
+        <li>Concrete example: show that the program checks Ada, then Linus, then Grace, and stops at index 2.</li>
+        <li>Relevant choice: best when you want precise control over iteration count, indexes, and early exit.</li>
+      </ul>
+
+      <p><em>2. Array <code>forEach</code>:</em> use this for side effects such as logging or building a trace, not for a clean search API. It does not naturally stop the traversal once a match is found.</p>
+      <pre><code>var users = ["Ada", "Linus", "Grace", "Margaret"];
+var target = "Grace";
+var foundIndex = -1;
+
+users.forEach(function (name, index) {
+  if (foundIndex !== -1) return;
+  if (name === target) {
+    foundIndex = index;
+  }
+});
+
+// foundIndex === 2</code></pre>
+      <ul>
+        <li>Concrete example: log every visited element to a debug panel while still detecting the first match.</li>
+        <li>Relevant choice: acceptable for teaching traversal effects, but weaker than <code>for</code> for actual search logic because there is no real <code>break</code>.</li>
+      </ul>
+
+      <p><em>3. Array <code>find</code> function:</em> use this when you want the matching element itself and want the code to read like application logic instead of algorithm mechanics.</p>
+      <pre><code>var users = [
+  { id: 101, name: "Ada" },
+  { id: 102, name: "Linus" },
+  { id: 103, name: "Grace" }
+];
+
+var match = users.find(function (user) {
+  return user.id === 103;
+});
+
+// match === { id: 103, name: "Grace" }</code></pre>
+      <ul>
+        <li>Concrete example: find the first user record whose <code>id</code> matches the current login request.</li>
+        <li>Relevant choice: best for production-style code when readability matters more than exposing the low-level loop.</li>
+      </ul>
+
+      <p><em>4. Custom <code>find</code> implementation:</em> use this when teaching how built-ins work internally or when you want one reusable helper with your own matching rule.</p>
+      <pre><code>function findInArray(items, predicate) {
+  for (var i = 0; i &lt; items.length; i++) {
+    if (predicate(items[i], i, items)) {
+      return items[i];
+    }
+  }
+  return undefined;
+}
+
+var users = [
+  { id: 101, name: "Ada" },
+  { id: 102, name: "Linus" },
+  { id: 103, name: "Grace" }
+];
+
+var match = findInArray(users, function (user) {
+  return user.name === "Grace";
+});</code></pre>
+      <ul>
+        <li>Concrete example: teach that the built-in <code>find</code> is still just a linear scan wrapped behind a helper.</li>
+        <li>Relevant choice: best when abstraction is part of the lesson, or when you need custom behavior across multiple searches.</li>
+      </ul>
+
+      <p>Short rule: choose <code>for</code> for control, <code>forEach</code> for side-effect traversal, built-in <code>find</code> for clean application code, and custom <code>find</code> when you want to teach or encapsulate the algorithm.</p>
+    </div>
   </div>
 
   <div class="panel">
@@ -538,6 +648,81 @@ body {
     <div class="cb">
       <div class="cb-label">The cost: sorting</div>
       <p>Binary search requires a sorted array. Sorting <em>n</em> elements costs <code>O(n log n)</code>. This upfront cost is paid once; every subsequent search costs only <code>O(log n)</code>. For any dataset searched more than once, the trade-off is always worth it.</p>
+    </div>
+
+    <div class="cb">
+      <div class="cb-label">JScript Implementation Styles</div>
+      <p>Binary search has fewer useful iteration styles than linear search because the algorithm depends on direct index access and repeated midpoint calculation. In practice, the plain <em>while loop</em> is the relevant form, and helper functions are usually just wrappers around that same loop.</p>
+
+      <p><em>1. Index-controlled <code>while</code> loop:</em> this is the standard binary-search implementation because you must update <code>left</code>, <code>right</code>, and <code>mid</code> explicitly on every step.</p>
+      <pre><code>var numbers = [3, 8, 12, 21, 34, 55, 89];
+var target = 34;
+var left = 0;
+var right = numbers.length - 1;
+var foundIndex = -1;
+
+while (left &lt;= right) {
+  var mid = Math.floor((left + right) / 2);
+
+  if (numbers[mid] === target) {
+    foundIndex = mid;
+    break;
+  }
+
+  if (numbers[mid] &lt; target) {
+    left = mid + 1;
+  } else {
+    right = mid - 1;
+  }
+}
+
+// foundIndex === 4</code></pre>
+      <ul>
+        <li>Concrete example: searching for <code>34</code> checks <code>21</code>, then <code>55</code>, then lands on <code>34</code>.</li>
+        <li>Relevant choice: best when you want to teach exactly how the search interval shrinks.</li>
+      </ul>
+
+      <p><em>2. Recursive implementation:</em> this expresses the same logic in a more mathematical form, with each call representing the remaining half of the array.</p>
+      <pre><code>function binarySearch(items, target, left, right) {
+  if (left &gt; right) return -1;
+
+  var mid = Math.floor((left + right) / 2);
+
+  if (items[mid] === target) return mid;
+  if (items[mid] &lt; target) return binarySearch(items, target, mid + 1, right);
+  return binarySearch(items, target, left, mid - 1);
+}
+
+var numbers = [3, 8, 12, 21, 34, 55, 89];
+var foundIndex = binarySearch(numbers, 34, 0, numbers.length - 1);</code></pre>
+      <ul>
+        <li>Concrete example: each recursive call discards half the current range until only the matching slot remains.</li>
+        <li>Relevant choice: useful for explanation, but the iterative loop is usually clearer for production debugging.</li>
+      </ul>
+
+      <p><em>3. Wrapper function for repeated lookups:</em> application code often hides the control loop behind a reusable helper so callers only provide the sorted array and target.</p>
+      <pre><code>function findSortedUserId(sortedIds, targetId) {
+  var left = 0;
+  var right = sortedIds.length - 1;
+
+  while (left &lt;= right) {
+    var mid = Math.floor((left + right) / 2);
+    if (sortedIds[mid] === targetId) return mid;
+    if (sortedIds[mid] &lt; targetId) left = mid + 1;
+    else right = mid - 1;
+  }
+
+  return -1;
+}
+
+var ids = [101, 105, 110, 125, 140, 170];
+var index = findSortedUserId(ids, 125);</code></pre>
+      <ul>
+        <li>Concrete example: a user directory sorted by numeric ID can answer repeated searches with the same helper.</li>
+        <li>Relevant choice: best when sorting is already guaranteed and the search will happen many times.</li>
+      </ul>
+
+      <p>Short rule: binary search is mainly about interval control, so direct indexed loops and small wrappers are the practical JScript forms. Methods like <code>forEach</code> or <code>find</code> are the wrong fit because they scan linearly and throw away the algorithm's advantage.</p>
     </div>
   </div>
 
@@ -634,6 +819,72 @@ body {
 
   <div class="panel">
     <div class="panel-label">Playground · 03</div>
+
+    <div class="cb">
+      <div class="cb-label">JScript Implementation Styles</div>
+      <p>Hash search is less about iteration across the full dataset and more about <em>direct addressing</em>. The implementation style depends on whether you use a built-in object map, a built-in <code>Map</code>, or a teaching-oriented custom hash table.</p>
+
+      <p><em>1. Plain object lookup:</em> the simplest JScript-style hash search is to store values by key on an object and retrieve them directly.</p>
+      <pre><code>var userByName = {
+  ada: { id: 101, role: "admin" },
+  grace: { id: 102, role: "editor" },
+  linus: { id: 103, role: "viewer" }
+};
+
+var match = userByName["grace"];
+
+// match === { id: 102, role: "editor" }</code></pre>
+      <ul>
+        <li>Concrete example: look up the <code>grace</code> user record without scanning every user.</li>
+        <li>Relevant choice: best when keys are simple strings and you want the clearest demonstration of constant-time lookup.</li>
+      </ul>
+
+      <p><em>2. <code>Map</code> lookup:</em> use <code>Map</code> when keys are not limited to plain object property rules or when you want an explicit hash-map API.</p>
+      <pre><code>var sessions = new Map();
+sessions.set("token-101", { userId: 101, active: true });
+sessions.set("token-102", { userId: 102, active: true });
+
+var session = sessions.get("token-102");
+
+// session === { userId: 102, active: true }</code></pre>
+      <ul>
+        <li>Concrete example: retrieve the session attached to an API token in one lookup.</li>
+        <li>Relevant choice: better than a plain object when the codebase wants explicit insertion, lookup, and membership operations.</li>
+      </ul>
+
+      <p><em>3. Custom hash table implementation:</em> use this when teaching how the slot computation and collision handling actually work internally.</p>
+      <pre><code>function hash(key, size) {
+  var total = 0;
+  for (var i = 0; i &lt; key.length; i++) {
+    total += key.charCodeAt(i);
+  }
+  return total % size;
+}
+
+function getFromTable(table, key) {
+  var slot = hash(key, table.length);
+  var bucket = table[slot] || [];
+
+  for (var i = 0; i &lt; bucket.length; i++) {
+    if (bucket[i].key === key) {
+      return bucket[i].value;
+    }
+  }
+
+  return undefined;
+}
+
+var table = [];
+table[3] = [{ key: "grace", value: { id: 102, role: "editor" } }];
+
+var match = getFromTable(table, "grace");</code></pre>
+      <ul>
+        <li>Concrete example: compute the slot for <code>grace</code>, inspect that bucket, then scan only the collided entries inside it.</li>
+        <li>Relevant choice: best for explaining why average-case lookup is constant time but collision handling can introduce a tiny local linear scan.</li>
+      </ul>
+
+      <p>Short rule: use plain objects or <code>Map</code> for real application lookup, and use a custom table only when you need to explain the mechanics behind hashing and collisions.</p>
+    </div>
 
     <div class="pg-section">
       <label class="pg-label">Hash table configuration</label>
