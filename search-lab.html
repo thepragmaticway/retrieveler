@@ -485,14 +485,14 @@ body {
 }
 .summary-line {
   fill: none;
-  stroke-width: 3;
+  stroke-width: 0.7;
 }
 .summary-line.linear { stroke: #ff6b6b; }
 .summary-line.binary { stroke: #4db8ff; }
 .summary-line.hash   { stroke: #00ff88; }
 .summary-dot {
   stroke: #071014;
-  stroke-width: 2;
+  stroke-width: 0.6;
 }
 .summary-dot.linear { fill: #ff6b6b; }
 .summary-dot.binary { fill: #4db8ff; }
@@ -1987,7 +1987,7 @@ var match = getFromTable(table, "grace");</code></pre>
 
       svgParts.push('<path class="summary-line ' + entry.tone + '" d="' + buildPath(points) + '"></path>');
       points.forEach(function (point) {
-        svgParts.push('<circle class="summary-dot ' + entry.tone + '" cx="' + point.x.toFixed(2) + '" cy="' + point.y.toFixed(2) + '" r="1.8"></circle>');
+        svgParts.push('<circle class="summary-dot ' + entry.tone + '" cx="' + point.x.toFixed(2) + '" cy="' + point.y.toFixed(2) + '" r="1.1"></circle>');
       });
     });
 
