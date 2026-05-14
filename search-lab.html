@@ -700,7 +700,7 @@ var foundIndex = binarySearch(numbers, 34, 0, numbers.length - 1);</code></pre>
         <li>Relevant choice: useful for explanation, but the iterative loop is usually clearer for production debugging.</li>
       </ul>
 
-      <p><em>3. Wrapper function for repeated lookups:</em> application code often hides the control loop behind a reusable helper so callers only provide the sorted array and target.</p>
+      <p><em>3. Wrapper function for repeated lookups:</em> application code often hides the control loop behind a reusable helper so callers can start with an unsorted user list, derive a sorted ID index once, and then reuse it for many searches.</p>
       <pre><code>function findSortedUserId(sortedIds, targetId) {
   var left = 0;
   var right = sortedIds.length - 1;
@@ -715,11 +715,23 @@ var foundIndex = binarySearch(numbers, 34, 0, numbers.length - 1);</code></pre>
   return -1;
 }
 
-var ids = [101, 105, 110, 125, 140, 170];
-var index = findSortedUserId(ids, 125);</code></pre>
+var users = [
+  { id: 140, name: "Grace" },
+  { id: 101, name: "Ada" },
+  { id: 170, name: "Linus" },
+  { id: 125, name: "Margaret" }
+];
+
+var sortedIds = users
+  .map(function (user) { return user.id; })
+  .sort(function (a, b) { return a - b; });
+
+var index = findSortedUserId(sortedIds, 125);
+// sortedIds === [101, 125, 140, 170]
+// index === 1</code></pre>
       <ul>
-        <li>Concrete example: a user directory sorted by numeric ID can answer repeated searches with the same helper.</li>
-        <li>Relevant choice: best when sorting is already guaranteed and the search will happen many times.</li>
+        <li>Concrete example: derive a sorted ID list from an unsorted user directory once, then reuse it for repeated lookups by ID.</li>
+        <li>Relevant choice: best when the original data is unsorted but you can afford one preprocessing step to make future searches fast.</li>
       </ul>
 
       <p>Short rule: binary search is mainly about interval control, so direct indexed loops and small wrappers are the practical JScript forms. Methods like <code>forEach</code> or <code>find</code> are the wrong fit because they scan linearly and throw away the algorithm's advantage.</p>
@@ -815,10 +827,6 @@ var index = findSortedUserId(ids, 125);</code></pre>
         <tr><td>Worst (all collide)</td><td class="hi-red">O(n)</td><td class="dim">Degrades to linear — rare with good hash</td></tr>
       </table>
     </div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-label">Playground · 03</div>
 
     <div class="cb">
       <div class="cb-label">JScript Implementation Styles</div>
@@ -885,6 +893,10 @@ var match = getFromTable(table, "grace");</code></pre>
 
       <p>Short rule: use plain objects or <code>Map</code> for real application lookup, and use a custom table only when you need to explain the mechanics behind hashing and collisions.</p>
     </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">Playground · 03</div>
 
     <div class="pg-section">
       <label class="pg-label">Hash table configuration</label>
