@@ -1251,9 +1251,20 @@ var match = getFromTable(table, "grace");</code></pre>
 
     <div class="cb">
       <div class="cb-label">The core meaning</div>
-      <p><code>log₂(x)</code> means: <em>"what exponent do I put on 2 to get x?"</em> If <code>2^7 = 128</code>, then <code>log₂(128) = 7</code>. The log value is not a separate mysterious number. It is just the exponent.</p>
+      <p><code>log2(x)</code> means: <em>"what exponent do I put on 2 to get x?"</em> If <code>2^7 = 128</code>, then <code>log2(128) = 7</code>. The log value is not a separate mysterious number. It is just the exponent.</p>
+      <p>In real systems, that exponent often turns directly into a bit count. One bit gives <code>2</code> choices, two bits give <code>4</code>, ten bits give <code>1,024</code>. So if you need to cover exactly <code>1,024</code> positions, values, or combinations, the minimum exact bit width is <code>10</code>.</p>
     </div>
 
+    <div class="cb">
+      <div class="cb-label">When log and bits are the same idea</div>
+      <p>If a question asks, <em>"How many binary decisions or bits do I need to cover this many possibilities?"</em>, you are effectively doing a base-2 log question. For exact powers of two, the answer is the same number.</p>
+      <div class="appendix-note">
+        <div><strong>Addressing memory:</strong> a <code>1,024</code>-byte buffer has <code>1,024</code> byte positions, so it needs <code>10</code> address bits.</div>
+        <div><strong>Assigning IDs:</strong> <code>1,048,576</code> customers means about <code>20</code> bits for one unique ID per customer.</div>
+        <div><strong>Yes/no combinations:</strong> <code>10</code> switches or yes/no questions create <code>2^10 = 1,024</code> distinct patterns.</div>
+      </div>
+      <p>Use this shortcut carefully: if the count is exactly a power of two, bits = <code>log2(count)</code>. If the count is not exact, you usually round up because bit widths must be whole numbers.</p>
+    </div>
     <div class="cb">
       <div class="cb-label">What to memorize</div>
       <p>You do not need an infinite table in your head. For binary search and computer-size intuition, memorize the ladder from <code>0</code> to <code>9</code>, then the decade anchors <code>10</code>, <code>20</code>, <code>30</code>, and <code>40</code>.</p>
@@ -1311,10 +1322,10 @@ var match = getFromTable(table, "grace");</code></pre>
       <div class="cb">
         <div class="cb-label">Fast drills</div>
         <div class="appendix-practice">
-          <div class="appendix-card"><strong>Drill 1:</strong> <code>log₂(x) = 6</code> → <strong>64</strong></div>
-          <div class="appendix-card"><strong>Drill 2:</strong> <code>x = 128</code> → <strong>7</strong></div>
-          <div class="appendix-card"><strong>Drill 3:</strong> <code>log₂(x)</code> goes from <code>10</code> to <code>20</code> → <strong>x multiplies by 1,024</strong></div>
-          <div class="appendix-card"><strong>Drill 4:</strong> <code>log₂(x)</code> goes from <code>20</code> to <code>40</code> → <strong>x multiplies by 1,024 × 1,024 = 1,048,576</strong></div>
+          <div class="appendix-card"><strong>Drill 1:</strong> <code>log2(x) = 6</code> -> <strong>64</strong></div>
+          <div class="appendix-card"><strong>Drill 2:</strong> <code>x = 128</code> -> <strong>7</strong></div>
+          <div class="appendix-card"><strong>Drill 3:</strong> <code>log2(x)</code> goes from <code>10</code> to <code>20</code> -> <strong>x multiplies by 1,024</strong></div>
+          <div class="appendix-card"><strong>Drill 4:</strong> <code>log2(x)</code> goes from <code>20</code> to <code>40</code> -> <strong>x multiplies by 1,024 x 1,024 = 1,048,576</strong></div>
         </div>
       </div>
 
@@ -1328,20 +1339,20 @@ var match = getFromTable(table, "grace");</code></pre>
     <div class="appendix-subpanel" id="appendix-quiz">
       <div class="cb">
         <div class="cb-label">Quiz</div>
-        <p>Ten real-world scale questions. When the answer is an actual size, enter the numeric part and choose a suffix. Use <code>None</code> when the answer is a plain number.</p>
+        <p>Ten practical bit-width and capacity questions. For capacity answers, enter the numeric part and choose a suffix. Use <code>None</code> when the answer is a plain number.</p>
 
         <div class="appendix-quiz-list">
           <div class="appendix-quiz-item" data-mode="log" data-answer="10">
-            <p><strong>1. Photo backup:</strong> A small image folder takes <code>1,024</code> bytes. Which power-of-two step is that?</p>
+            <p><strong>1. Memory buffer:</strong> A device keeps a temporary buffer of <code>1,024</code> bytes. What is the minimum number of address bits needed to point to every byte?</p>
             <div class="appendix-quiz-answer">
-              <input class="pg-input appendix-quiz-value" type="number" placeholder="step number">
+              <input class="pg-input appendix-quiz-value" type="number" placeholder="minimum bits">
               <button class="btn amber appendix-quiz-check">Check</button>
             </div>
             <div class="appendix-quiz-feedback"></div>
           </div>
 
           <div class="appendix-quiz-item" data-mode="x" data-answer="512" data-suffix="None">
-            <p><strong>2. Photo album:</strong> A gallery app labels an album as the <code>9th</code> power-of-two size. What actual size is that?</p>
+            <p><strong>2. Door access panel:</strong> An office keypad uses <code>9</code> yes/no switches. How many different code patterns are possible?</p>
             <div class="appendix-quiz-answer dual">
               <input class="pg-input appendix-quiz-value" type="number" placeholder="numeric part">
               <select class="pg-input appendix-quiz-suffix"><option>None</option><option>K</option><option>G</option><option>T</option></select>
@@ -1351,7 +1362,7 @@ var match = getFromTable(table, "grace");</code></pre>
           </div>
 
           <div class="appendix-quiz-item" data-mode="x" data-answer="1" data-suffix="K">
-            <p><strong>3. Contact list:</strong> A phone can store names at the <code>10th</code> power-of-two step. Enter the actual size with a suffix.</p>
+            <p><strong>3. Survey form:</strong> A poll has <code>10</code> yes/no questions. How many distinct answer sheets are possible? Enter it with a suffix.</p>
             <div class="appendix-quiz-answer dual">
               <input class="pg-input appendix-quiz-value" type="number" placeholder="numeric part">
               <select class="pg-input appendix-quiz-suffix"><option>None</option><option>K</option><option>G</option><option>T</option></select>
@@ -1361,16 +1372,16 @@ var match = getFromTable(table, "grace");</code></pre>
           </div>
 
           <div class="appendix-quiz-item" data-mode="log" data-answer="20">
-            <p><strong>4. City event tickets:</strong> A ticketing campaign reaches about <code>1,048,576</code> people. Which power-of-two step is that?</p>
+            <p><strong>4. Photo library IDs:</strong> A service needs one unique numeric ID for each of <code>1,048,576</code> photos. What is the minimum bit width for the ID?</p>
             <div class="appendix-quiz-answer">
-              <input class="pg-input appendix-quiz-value" type="number" placeholder="step number">
+              <input class="pg-input appendix-quiz-value" type="number" placeholder="minimum bits">
               <button class="btn amber appendix-quiz-check">Check</button>
             </div>
             <div class="appendix-quiz-feedback"></div>
           </div>
 
           <div class="appendix-quiz-item" data-mode="x" data-answer="1" data-suffix="G">
-            <p><strong>5. Video views:</strong> A viral clip reaches the <code>30th</code> power-of-two scale. Enter the actual size with a suffix.</p>
+            <p><strong>5. Ticket barcode:</strong> A venue uses <code>30</code> binary bits for ticket numbers. How many distinct tickets can that represent? Enter it with a suffix.</p>
             <div class="appendix-quiz-answer dual">
               <input class="pg-input appendix-quiz-value" type="number" placeholder="numeric part">
               <select class="pg-input appendix-quiz-suffix"><option>None</option><option>K</option><option>G</option><option>T</option></select>
@@ -1380,16 +1391,16 @@ var match = getFromTable(table, "grace");</code></pre>
           </div>
 
           <div class="appendix-quiz-item" data-mode="log" data-answer="40">
-            <p><strong>6. Online shopping receipts:</strong> A long-running marketplace has about <code>1.1T</code> receipts in its archive. Which memorized power-of-two anchor is this closest to?</p>
+            <p><strong>6. Receipt archive:</strong> An online marketplace expects about <code>1.1T</code> receipts over its lifetime. Which memorized bit-count anchor is the right fit for unique receipt numbers?</p>
             <div class="appendix-quiz-answer">
-              <input class="pg-input appendix-quiz-value" type="number" placeholder="step number">
+              <input class="pg-input appendix-quiz-value" type="number" placeholder="bit-count anchor">
               <button class="btn amber appendix-quiz-check">Check</button>
             </div>
             <div class="appendix-quiz-feedback"></div>
           </div>
 
           <div class="appendix-quiz-item" data-mode="scale" data-answer="1024">
-            <p><strong>7. School photo archive:</strong> If the collection grows from the <code>10th</code> to the <code>20th</code> power-of-two step, by what factor does the actual collection size increase?</p>
+            <p><strong>7. Product code expansion:</strong> A company expands its product codes from <code>10</code> bits to <code>20</code> bits. By what factor does the code space grow?</p>
             <div class="appendix-quiz-answer">
               <input class="pg-input appendix-quiz-value" type="number" placeholder="growth factor">
               <button class="btn amber appendix-quiz-check">Check</button>
@@ -1398,7 +1409,7 @@ var match = getFromTable(table, "grace");</code></pre>
           </div>
 
           <div class="appendix-quiz-item" data-mode="scale" data-answer="1048576">
-            <p><strong>8. Music streaming catalog:</strong> If the library grows from the <code>20th</code> to the <code>40th</code> power-of-two step, by what factor does the real catalog size increase?</p>
+            <p><strong>8. Membership card system:</strong> A chain grows from <code>20</code>-bit card numbers to <code>40</code>-bit card numbers. By what factor does the total capacity grow?</p>
             <div class="appendix-quiz-answer">
               <input class="pg-input appendix-quiz-value" type="number" placeholder="growth factor">
               <button class="btn amber appendix-quiz-check">Check</button>
@@ -1407,16 +1418,16 @@ var match = getFromTable(table, "grace");</code></pre>
           </div>
 
           <div class="appendix-quiz-item" data-mode="log" data-answer="7">
-            <p><strong>9. Theater seats:</strong> A small hall has <code>128</code> seats. Which power-of-two step is that?</p>
+            <p><strong>9. Locker row:</strong> A school hallway has <code>128</code> lockers in one row. What is the minimum number of bits needed to label every locker uniquely in that row?</p>
             <div class="appendix-quiz-answer">
-              <input class="pg-input appendix-quiz-value" type="number" placeholder="step number">
+              <input class="pg-input appendix-quiz-value" type="number" placeholder="minimum bits">
               <button class="btn amber appendix-quiz-check">Check</button>
             </div>
             <div class="appendix-quiz-feedback"></div>
           </div>
 
-          <div class="appendix-quiz-item" data-mode="x" data-answer="64" data-suffix="None">
-            <p><strong>10. Chess tournament:</strong> A bracket reaches the <code>6th</code> power-of-two size. How many players is that?</p>
+          <div class="appendix-quiz-item" data-mode="x" data-answer="4" data-suffix="G" data-hint="A 32-bit CPU can form 2^32 byte addresses. Use the 30 -> G anchor, then multiply by 4.">
+            <p><strong>10. 32-bit CPU memory:</strong> What is the maximum number of bytes of memory a <code>32</code>-bit CPU can directly address? Enter the answer with a suffix.</p>
             <div class="appendix-quiz-answer dual">
               <input class="pg-input appendix-quiz-value" type="number" placeholder="numeric part">
               <select class="pg-input appendix-quiz-suffix"><option>None</option><option>K</option><option>G</option><option>T</option></select>
@@ -1431,6 +1442,8 @@ var match = getFromTable(table, "grace");</code></pre>
         </div>
         <div class="output-box" id="appendix-quiz-summary" style="margin-top:12px"><span class="dim">Quiz score will appear here.</span></div>
       </div>
+    </div>
+  </div>
     </div>
   </div>
 </div>
@@ -2044,6 +2057,7 @@ var match = getFromTable(table, "grace");</code></pre>
   function checkItem(item) {
     var mode = item.dataset.mode;
     var expected = item.dataset.answer;
+    var hint = item.dataset.hint;
     var feedback = item.querySelector('.appendix-quiz-feedback');
     var valueEl = item.querySelector('.appendix-quiz-value');
     var suffixEl = item.querySelector('.appendix-quiz-suffix');
@@ -2053,15 +2067,23 @@ var match = getFromTable(table, "grace");</code></pre>
       var actualValue = normalizeNumberInput(valueEl.value);
       var actualSuffix = suffixEl ? suffixEl.value : 'None';
       ok = actualValue === expected && actualSuffix === item.dataset.suffix;
+      if (!hint) {
+        hint = 'Think in powers of two and use the 10/20/30/40 anchors for K, M, G, and T.';
+      }
       feedback.innerHTML = ok
         ? '<span class="status ok">Correct</span> <span class="dim">' + actualValue + (actualSuffix === 'None' ? '' : actualSuffix) + '</span>'
-        : '<span class="status err">Try again</span> <span class="dim">Expected ' + expected + (item.dataset.suffix === 'None' ? '' : item.dataset.suffix) + '</span>';
+        : '<span class="status err">Try again</span> <span class="dim">Hint: ' + hint + '</span>';
     } else {
       var actual = normalizeNumberInput(valueEl.value);
       ok = actual === expected;
+      if (!hint) {
+        hint = mode === 'scale'
+          ? 'Each +10 in log2 or bits multiplies capacity by 1,024.'
+          : 'Count how many doublings are needed to reach that exact power of two.';
+      }
       feedback.innerHTML = ok
         ? '<span class="status ok">Correct</span> <span class="dim">' + actual + '</span>'
-        : '<span class="status err">Try again</span> <span class="dim">Expected ' + expected + '</span>';
+        : '<span class="status err">Try again</span> <span class="dim">Hint: ' + hint + '</span>';
     }
 
     item.dataset.correct = ok ? '1' : '0';
