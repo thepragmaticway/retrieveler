@@ -190,6 +190,26 @@ How to use it:
 
 This session reinforces that secure data retrieval depends on strong encryption, one-way storage, and careful transfer and verification practices.
 
+## IPC Lab
+
+The [IPC Lab](./ipc-lab.html) teaches interprocess communication from operating-system fundamentals through practical networking workflows.
+
+What it is:
+
+- a guided module on how operating systems manage process-to-resource and process-to-process communication
+- a comparison of IPC mechanisms including pipes, named pipes, shared memory, message queues, and sockets
+- an explanation of TCP as a reliable ordered stream and HTTP as a message protocol layered on top of TCP
+- hands-on command-line labs using tools like `ncat`, `curl`, `wget`, and HTTP clients to inspect real communication flows
+
+How to use it:
+
+- start with the OS platform model to understand why IPC exists
+- compare local IPC mechanisms before moving into TCP and HTTP
+- run the pipe and socket examples to see how data moves between processes
+- inspect HTTP requests and responses to connect application-level messages back to the transport layer
+
+This session shows how retrieval and communication depend on the operating system and network protocols that move data between programs.
+
 ## Why this project matters
 
 Understanding these three data structures is essential for anyone working with data retrieval, because each structure shapes how data is stored, searched, and joined.

@@ -1,0 +1,2754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPC Lab — Interprocess Communication</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #080c10;
+  --bg2:     #0f1419;
+  --bg3:     #161d26;
+  --bg4:     #1d2733;
+  --border:  rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.14);
+  --text:    #d4dce8;
+  --muted:   #586472;
+  --dim:     #8a9ab0;
+  --cyan:    #00c8c8;
+  --cyan-d:  rgba(0,200,200,0.10);
+  --cyan-b:  rgba(0,200,200,0.25);
+  --amber:   #f0a030;
+  --amber-d: rgba(240,160,48,0.10);
+  --green:   #3dd68c;
+  --green-d: rgba(61,214,140,0.10);
+  --red:     #f06060;
+  --red-d:   rgba(240,96,96,0.10);
+  --blue:    #60a8f0;
+  --blue-d:  rgba(96,168,240,0.10);
+  --purple:  #b07ff0;
+  --purple-d:rgba(176,127,240,0.10);
+  --font:    'IBM Plex Sans', sans-serif;
+  --mono:    'IBM Plex Mono', monospace;
+  --sidebar: 240px;
+  --radius:  6px;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.7;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar);
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  z-index: 100;
+  padding: 28px 0 40px;
+}
+.sidebar-brand {
+  padding: 0 20px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.sidebar-brand .label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 4px;
+}
+.sidebar-brand .title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cyan);
+  line-height: 1.3;
+}
+.nav-section {
+  padding: 8px 20px 4px;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.nav-link {
+  display: block;
+  padding: 7px 20px;
+  font-size: 13px;
+  color: var(--dim);
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+  border-left: 2px solid transparent;
+  line-height: 1.4;
+}
+.nav-link:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.nav-link.active { color: var(--cyan); border-left-color: var(--cyan); background: var(--cyan-d); }
+.overview-link {
+  display: block;
+  margin: 0 20px 18px;
+  padding: 8px 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  text-decoration: none;
+}
+.overview-link:hover { color: var(--text); }
+
+/* ── MAIN ── */
+main {
+  margin-left: var(--sidebar);
+  flex: 1;
+  max-width: 960px;
+  padding: 60px 64px 120px;
+}
+
+/* ── SECTION HEADINGS ── */
+.section {
+  margin-bottom: 80px;
+}
+.section-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 10px;
+  display: block;
+}
+h1 {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: #eaf0f8;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #d4dce8;
+  margin-bottom: 16px;
+  margin-top: 40px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.3;
+}
+h2:first-child { margin-top: 0; }
+h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--amber);
+  margin: 24px 0 10px;
+}
+p { margin-bottom: 14px; color: var(--dim); }
+strong { color: var(--text); font-weight: 500; }
+
+/* ── HERO BAR ── */
+.hero-bar {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--cyan);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 32px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--dim);
+}
+.hero-bar strong { color: var(--cyan); }
+
+/* ── CARDS ── */
+.card-grid {
+  display: grid;
+  gap: 16px;
+}
+.card-grid.col2 { grid-template-columns: 1fr 1fr; }
+.card-grid.col3 { grid-template-columns: 1fr 1fr 1fr; }
+.card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.card-icon {
+  font-size: 22px;
+  margin-bottom: 10px;
+  display: block;
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.card p { font-size: 13px; margin: 0; }
+
+/* ── COMPARISON DIAGRAM ── */
+.compare-diagram {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px 24px;
+  margin: 24px 0;
+}
+.compare-row {
+  display: grid;
+  grid-template-columns: 1fr 48px 1fr;
+  gap: 0;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.compare-row:last-child { margin-bottom: 0; }
+.compare-col {
+  background: var(--bg4);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.compare-col.left { border-color: var(--amber); background: var(--amber-d); }
+.compare-col.right { border-color: var(--cyan); background: var(--cyan-d); }
+.compare-label {
+  font-size: 10px;
+  font-family: var(--mono);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.compare-label.amber { color: var(--amber); }
+.compare-label.cyan  { color: var(--cyan); }
+.compare-value { font-size: 14px; font-weight: 500; color: var(--text); }
+.compare-mid { text-align: center; color: var(--muted); font-size: 12px; font-family: var(--mono); }
+.compare-header {
+  display: grid;
+  grid-template-columns: 1fr 48px 1fr;
+  margin-bottom: 16px;
+}
+.compare-header-col {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 4px;
+}
+.compare-header-col.amber { background: var(--amber-d); color: var(--amber); }
+.compare-header-col.cyan  { background: var(--cyan-d);  color: var(--cyan); }
+
+/* ── UNIVERSE DIAGRAM ── */
+.universe-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 24px 0;
+}
+.universe-box {
+  border-radius: 10px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.universe-box.living {
+  background: linear-gradient(135deg, rgba(61,214,140,0.06) 0%, rgba(0,200,200,0.04) 100%);
+  border: 1px solid rgba(61,214,140,0.2);
+}
+.universe-box.process {
+  background: linear-gradient(135deg, rgba(96,168,240,0.06) 0%, rgba(176,127,240,0.04) 100%);
+  border: 1px solid rgba(96,168,240,0.2);
+}
+.universe-title {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--mono);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.universe-box.living .universe-title { color: var(--green); }
+.universe-box.process .universe-title { color: var(--blue); }
+.entity-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.entity-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.entity-arrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 8px 18px;
+  font-size: 12px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.arrow-line {
+  height: 1px;
+  background: var(--border2);
+  flex: 1;
+}
+.universe-bridge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 16px 0;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--muted);
+}
+.bridge-eq {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bridge-eq span { color: var(--text); font-size: 13px; }
+
+/* ── IPC TYPE TABLE ── */
+.ipc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 13px;
+}
+.ipc-table th {
+  background: var(--bg4);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: var(--mono);
+  color: var(--muted);
+  border-bottom: 1px solid var(--border2);
+}
+.ipc-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  color: var(--dim);
+}
+.ipc-table tr:last-child td { border-bottom: none; }
+.ipc-table td:first-child { font-weight: 500; color: var(--text); }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: var(--mono);
+  margin: 2px;
+  font-weight: 500;
+}
+.badge.win  { background: rgba(96,168,240,0.15); color: var(--blue); }
+.badge.lin  { background: rgba(61,214,140,0.15); color: var(--green); }
+.badge.both { background: rgba(240,160,48,0.15); color: var(--amber); }
+
+/* ── PROTOCOL ANALOGY ── */
+.analogy-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 24px 0;
+}
+.analogy-card {
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.analogy-card.local {
+  background: rgba(240,160,48,0.07);
+  border: 1px solid rgba(240,160,48,0.2);
+}
+.analogy-card.global {
+  background: rgba(96,168,240,0.07);
+  border: 1px solid rgba(96,168,240,0.2);
+}
+.analogy-card .a-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.analogy-card.local .a-title { color: var(--amber); }
+.analogy-card.global .a-title { color: var(--blue); }
+.analogy-card ul {
+  list-style: none;
+  font-size: 13px;
+  color: var(--dim);
+}
+.analogy-card ul li {
+  padding: 4px 0;
+  display: flex;
+  gap: 8px;
+}
+.analogy-card ul li::before {
+  content: '→';
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.pro-con {
+  margin-top: 10px;
+  font-size: 12px;
+  font-family: var(--mono);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pro { color: var(--green); }
+.con { color: var(--red); }
+
+/* ── MESSAGE ANATOMY ── */
+.msg-diagram {
+  font-family: var(--mono);
+  font-size: 13px;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 20px 0;
+}
+.msg-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+}
+.msg-row:last-child { border-bottom: none; }
+.msg-field {
+  padding: 12px 16px;
+  font-weight: 500;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.msg-val {
+  padding: 12px 16px;
+  border-left: 1px solid var(--border);
+  color: var(--dim);
+  font-family: var(--font);
+  font-size: 13px;
+  flex: 1;
+}
+.msg-field.to      { background: rgba(61,214,140,0.10);  color: var(--green); }
+.msg-field.from    { background: rgba(96,168,240,0.10);  color: var(--blue); }
+.msg-field.header  { background: rgba(240,160,48,0.10);  color: var(--amber); }
+.msg-field.payload { background: rgba(176,127,240,0.10); color: var(--purple); min-height: 60px; }
+.msg-val.payload-val { font-style: italic; color: var(--purple); font-family: var(--mono); font-size: 12px; }
+
+/* ── HTTP DIAGRAM ── */
+.http-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 24px 0;
+}
+.http-actor-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 120px;
+  align-items: center;
+  gap: 0;
+}
+.http-actor {
+  background: var(--bg4);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+.http-actor.client { border-color: var(--blue); color: var(--blue); background: var(--blue-d); }
+.http-actor.server { border-color: var(--green); color: var(--green); background: var(--green-d); }
+.http-msg-wrap {
+  display: grid;
+  grid-template-columns: 120px 1fr 120px;
+  align-items: center;
+  margin: 8px 0;
+}
+.http-msg-line {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 20px;
+  background: var(--bg3);
+  border-top: 1px dashed var(--border2);
+  border-bottom: 1px dashed var(--border2);
+  position: relative;
+}
+.http-msg-line.req { border-color: rgba(96,168,240,0.3); }
+.http-msg-line.res { border-color: rgba(61,214,140,0.3); }
+.http-arrow {
+  font-family: var(--mono);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.http-arrow.req { color: var(--blue); }
+.http-arrow.res { color: var(--green); direction: rtl; }
+.http-label { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+
+/* ── HTTP STRUCTURE ── */
+.http-struct {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 24px 0;
+}
+.http-block {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.http-block-title {
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: var(--mono);
+  border-bottom: 1px solid var(--border);
+}
+.http-block-title.req { color: var(--blue); background: var(--blue-d); }
+.http-block-title.res { color: var(--green); background: var(--green-d); }
+.http-block pre {
+  padding: 16px;
+  font-size: 12px;
+  font-family: var(--mono);
+  line-height: 1.8;
+  color: var(--dim);
+  white-space: pre;
+  overflow-x: auto;
+}
+.http-block pre .hl-method { color: var(--blue); font-weight: 600; }
+.http-block pre .hl-path   { color: var(--cyan); }
+.http-block pre .hl-header { color: var(--amber); }
+.http-block pre .hl-status { color: var(--green); font-weight: 600; }
+.http-block pre .hl-body   { color: var(--purple); }
+.http-block pre .hl-comment{ color: var(--muted); }
+
+/* ── CODE BLOCK ── */
+.code-block {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 16px 0;
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+.code-label {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+.code-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  background: var(--bg4);
+  color: var(--muted);
+}
+.code-block pre {
+  padding: 16px;
+  font-size: 12.5px;
+  font-family: var(--mono);
+  line-height: 1.75;
+  color: var(--dim);
+  overflow-x: auto;
+  white-space: pre;
+}
+.code-block pre .cmd  { color: var(--cyan); }
+.code-block pre .arg  { color: var(--amber); }
+.code-block pre .str  { color: var(--green); }
+.code-block pre .com  { color: var(--muted); font-style: italic; }
+.code-block pre .out  { color: var(--purple); }
+
+/* ── LAB BOX ── */
+.lab-box {
+  background: rgba(0,200,200,0.04);
+  border: 1px solid rgba(0,200,200,0.2);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin: 24px 0;
+}
+.lab-box-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lab-box-title::before {
+  content: '▶';
+  font-size: 9px;
+}
+.lab-step {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.lab-step-num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--cyan-d);
+  border: 1px solid var(--cyan-b);
+  color: var(--cyan);
+  font-size: 11px;
+  font-family: var(--mono);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.lab-step-content { color: var(--dim); line-height: 1.6; }
+.lab-step-content code {
+  background: var(--bg4);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--cyan);
+}
+
+/* ── NOTE BOX ── */
+.note {
+  background: rgba(240,160,48,0.06);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 12px 16px;
+  margin: 16px 0;
+  font-size: 13px;
+  color: var(--dim);
+}
+.note strong { color: var(--amber); }
+
+/* ── STATELESS DIAGRAM ── */
+.stateless-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin: 8px 0;
+}
+.stateless-req {
+  background: var(--blue-d);
+  border: 1px solid rgba(96,168,240,0.2);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 12px;
+  font-family: var(--mono);
+  flex: 1;
+}
+.stateless-arrow { color: var(--muted); font-size: 18px; padding-top: 10px; }
+.stateless-res {
+  background: var(--green-d);
+  border: 1px solid rgba(61,214,140,0.2);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 12px;
+  font-family: var(--mono);
+  flex: 1;
+}
+.stateless-note {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+  font-style: italic;
+  font-family: var(--font);
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+
+/* ── SECTION DIVIDER ── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 60px 0;
+}
+
+/* ── TOOL GRID ── */
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 20px 0;
+}
+.tool-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.tool-name {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cyan);
+  margin-bottom: 4px;
+}
+.tool-plat {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.tool-desc { font-size: 12px; color: var(--dim); }
+
+/* ── HEADER METADATA BOX ── */
+.envelope-analogy {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 20px 0;
+}
+.envelope-side {
+  border-radius: var(--radius);
+  padding: 20px;
+  font-size: 13px;
+}
+.envelope-side.old {
+  background: rgba(240,160,48,0.07);
+  border: 1px solid rgba(240,160,48,0.2);
+}
+.envelope-side.digital {
+  background: rgba(0,200,200,0.07);
+  border: 1px solid rgba(0,200,200,0.2);
+}
+.env-title { font-weight: 600; margin-bottom: 12px; font-size: 14px; }
+.envelope-side.old .env-title { color: var(--amber); }
+.envelope-side.digital .env-title { color: var(--cyan); }
+.env-item { display: flex; gap: 8px; margin-bottom: 8px; color: var(--dim); }
+.env-item-key { font-family: var(--mono); font-size: 12px; color: var(--text); min-width: 72px; }
+
+/* ── PAGE HEADER ── */
+.page-header {
+  margin-bottom: 56px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header .tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  display: block;
+  margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: 40px;
+  color: #eaf0f8;
+  font-weight: 600;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+.page-header .subtitle {
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 600px;
+  line-height: 1.6;
+}
+
+/* ── RESOURCE DIAGRAM ── */
+.os-diagram {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 32px;
+  margin: 24px 0;
+  position: relative;
+}
+.os-center {
+  background: linear-gradient(135deg, rgba(0,200,200,0.15), rgba(96,168,240,0.10));
+  border: 2px solid rgba(0,200,200,0.3);
+  border-radius: 8px;
+  padding: 16px 24px;
+  text-align: center;
+  margin: 0 auto;
+  max-width: 220px;
+  margin-bottom: 28px;
+}
+.os-center .os-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 4px;
+}
+.os-center .os-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--cyan);
+}
+.os-rows {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.os-col { }
+.os-col-title {
+  font-size: 11px;
+  font-family: var(--mono);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.os-col-title.p2r { color: var(--amber); }
+.os-col-title.p2p { color: var(--blue); }
+.os-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 5px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-family: var(--mono);
+}
+.os-item.res {
+  background: rgba(240,160,48,0.08);
+  border: 1px solid rgba(240,160,48,0.15);
+  color: var(--amber);
+}
+.os-item.ipc {
+  background: rgba(96,168,240,0.08);
+  border: 1px solid rgba(96,168,240,0.15);
+  color: var(--blue);
+}
+.os-item-icon { font-size: 16px; }
+
+/* ── TCP LAYER DIAGRAM ── */
+.tcp-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 380px;
+  margin: 24px auto;
+}
+.tcp-layer {
+  padding: 12px 20px;
+  text-align: center;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-family: var(--mono);
+  font-weight: 500;
+}
+.tcp-layer:first-child { border-radius: 8px 8px 0 0; }
+.tcp-layer:last-child  { border-radius: 0 0 8px 8px; }
+.tcp-layer.app  { background: rgba(176,127,240,0.12); color: var(--purple); border-color: rgba(176,127,240,0.2); }
+.tcp-layer.http { background: rgba(240,160,48,0.10);  color: var(--amber);  border-color: rgba(240,160,48,0.2); }
+.tcp-layer.tcp  { background: rgba(96,168,240,0.10);  color: var(--blue);   border-color: rgba(96,168,240,0.2); }
+.tcp-layer.ip   { background: rgba(61,214,140,0.10);  color: var(--green);  border-color: rgba(61,214,140,0.2); }
+.tcp-layer.link { background: rgba(0,200,200,0.08);   color: var(--cyan);   border-color: var(--cyan-b); }
+.tcp-layer .layer-note { font-size: 10px; color: var(--muted); font-family: var(--font); margin-top: 3px; font-style: italic; }
+
+</style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <span class="label">IOJT 2026 · Lab</span>
+    <div class="title">Interprocess<br>Communication</div>
+  </div>
+
+  <a href="index.html" class="overview-link">Back to overview</a>
+
+  <span class="nav-section">Foundation</span>
+  <a href="#s1" class="nav-link active">OS as Platform</a>
+  <a href="#s2" class="nav-link">Human World Analogy</a>
+  <a href="#s3" class="nav-link">IPC Types</a>
+
+  <span class="nav-section">Networking</span>
+  <a href="#s4" class="nav-link">TCP vs Local Protocols</a>
+  <a href="#s5" class="nav-link">TCP Lab</a>
+  <a href="#s5e" class="nav-link">Pipe Lab</a>
+
+  <span class="nav-section">Messaging</span>
+  <a href="#s6" class="nav-link">Message Anatomy</a>
+  <a href="#s7" class="nav-link">HTTP Protocol</a>
+  <a href="#s8" class="nav-link">HTTP Structure</a>
+  <a href="#s9" class="nav-link">HTTP Lab</a>
+</nav>
+
+<!-- ── MAIN ── -->
+<main>
+
+  <div class="page-header">
+    <span class="tag">IPC Lab — Module 4</span>
+    <h1>Interprocess<br>Communication</h1>
+    <p class="subtitle">From OS resource management to HTTP over TCP — a ground-up exploration of how processes talk to resources and to each other.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- S1 · OS AS PLATFORM                        -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="section" id="s1">
+    <span class="section-tag">§ 01 — Foundation</span>
+    <h2>OS as a Platform</h2>
+
+    <div class="hero-bar">
+      An Operating System is a <strong>platform</strong> with two core duties:<br>
+      &nbsp;&nbsp;<strong>P → R</strong> &nbsp;Allocate and mediate access to system resources (CPU, memory, disk, I/O devices)<br>
+      &nbsp;&nbsp;<strong>P → P</strong> &nbsp;Provide communication channels between processes (IPC)
+    </div>
+
+    <p>Without the OS acting as a controlled intermediary, every program would have to know how to drive its own hardware — and two programs could not safely share a CPU or the same region of memory. The OS abstracts all of that, exposing clean interfaces: system calls.</p>
+
+    <div class="os-diagram">
+      <div class="os-center">
+        <span class="os-label">Kernel</span>
+        <div class="os-name">Operating System</div>
+      </div>
+      <div class="os-rows">
+        <div class="os-col">
+          <div class="os-col-title p2r">P → Resource (P2R)</div>
+          <div class="os-item res"><span class="os-item-icon">⚙️</span>CPU Scheduler</div>
+          <div class="os-item res"><span class="os-item-icon">🧠</span>Memory Manager</div>
+          <div class="os-item res"><span class="os-item-icon">💾</span>File System / Disk</div>
+          <div class="os-item res"><span class="os-item-icon">🖥️</span>Device Drivers (GPU, NIC)</div>
+          <div class="os-item res"><span class="os-item-icon">⏱️</span>Timer / Interrupt Controller</div>
+        </div>
+        <div class="os-col">
+          <div class="os-col-title p2p">P → Process (IPC)</div>
+          <div class="os-item ipc"><span class="os-item-icon">📬</span>Message Queues</div>
+          <div class="os-item ipc"><span class="os-item-icon">🔗</span>Pipes &amp; Named Pipes</div>
+          <div class="os-item ipc"><span class="os-item-icon">🗂️</span>Shared Memory</div>
+          <div class="os-item ipc"><span class="os-item-icon">🔒</span>Semaphores &amp; Mutexes</div>
+          <div class="os-item ipc"><span class="os-item-icon">🌐</span>Sockets (local &amp; network)</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Many-to-Many Block Diagram</h3>
+    <p>Every process can reach every resource through the OS Resource Manager (P→R), and every process can communicate with every other process through the OS IPC Subsystem (P→P). The OS is always the intermediary — no direct connections exist.</p>
+
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:18px 18px 10px;margin:20px 0;overflow:hidden;">
+      <svg viewBox="0 0 820 432" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+        <defs>
+          <!-- Amber arrowhead (P→R) -->
+          <marker id="mm-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#f0a030"/>
+          </marker>
+          <!-- Blue arrowhead forward (P→P) -->
+          <marker id="mm-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#60a8f0"/>
+          </marker>
+          <!-- Blue arrowhead reverse (P↔P) -->
+          <marker id="mm-br" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+            <path d="M10,0 L0,5 L10,10 z" fill="#60a8f0"/>
+          </marker>
+          <!-- Clip to OS box interior -->
+          <clipPath id="mm-osclip">
+            <rect x="22" y="112" width="776" height="130" rx="6"/>
+          </clipPath>
+        </defs>
+
+        <!-- ══ VERTICAL P→R CONNECTORS (outside OS box) ══ -->
+        <!-- P bottoms (y=60) → OS top (y=112) -->
+        <line x1="100" y1="60" x2="100" y2="112" stroke="#f0a030" stroke-width="1.5" opacity="0.55"/>
+        <line x1="246" y1="60" x2="246" y2="112" stroke="#f0a030" stroke-width="1.5" opacity="0.55"/>
+        <line x1="410" y1="60" x2="410" y2="112" stroke="#f0a030" stroke-width="1.5" opacity="0.55"/>
+        <line x1="574" y1="60" x2="574" y2="112" stroke="#f0a030" stroke-width="1.5" opacity="0.55"/>
+        <line x1="720" y1="60" x2="720" y2="112" stroke="#f0a030" stroke-width="1.5" opacity="0.55"/>
+        <!-- OS bottom (y=242) → R tops (y=308) with arrowheads -->
+        <line x1="100" y1="242" x2="100" y2="304" stroke="#f0a030" stroke-width="1.5" opacity="0.55" marker-end="url(#mm-a)"/>
+        <line x1="246" y1="242" x2="246" y2="304" stroke="#f0a030" stroke-width="1.5" opacity="0.55" marker-end="url(#mm-a)"/>
+        <line x1="410" y1="242" x2="410" y2="304" stroke="#f0a030" stroke-width="1.5" opacity="0.55" marker-end="url(#mm-a)"/>
+        <line x1="574" y1="242" x2="574" y2="304" stroke="#f0a030" stroke-width="1.5" opacity="0.55" marker-end="url(#mm-a)"/>
+        <line x1="720" y1="242" x2="720" y2="304" stroke="#f0a030" stroke-width="1.5" opacity="0.55" marker-end="url(#mm-a)"/>
+
+        <!-- ══ OS OUTER BOX ══ -->
+        <rect x="22" y="112" width="776" height="130" fill="#0f1419" stroke="rgba(0,200,200,0.28)" stroke-width="1.5" rx="6"/>
+
+        <!-- ══ ZONE FILLS ══ -->
+        <!-- Left: Resource Manager -->
+        <rect x="26" y="116" width="380" height="122" fill="rgba(240,160,48,0.07)" stroke="rgba(240,160,48,0.2)" stroke-width="1" rx="4"/>
+        <!-- Right: IPC Subsystem -->
+        <rect x="412" y="116" width="380" height="122" fill="rgba(96,168,240,0.07)" stroke="rgba(96,168,240,0.2)" stroke-width="1" rx="4"/>
+        <!-- Divider -->
+        <line x1="410" y1="118" x2="410" y2="238" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="4,4"/>
+
+        <!-- ══ M2M CROSS-DIAGONAL MESH (clipped inside OS box) ══ -->
+        <g clip-path="url(#mm-osclip)">
+          <!-- Straight-through columns (lighter) -->
+          <line x1="100"  y1="112" x2="100"  y2="242" stroke="#f0a030" stroke-width="1.2" opacity="0.3"/>
+          <line x1="246"  y1="112" x2="246"  y2="242" stroke="#f0a030" stroke-width="1.2" opacity="0.3"/>
+          <line x1="410"  y1="112" x2="410"  y2="242" stroke="#f0a030" stroke-width="1.2" opacity="0.3"/>
+          <line x1="574"  y1="112" x2="574"  y2="242" stroke="#f0a030" stroke-width="1.2" opacity="0.3"/>
+          <line x1="720"  y1="112" x2="720"  y2="242" stroke="#f0a030" stroke-width="1.2" opacity="0.3"/>
+          <!-- Cross connections proving many-to-many routing -->
+          <line x1="100"  y1="112" x2="574"  y2="242" stroke="#f0a030" stroke-width="1"   opacity="0.38" stroke-dasharray="5,3"/>
+          <line x1="246"  y1="112" x2="720"  y2="242" stroke="#f0a030" stroke-width="1"   opacity="0.38" stroke-dasharray="5,3"/>
+          <line x1="574"  y1="112" x2="100"  y2="242" stroke="#f0a030" stroke-width="1"   opacity="0.38" stroke-dasharray="5,3"/>
+          <line x1="720"  y1="112" x2="246"  y2="242" stroke="#f0a030" stroke-width="1"   opacity="0.38" stroke-dasharray="5,3"/>
+          <line x1="100"  y1="112" x2="246"  y2="242" stroke="#f0a030" stroke-width="0.8" opacity="0.25" stroke-dasharray="4,4"/>
+          <line x1="410"  y1="112" x2="720"  y2="242" stroke="#f0a030" stroke-width="0.8" opacity="0.25" stroke-dasharray="4,4"/>
+        </g>
+
+        <!-- ══ ZONE LABELS ══ -->
+        <text x="410" y="109" fill="#00c8c8" font-size="10" font-family="IBM Plex Mono,monospace" letter-spacing="2" text-anchor="middle" font-weight="600">OS  PLATFORM  /  KERNEL</text>
+        <text x="216" y="141" fill="#f0a030" font-size="12" font-family="IBM Plex Mono,monospace" text-anchor="middle" font-weight="600">Resource Manager</text>
+        <text x="216" y="157" fill="#8a9ab0" font-size="10" font-family="IBM Plex Sans,sans-serif" text-anchor="middle" font-style="italic">P → R · many-to-many</text>
+        <text x="602" y="141" fill="#60a8f0" font-size="12" font-family="IBM Plex Mono,monospace" text-anchor="middle" font-weight="600">IPC Subsystem</text>
+        <text x="602" y="157" fill="#8a9ab0" font-size="10" font-family="IBM Plex Sans,sans-serif" text-anchor="middle" font-style="italic">P → P · many-to-many</text>
+
+        <!-- ══ "ANY P → ANY R" ANNOTATION inside RM zone ══ -->
+        <text x="216" y="212" fill="rgba(240,160,48,0.45)" font-size="10" font-family="IBM Plex Mono,monospace" text-anchor="middle">P₁ → R₃ · P₂ → R₅ · P₄ → R₁ …</text>
+        <text x="602" y="212" fill="rgba(96,168,240,0.45)" font-size="10" font-family="IBM Plex Mono,monospace" text-anchor="middle">P₁ ↔ P₄ · P₂ ↔ P₅ · P₃ ↔ P₄ …</text>
+
+        <!-- ══ P→P ARCS (over OS box, routing through IPC zone) ══ -->
+        <!-- P1 ↔ P4 : sweeps right through IPC zone -->
+        <path d="M 100,58 C 460,234 574,234 574,58"
+              fill="none" stroke="#60a8f0" stroke-width="1.8" opacity="0.85"
+              marker-start="url(#mm-br)" marker-end="url(#mm-b)"/>
+        <!-- P2 ↔ P5 : wide arc through IPC zone -->
+        <path d="M 246,58 C 524,230 700,230 720,58"
+              fill="none" stroke="#60a8f0" stroke-width="1.8" opacity="0.75"
+              marker-start="url(#mm-br)" marker-end="url(#mm-b)"/>
+        <!-- P3 ↔ P4 : short hop in IPC zone -->
+        <path d="M 410,58 C 458,218 536,218 574,58"
+              fill="none" stroke="#60a8f0" stroke-width="1.6" opacity="0.65"
+              marker-start="url(#mm-br)" marker-end="url(#mm-b)"/>
+
+        <!-- ══ PROCESS BOXES (topmost) ══ -->
+        <rect x="52"  y="22" width="96" height="38" fill="#1d2733" stroke="rgba(176,127,240,0.55)" stroke-width="1.5" rx="5"/>
+        <text x="100" y="38" fill="#d4dce8" font-size="14" font-family="IBM Plex Mono,monospace" font-weight="600" text-anchor="middle">P₁</text>
+        <text x="100" y="52" fill="#586472" font-size="10" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">Browser</text>
+
+        <rect x="198" y="22" width="96" height="38" fill="#1d2733" stroke="rgba(176,127,240,0.55)" stroke-width="1.5" rx="5"/>
+        <text x="246" y="38" fill="#d4dce8" font-size="14" font-family="IBM Plex Mono,monospace" font-weight="600" text-anchor="middle">P₂</text>
+        <text x="246" y="52" fill="#586472" font-size="10" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">DB Server</text>
+
+        <rect x="362" y="22" width="96" height="38" fill="#1d2733" stroke="rgba(176,127,240,0.55)" stroke-width="1.5" rx="5"/>
+        <text x="410" y="38" fill="#d4dce8" font-size="14" font-family="IBM Plex Mono,monospace" font-weight="600" text-anchor="middle">P₃</text>
+        <text x="410" y="52" fill="#586472" font-size="10" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">API Server</text>
+
+        <rect x="526" y="22" width="96" height="38" fill="#1d2733" stroke="rgba(176,127,240,0.55)" stroke-width="1.5" rx="5"/>
+        <text x="574" y="38" fill="#d4dce8" font-size="14" font-family="IBM Plex Mono,monospace" font-weight="600" text-anchor="middle">P₄</text>
+        <text x="574" y="52" fill="#586472" font-size="10" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">Logger</text>
+
+        <rect x="672" y="22" width="96" height="38" fill="#1d2733" stroke="rgba(176,127,240,0.55)" stroke-width="1.5" rx="5"/>
+        <text x="720" y="38" fill="#d4dce8" font-size="14" font-family="IBM Plex Mono,monospace" font-weight="600" text-anchor="middle">P₅</text>
+        <text x="720" y="52" fill="#586472" font-size="10" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">Scheduler</text>
+
+        <!-- ══ RESOURCE BOXES ══ -->
+        <rect x="52"  y="308" width="96" height="38" fill="#1d2733" stroke="rgba(240,160,48,0.45)" stroke-width="1.5" rx="5"/>
+        <text x="100" y="324" fill="#d4dce8" font-size="12" font-family="IBM Plex Mono,monospace" font-weight="500" text-anchor="middle">CPU</text>
+        <text x="100" y="338" fill="#586472" font-size="10" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">Compute</text>
+
+        <rect x="198" y="308" width="96" height="38" fill="#1d2733" stroke="rgba(240,160,48,0.45)" stroke-width="1.5" rx="5"/>
+        <text x="246" y="324" fill="#d4dce8" font-size="12" font-family="IBM Plex Mono,monospace" font-weight="500" text-anchor="middle">RAM</text>
+        <text x="246" y="338" fill="#586472" font-size="10" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">Memory</text>
+
+        <rect x="362" y="308" width="96" height="38" fill="#1d2733" stroke="rgba(240,160,48,0.45)" stroke-width="1.5" rx="5"/>
+        <text x="410" y="324" fill="#d4dce8" font-size="12" font-family="IBM Plex Mono,monospace" font-weight="500" text-anchor="middle">Disk</text>
+        <text x="410" y="338" fill="#586472" font-size="10" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">Storage</text>
+
+        <rect x="526" y="308" width="96" height="38" fill="#1d2733" stroke="rgba(240,160,48,0.45)" stroke-width="1.5" rx="5"/>
+        <text x="574" y="324" fill="#d4dce8" font-size="12" font-family="IBM Plex Mono,monospace" font-weight="500" text-anchor="middle">GPU</text>
+        <text x="574" y="338" fill="#586472" font-size="10" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">Graphics</text>
+
+        <rect x="672" y="308" width="96" height="38" fill="#1d2733" stroke="rgba(240,160,48,0.45)" stroke-width="1.5" rx="5"/>
+        <text x="720" y="324" fill="#d4dce8" font-size="12" font-family="IBM Plex Mono,monospace" font-weight="500" text-anchor="middle">NIC</text>
+        <text x="720" y="338" fill="#586472" font-size="10" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">Network</text>
+
+        <!-- ══ ROW LABELS ══ -->
+        <text x="18" y="18"  fill="#434f5e" font-size="9.5" font-family="IBM Plex Mono,monospace" letter-spacing="1.5">PROCESSES</text>
+        <text x="18" y="306" fill="#434f5e" font-size="9.5" font-family="IBM Plex Mono,monospace" letter-spacing="1.5">RESOURCES</text>
+
+        <!-- ══ LEGEND ══ -->
+        <line x1="26" y1="366" x2="60" y2="366" stroke="#f0a030" stroke-width="1.5"/>
+        <line x1="36" y1="366" x2="48" y2="366" stroke="#f0a030" stroke-width="1.5" stroke-dasharray="3,2"/>
+        <text x="66" y="370" fill="#8a9ab0" font-size="11" font-family="IBM Plex Sans,sans-serif">P → R &nbsp;· Any process can access any resource (via Resource Manager)</text>
+
+        <path d="M 26,384 C 34,378 52,378 60,384" fill="none" stroke="#60a8f0" stroke-width="1.5" marker-start="url(#mm-br)" marker-end="url(#mm-b)"/>
+        <text x="66" y="388" fill="#8a9ab0" font-size="11" font-family="IBM Plex Sans,sans-serif">P ↔ P &nbsp;· Any process can communicate with any process (via IPC Subsystem)</text>
+
+        <!-- Caption -->
+        <text x="410" y="416" fill="#3a4552" font-size="10" font-family="IBM Plex Sans,sans-serif" text-anchor="middle" font-style="italic">No direct P→R or P→P connections — kernel is always the intermediary</text>
+      </svg>
+    </div>
+
+    <h3>Why Two Separate Concerns?</h3>
+    <p><strong>P→R</strong> is about fairness, isolation, and safety. The OS prevents one process from starving another of CPU time, or corrupting another's memory. <strong>P→P</strong> is about cooperation — letting programs that need to work together exchange data and signals through well-defined channels, not by poking each other's memory directly.</p>
+
+    <div class="card-grid col3">
+      <div class="card">
+        <span class="card-icon">⚙️</span>
+        <div class="card-title">CPU</div>
+        <p>OS time-slices CPU among all running processes via a scheduler. A process never owns the CPU — it borrows it in quanta.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🧠</span>
+        <div class="card-title">Memory</div>
+        <p>Virtual address spaces give each process the illusion of owning all RAM. The MMU + OS translates virtual addresses to physical pages.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">💾</span>
+        <div class="card-title">Disk / File System</div>
+        <p>The OS translates file paths to inode or MFT records, managing read/write buffering and permissions for all concurrent accesses.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- S2 · LIVING WORLD ANALOGY                  -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="section" id="s2">
+    <span class="section-tag">§ 02 — Analogy</span>
+    <h2>The Human World vs The Process World</h2>
+
+    <p>Every human being needs <em>resources</em> (food, water, oxygen, space) and communicates with other <em>organisms</em> (signals, language, chemistry). A process world works exactly the same way — with the OS acting as the natural environment and governing rules that both humans and processes must operate within.</p>
+
+    <div class="universe-wrap">
+      <div class="universe-box living">
+        <div class="universe-title">🌿 Human World (Universe)</div>
+
+        <div class="entity-row">
+          <div class="entity-dot" style="background:var(--green)"></div>
+          <span style="font-size:13px; color:var(--text); font-weight:500">Human Being</span>
+          <span style="font-size:12px; color:var(--muted); margin-left:auto">organism</span>
+        </div>
+
+        <div style="margin: 14px 0; padding: 12px; background: rgba(255,255,255,0.03); border-radius:5px;">
+          <div style="font-size:11px; font-family:var(--mono); color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">L → Resource</div>
+          <div class="entity-arrow"><div class="arrow-line"></div>🌱 needs food, water</div>
+          <div class="entity-arrow"><div class="arrow-line"></div>🌬️ breathes oxygen</div>
+          <div class="entity-arrow"><div class="arrow-line"></div>☀️ uses sunlight/energy</div>
+          <div class="entity-arrow"><div class="arrow-line"></div>🏡 occupies space / territory</div>
+        </div>
+
+        <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius:5px;">
+          <div style="font-size:11px; font-family:var(--mono); color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">L → Human Being</div>
+          <div class="entity-arrow"><div class="arrow-line"></div>🗣️ language &amp; speech</div>
+          <div class="entity-arrow"><div class="arrow-line"></div>✉️ written messages</div>
+          <div class="entity-arrow"><div class="arrow-line"></div>🧬 chemical signals</div>
+          <div class="entity-arrow"><div class="arrow-line"></div>👁️ gesture &amp; touch</div>
+        </div>
+
+        <div style="margin-top:12px; font-size:12px; color:var(--muted); font-style:italic;">Environment = natural laws, ecology, physics</div>
+      </div>
+
+      <div class="universe-box process">
+        <div class="universe-title">💻 Process World (OS)</div>
+
+        <div class="entity-row">
+          <div class="entity-dot" style="background:var(--blue)"></div>
+          <span style="font-size:13px; color:var(--text); font-weight:500">Process / Program</span>
+          <span style="font-size:12px; color:var(--muted); margin-left:auto">instance</span>
+        </div>
+
+        <div style="margin: 14px 0; padding: 12px; background: rgba(255,255,255,0.03); border-radius:5px;">
+          <div style="font-size:11px; font-family:var(--mono); color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">P → Resource</div>
+          <div class="entity-arrow"><div class="arrow-line"></div>⚙️ requests CPU time</div>
+          <div class="entity-arrow"><div class="arrow-line"></div>🧠 allocates memory pages</div>
+          <div class="entity-arrow"><div class="arrow-line"></div>💾 reads/writes to disk</div>
+          <div class="entity-arrow"><div class="arrow-line"></div>🖥️ opens device handles</div>
+        </div>
+
+        <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius:5px;">
+          <div style="font-size:11px; font-family:var(--mono); color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">P → Process (IPC)</div>
+          <div class="entity-arrow"><div class="arrow-line"></div>📬 message queues</div>
+          <div class="entity-arrow"><div class="arrow-line"></div>🔗 pipes</div>
+          <div class="entity-arrow"><div class="arrow-line"></div>🗂️ shared memory</div>
+          <div class="entity-arrow"><div class="arrow-line"></div>🌐 sockets / network</div>
+        </div>
+
+        <div style="margin-top:12px; font-size:12px; color:var(--muted); font-style:italic;">Environment = OS kernel, hardware abstraction</div>
+      </div>
+    </div>
+
+    <!-- COMPARISON TABLE -->
+    <div class="compare-diagram">
+      <div class="compare-header">
+        <div class="compare-header-col amber">🌿 Human World</div>
+        <div></div>
+        <div class="compare-header-col cyan">💻 Process World</div>
+      </div>
+
+      <div class="compare-row">
+        <div class="compare-col left">
+          <div class="compare-label amber">Entity</div>
+          <div class="compare-value">Human Being</div>
+        </div>
+        <div class="compare-mid">≡</div>
+        <div class="compare-col right">
+          <div class="compare-label cyan">Entity</div>
+          <div class="compare-value">Process / Program Instance</div>
+        </div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-col left">
+          <div class="compare-label amber">Environment</div>
+          <div class="compare-value">Nature, Physics, Ecology</div>
+        </div>
+        <div class="compare-mid">≡</div>
+        <div class="compare-col right">
+          <div class="compare-label cyan">Environment</div>
+          <div class="compare-value">Operating System Kernel</div>
+        </div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-col left">
+          <div class="compare-label amber">Resources</div>
+          <div class="compare-value">Food, Water, Oxygen, Space, Energy</div>
+        </div>
+        <div class="compare-mid">≡</div>
+        <div class="compare-col right">
+          <div class="compare-label cyan">Resources</div>
+          <div class="compare-value">CPU, RAM, Disk, GPU, Network</div>
+        </div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-col left">
+          <div class="compare-label amber">Resource Rules</div>
+          <div class="compare-value">Natural limits — scarcity, ecology, seasons</div>
+        </div>
+        <div class="compare-mid">≡</div>
+        <div class="compare-col right">
+          <div class="compare-label cyan">Resource Rules</div>
+          <div class="compare-value">Kernel scheduler, MMU, permissions</div>
+        </div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-col left">
+          <div class="compare-label amber">Communication</div>
+          <div class="compare-value">Language, signals, chemistry, gestures</div>
+        </div>
+        <div class="compare-mid">≡</div>
+        <div class="compare-col right">
+          <div class="compare-label cyan">Communication</div>
+          <div class="compare-value">Pipes, sockets, queues, shared memory</div>
+        </div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-col left">
+          <div class="compare-label amber">Isolation</div>
+          <div class="compare-value">Skin, cell membranes, territory</div>
+        </div>
+        <div class="compare-mid">≡</div>
+        <div class="compare-col right">
+          <div class="compare-label cyan">Isolation</div>
+          <div class="compare-value">Virtual address space, process boundary</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- S3 · IPC TYPES                             -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="section" id="s3">
+    <span class="section-tag">§ 03 — IPC Types</span>
+    <h2>IPC Mechanisms — Windows &amp; Linux</h2>
+
+    <p>Both Windows and Linux provide a rich set of IPC primitives. Some exist on both platforms under different names or APIs; a few are platform-exclusive. The right choice depends on whether processes share the same machine, user, or network.</p>
+
+    <table class="ipc-table">
+      <thead>
+        <tr>
+          <th>Mechanism</th>
+          <th>Platform</th>
+          <th>How It Works</th>
+          <th>Best For</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Anonymous Pipe</td>
+          <td><span class="badge both">Both</span></td>
+          <td>Unidirectional byte stream between a parent and child process. Data flows in one direction through a kernel buffer. Classic use: <code>ls | grep</code> in a shell.</td>
+          <td>Parent–child, sequential data streams</td>
+        </tr>
+        <tr>
+          <td>Named Pipe (FIFO)</td>
+          <td><span class="badge both">Both</span></td>
+          <td>Like anonymous pipes but has a filesystem entry (<code>/tmp/mypipe</code> on Linux, <code>\\.\pipe\name</code> on Windows), so unrelated processes can connect to it by name.</td>
+          <td>Two unrelated processes on same machine</td>
+        </tr>
+        <tr>
+          <td>Message Queue</td>
+          <td><span class="badge both">Both</span></td>
+          <td>OS-managed queue of discrete messages. Sender writes a message; receiver reads it atomically. Each message has a type/priority. POSIX mq on Linux; MSMQ on Windows.</td>
+          <td>Decoupled producer/consumer, async tasks</td>
+        </tr>
+        <tr>
+          <td>Shared Memory</td>
+          <td><span class="badge both">Both</span></td>
+          <td>A region of RAM mapped into the address spaces of two or more processes. Fastest IPC method — no copying. Requires separate synchronisation (mutex/semaphore). <code>shmget/mmap</code> on Linux; <code>CreateFileMapping</code> on Windows.</td>
+          <td>High-throughput, low-latency data sharing</td>
+        </tr>
+        <tr>
+          <td>Semaphore / Mutex</td>
+          <td><span class="badge both">Both</span></td>
+          <td>Not a data channel — a synchronisation primitive. A semaphore is a counter; a mutex is a binary lock. Used alongside shared memory or files to prevent race conditions.</td>
+          <td>Coordinating concurrent access to shared state</td>
+        </tr>
+        <tr>
+          <td>Unix Domain Socket</td>
+          <td><span class="badge lin">Linux / macOS</span></td>
+          <td>Full socket API (stream or datagram) but over a local filesystem path instead of a network address. High performance; supports passing file descriptors between processes.</td>
+          <td>High-performance local IPC (daemons, browsers)</td>
+        </tr>
+        <tr>
+          <td>COM / DCOM</td>
+          <td><span class="badge win">Windows</span></td>
+          <td>Component Object Model. Processes expose objects with interfaces; clients call methods via a proxy. DCOM extends this across a network. Foundation for OLE, ActiveX, WinRT.</td>
+          <td>Windows component integration, Office automation</td>
+        </tr>
+        <tr>
+          <td>D-Bus</td>
+          <td><span class="badge lin">Linux</span></td>
+          <td>A message bus daemon that lets system services and desktop applications send signals and call methods on each other. Heavily used by systemd, GNOME, KDE, PulseAudio.</td>
+          <td>Desktop/system service coordination on Linux</td>
+        </tr>
+        <tr>
+          <td>Socket (TCP/UDP)</td>
+          <td><span class="badge both">Both</span></td>
+          <td>Network sockets using the TCP or UDP protocols. Work between processes on the same machine (via loopback <code>127.0.0.1</code>) or across the internet. The universal IPC for distributed systems.</td>
+          <td>Cross-machine, cross-platform, internet-scale IPC</td>
+        </tr>
+        <tr>
+          <td>Signal (kill/sigaction)</td>
+          <td><span class="badge lin">Linux / POSIX</span></td>
+          <td>Asynchronous notification sent to a process. Tiny payload (just a signal number, e.g. SIGTERM, SIGINT). The process registers a handler or is killed. Not a data channel — an event notification.</td>
+          <td>Process lifecycle control (start, stop, reload)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <strong>Key insight:</strong> As you move up the list, IPC mechanisms get faster but more tightly coupled (same machine, same OS). Sockets trade some performance for total flexibility — they work anywhere.
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- S4 · TCP VS LOCAL PROTOCOLS                -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="section" id="s4">
+    <span class="section-tag">§ 04 — Networking</span>
+    <h2>TCP vs Local Protocols — Global Passport vs Local ID</h2>
+
+    <p>Think of communication protocols as <em>identity and travel documents</em>. Some documents are only accepted locally; others are recognised anywhere in the world.</p>
+
+    <div class="analogy-grid">
+      <div class="analogy-card local">
+        <div class="a-title">📄 Local Protocols — "Local Documents"</div>
+        <ul>
+          <li>Unix Domain Sockets (<code>AF_UNIX</code>)</li>
+          <li>Named Pipes / FIFO</li>
+          <li>Shared Memory segments</li>
+          <li>D-Bus on Linux</li>
+          <li>COM on Windows</li>
+        </ul>
+        <div style="margin-top:12px; font-size:12px; color:var(--muted); font-style:italic;">Real-world analogy:</div>
+        <ul style="margin-top:6px;">
+          <li>NRIC / National ID card (valid in one country)</li>
+          <li>Local driver's licence</li>
+          <li>University student card</li>
+          <li>Local business certificate</li>
+        </ul>
+        <div class="pro-con" style="margin-top:12px;">
+          <span class="pro">✓ Faster — no network stack overhead</span>
+          <span class="pro">✓ More secure — no external exposure</span>
+          <span class="pro">✓ OS handles permissions natively</span>
+          <span class="con">✗ Only works on the same machine</span>
+          <span class="con">✗ Not portable across OS types</span>
+        </div>
+      </div>
+
+      <div class="analogy-card global">
+        <div class="a-title">🌐 TCP/IP — "International Passport"</div>
+        <ul>
+          <li>TCP (Transmission Control Protocol)</li>
+          <li>UDP (User Datagram Protocol)</li>
+          <li>Works via IP addresses — globally routable</li>
+          <li>Used by HTTP, SMTP, SSH, FTP, WebSocket…</li>
+          <li>Works: same machine, LAN, internet</li>
+        </ul>
+        <div style="margin-top:12px; font-size:12px; color:var(--muted); font-style:italic;">Real-world analogy:</div>
+        <ul style="margin-top:6px;">
+          <li>Passport — accepted in 195 countries</li>
+          <li>IBAN bank account number — used globally</li>
+          <li>Email address — works anywhere on earth</li>
+          <li>Phone number with country code (+95...)</li>
+        </ul>
+        <div class="pro-con" style="margin-top:12px;">
+          <span class="pro">✓ Works across machines, LANs, the internet</span>
+          <span class="pro">✓ Cross-platform (Windows ↔ Linux ↔ Mac)</span>
+          <span class="pro">✓ Standardised — every OS supports it</span>
+          <span class="con">✗ Slower — full network stack involved</span>
+          <span class="con">✗ Must manage addresses, ports, firewalls</span>
+        </div>
+      </div>
+    </div>
+
+    <h3>TCP in Depth</h3>
+    <p>TCP (Transmission Control Protocol) sits at Layer 4 of the network model. It provides a <strong>reliable, ordered, error-checked byte stream</strong> between two endpoints (a socket pair: IP address + port). Once a TCP connection is established, it feels like a pipe — you write bytes in one end and they emerge, in order, at the other end, even if the physical path crosses 12 routers and 3 continents.</p>
+
+    <div class="card-grid col3">
+      <div class="card">
+        <span class="card-icon">🔗</span>
+        <div class="card-title">Connection-Oriented</div>
+        <p>A 3-way handshake (SYN → SYN-ACK → ACK) establishes the connection before any data flows. Both sides agree to communicate.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">✅</span>
+        <div class="card-title">Reliable Delivery</div>
+        <p>Every segment is acknowledged. Lost packets are retransmitted. The receiving side never sees gaps — the OS reorders fragments before handing data to the application.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon">🌍</span>
+        <div class="card-title">Globally Routable</div>
+        <p>TCP rides on IP. An IP address identifies any machine on earth. Packets are routed hop-by-hop across the internet's backbone to reach the destination.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- S5 · TCP LAB                               -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="section" id="s5">
+    <span class="section-tag">§ 05 — TCP Lab</span>
+    <h2>Lab: Exploring TCP Connections</h2>
+
+    <p>We'll manually open TCP connections and type raw bytes — the same way higher-level tools like <code>curl</code> and browsers work under the hood.</p>
+
+    <h3>Tools</h3>
+    <div class="tool-grid">
+      <div class="tool-card">
+        <div class="tool-name">nc (netcat)</div>
+        <div class="tool-plat">Linux / macOS / Windows WSL</div>
+        <div class="tool-desc">The "Swiss army knife" for TCP/UDP. Opens raw connections or acts as a server listener.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">telnet</div>
+        <div class="tool-plat">Cross-platform (all OS)</div>
+        <div class="tool-desc">Classic TCP client. Pre-installed on most systems; also available via Windows optional features.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">ncat</div>
+        <div class="tool-plat">Windows (nmap suite)</div>
+        <div class="tool-desc">Modern reimplementation of netcat for Windows. Part of the nmap toolkit.</div>
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 5A — Open a raw TCP connection to a web server</div>
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          Open a terminal. Use <code>nc</code> (Linux/Mac) or <code>telnet</code> (any) to connect to a web server on port 80.<br>
+          <strong>nc:</strong> <code>nc example.com 80</code> &nbsp; | &nbsp; <strong>telnet:</strong> <code>telnet example.com 80</code>
+        </div>
+      </div>
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          Once connected (you'll see a blank cursor — the TCP channel is open), type the following HTTP request <em>exactly</em>, pressing Enter twice at the end:
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Type this after connecting</span>
+          <span class="code-tag">raw TCP input</span>
+        </div>
+        <pre><span class="cmd">GET</span> <span class="arg">/ HTTP/1.0</span>
+<span class="cmd">Host:</span> <span class="arg">example.com</span>
+
+</pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          The server responds with a full HTTP response — status line, headers, then the HTML body. Observe: you just manually spoke HTTP over a raw TCP socket.
+        </div>
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 5B — Create a simple TCP server and connect to it</div>
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          <strong>Terminal A (server):</strong> <code>nc -l 9000</code> — starts listening on port 9000
+        </div>
+      </div>
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          <strong>Terminal B (client):</strong> <code>nc localhost 9000</code> — connects to it
+        </div>
+      </div>
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          Type anything in either terminal and press Enter. Text appears in the other window. You've built a basic two-process IPC channel using TCP sockets.
+        </div>
+      </div>
+      <div class="lab-step">
+        <div class="lab-step-num">4</div>
+        <div class="lab-step-content">
+          On a second machine on the same WiFi: replace <code>localhost</code> with the server machine's local IP (e.g. <code>192.168.1.x</code>). Messages cross machines.
+        </div>
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 5C — Multi-client broadcast with ncat broker</div>
+
+      <p style="font-size:13px;color:var(--dim);margin-bottom:16px;">
+        In Lab 5B, only two processes communicated — a 1-to-1 channel. Here we scale to
+        <strong style="color:var(--text)">many-to-many</strong>: every message typed by any client is
+        broadcast to all other clients through a single broker process. This is the TCP equivalent
+        of the P→P many-to-many relationship managed by the OS IPC subsystem.
+      </p>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          <strong>Install ncat</strong> if not already present.<br>
+          Linux: <code>sudo apt install ncat</code> &nbsp;·&nbsp;
+          macOS: <code>brew install nmap</code> &nbsp;·&nbsp;
+          Windows: install <a href="https://nmap.org/download.html" style="color:var(--cyan)">nmap</a> — ncat.exe is bundled
+        </div>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          <strong>Terminal A — start the broker server.</strong> It listens on port 9001, keeps
+          accepting new clients (<code>-k</code>), and relays every message to all of them
+          (<code>--broker</code>).
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal A · Broker server</span>
+          <span class="code-tag">ncat</span>
+        </div>
+        <pre><span class="cmd">ncat</span> <span class="arg">-l 9001 --keep-open --broker</span>
+<span class="out">Ncat: Version 7.x ( https://nmap.org/ncat )
+Ncat: Listening on 0.0.0.0:9001</span>     <span class="com"># waiting for clients</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          <strong>Terminal B — Client 1 connects.</strong>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal B · Client 1</span>
+          <span class="code-tag">ncat</span>
+        </div>
+        <pre><span class="cmd">ncat</span> <span class="arg">localhost 9001</span>
+<span class="com"># cursor waits — you are now connected</span>
+<span class="str">Hello from Client 1</span>        <span class="com"># type this, press Enter</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">4</div>
+        <div class="lab-step-content">
+          <strong>Terminal C — Client 2 connects.</strong>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal C · Client 2</span>
+          <span class="code-tag">ncat</span>
+        </div>
+        <pre><span class="cmd">ncat</span> <span class="arg">localhost 9001</span>
+<span class="out">Hello from Client 1</span>        <span class="com"># arrives from broker immediately</span>
+<span class="str">Hello back from Client 2</span>   <span class="com"># type this — Client 1 will see it</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">5</div>
+        <div class="lab-step-content">
+          <strong>Terminal D — Client 3 connects</strong> (open as many as you like). Type in any
+          terminal — the message appears in all others simultaneously.
+        </div>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">6</div>
+        <div class="lab-step-content">
+          <strong>Cross-machine variant.</strong> On a second machine on the same WiFi, replace
+          <code>localhost</code> with the broker machine's LAN IP (e.g. <code>192.168.1.x</code>).
+          All terminals — across different machines — share the same broadcast channel.
+        </div>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">7</div>
+        <div class="lab-step-content">
+          <strong>Observe in Terminal A.</strong> The broker process itself prints nothing — it only
+          routes. Run the connection inspector in a fifth terminal to see all open sockets:
+          <code>ss -tnp | grep 9001</code> — one LISTEN entry plus one ESTABLISHED line per client.
+        </div>
+      </div>
+
+      <div style="margin-top:16px;padding:14px 16px;background:var(--bg4);border-radius:var(--radius);font-size:12px;color:var(--dim);font-family:var(--mono);line-height:2;">
+        <span style="color:var(--muted)">flow: </span>
+        <span style="color:var(--purple)">Client 1</span>
+        <span style="color:var(--muted)"> ──→ </span>
+        <span style="color:var(--cyan)">ncat broker :9001</span>
+        <span style="color:var(--muted)"> ──→ </span>
+        <span style="color:var(--purple)">Client 2</span>
+        <span style="color:var(--muted)">,</span>
+        <span style="color:var(--purple)">Client 3</span>
+        <span style="color:var(--muted)">,</span>
+        <span style="color:var(--purple)">Client N</span>
+        <br>
+        <span style="color:var(--muted)">ncat mode: </span>
+        <span style="color:var(--amber)">-l</span> listen &nbsp;·&nbsp;
+        <span style="color:var(--amber)">-k</span> keep-open (re-accept) &nbsp;·&nbsp;
+        <span style="color:var(--amber)">--broker</span> fan-out to all peers
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 5D — Expose ncat as an HTTP server via Cloudflare Tunnel</div>
+
+      <p style="font-size:13px;color:var(--dim);margin-bottom:16px;">
+        ncat listens for raw TCP. A browser sends HTTP — which is just text over TCP.
+        Cloudflare Tunnel (<code>cloudflared</code>) forwards the browser's HTTP request to your
+        ncat port, and you type the HTTP response by hand. This makes the full stack visible:
+        <strong style="color:var(--text)">Browser → HTTPS → Cloudflare → HTTP → ncat → you type the response</strong>.
+      </p>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          <strong>Install cloudflared.</strong><br>
+          Windows: download <code>cloudflared-windows-amd64.exe</code> from
+          <a href="https://github.com/cloudflare/cloudflared/releases" style="color:var(--cyan)">github.com/cloudflare/cloudflared/releases</a>,
+          rename to <code>cloudflared.exe</code>, place on PATH.<br>
+          Linux: <code>sudo apt install cloudflared</code> &nbsp;·&nbsp;
+          macOS: <code>brew install cloudflared</code>
+        </div>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          <strong>Terminal A — start ncat listening on port 9000.</strong>
+          Use <code>--keep-open</code> so it re-accepts after each browser request.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal A · ncat HTTP listener</span>
+          <span class="code-tag">ncat</span>
+        </div>
+        <pre><span class="cmd">ncat</span> <span class="arg">-l 9000 --keep-open</span>
+<span class="com"># waits silently — browser request will appear here when a client connects</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          <strong>Terminal B — start a quick Cloudflare Tunnel.</strong>
+          No account or login needed — <code>--quick-tunnels</code> gives you a temporary public HTTPS URL instantly.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal B · Cloudflare quick tunnel</span>
+          <span class="code-tag">cloudflared</span>
+        </div>
+        <pre><span class="cmd">cloudflared</span> <span class="arg">tunnel --url http://localhost:9000</span>
+<span class="out">
++--------------------------------------------------------------------------------------------+
+|  Your quick Tunnel has been created! Visit it at (it may take some time to be reachable):  |
+|  https://sue-sodium-detector-assumes.trycloudflare.com                                     |
++--------------------------------------------------------------------------------------------+</span>
+<span class="com"># copy the https://... URL — this is your public endpoint</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">4</div>
+        <div class="lab-step-content">
+          <strong>Open a browser</strong> and navigate to the <code>trycloudflare.com</code> URL.
+          Switch back to <strong>Terminal A</strong> — the full HTTP request from the browser appears:
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal A · incoming browser request (example)</span>
+          <span class="code-tag">raw TCP input received</span>
+        </div>
+        <pre><span class="out">GET / HTTP/1.1
+Host: sue-sodium-detector-assumes.trycloudflare.com
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) ...
+Accept: text/html,application/xhtml+xml,...
+Accept-Encoding: gzip
+Cf-Connecting-Ip: 2001:fb1:10f:cddb:...
+Cf-Ipcountry: TH
+Cf-Ray: 9fd43e7df6b6f4cf-BKK
+Cf-Visitor: {"scheme":"https"}
+Connection: keep-alive
+...</span>
+<span class="com"># Cloudflare strips TLS and forwards plain HTTP — you see every header</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">5</div>
+        <div class="lab-step-content">
+          <strong>Type the HTTP response</strong> in Terminal A. Type each line then press
+          <kbd>Enter</kbd>. After the last header press <kbd>Enter</kbd> <em>twice</em> to send
+          the mandatory blank line that separates headers from body.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal A · type this response</span>
+          <span class="code-tag">HTTP/1.1</span>
+        </div>
+        <pre><span class="hl-status" style="color:var(--green);font-weight:600;">HTTP/1.1 200 OK</span>
+<span style="color:var(--amber);">Content-Type: text/html</span>
+<span style="color:var(--amber);">Content-Length: 13</span>
+<span style="color:var(--amber);">Connection: close</span>
+                              <span class="com">← blank line here (press Enter twice)</span>
+<span style="color:var(--purple);">Hello, World!</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">6</div>
+        <div class="lab-step-content">
+          Switch to the browser — it renders <strong>Hello, World!</strong>. You just manually
+          served an HTTP response from a raw TCP listener exposed to the public internet.
+        </div>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">7</div>
+        <div class="lab-step-content">
+          <strong>Repeat with an HTML page.</strong> Wait for the next browser request
+          (ncat re-accepts due to <code>--keep-open</code>), then type a richer response.
+          Update <code>Content-Length</code> to match the body byte count exactly.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal A · HTML response</span>
+          <span class="code-tag">HTTP/1.1</span>
+        </div>
+        <pre><span style="color:var(--green);font-weight:600;">HTTP/1.1 200 OK</span>
+<span style="color:var(--amber);">Content-Type: text/html</span>
+<span style="color:var(--amber);">Content-Length: 49</span>
+<span style="color:var(--amber);">Connection: close</span>
+
+<span style="color:var(--purple);">&lt;h1&gt;IPC Lab&lt;/h1&gt;&lt;p&gt;HTTP over raw TCP socket&lt;/p&gt;</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">8</div>
+        <div class="lab-step-content">
+          <strong>Try a 404.</strong> Browsers handle non-200 status codes too — see what happens.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal A · 404 response</span>
+          <span class="code-tag">HTTP/1.1</span>
+        </div>
+        <pre><span style="color:var(--red);font-weight:600;">HTTP/1.1 404 Not Found</span>
+<span style="color:var(--amber);">Content-Type: text/html</span>
+<span style="color:var(--amber);">Content-Length: 18</span>
+<span style="color:var(--amber);">Connection: close</span>
+
+<span style="color:var(--purple);">&lt;h1&gt;Not Found&lt;/h1&gt;</span></pre>
+      </div>
+
+      <div style="margin-top:16px;padding:14px 16px;background:var(--bg4);border-radius:var(--radius);font-size:12px;color:var(--dim);line-height:2.2;font-family:var(--mono);">
+        <div><span style="color:var(--muted);">full path: </span>
+          <span style="color:var(--purple);">Browser</span>
+          <span style="color:var(--muted);"> ──HTTPS──▶ </span>
+          <span style="color:var(--cyan);">Cloudflare Edge</span>
+          <span style="color:var(--muted);"> ──HTTP──▶ </span>
+          <span style="color:var(--cyan);">cloudflared</span>
+          <span style="color:var(--muted);"> ──TCP──▶ </span>
+          <span style="color:var(--amber);">ncat :9000</span>
+          <span style="color:var(--muted);"> ──▶ </span>
+          <span style="color:var(--green);">you type</span>
+        </div>
+        <div><span style="color:var(--muted);">key insight: </span>HTTP is just formatted text — any process that can read and write TCP can speak it</div>
+        <div><span style="color:var(--muted);">blank line: </span><code>\r\n\r\n</code> separates headers from body — required by HTTP spec</div>
+        <div><span style="color:var(--muted);">Content-Length: </span>must match body byte count exactly or browser will hang waiting for more data</div>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-label">Check open TCP connections</span>
+        <span class="code-tag">shell</span>
+      </div>
+      <pre><span class="com"># Linux / macOS</span>
+<span class="cmd">ss</span> <span class="arg">-tnp</span>               <span class="com"># show TCP connections with PIDs</span>
+<span class="cmd">netstat</span> <span class="arg">-an</span>            <span class="com"># all sockets, all states</span>
+
+<span class="com"># Windows (CMD / PowerShell)</span>
+<span class="cmd">netstat</span> <span class="arg">-an</span>
+<span class="cmd">Get-NetTCPConnection</span>  <span class="com"># PowerShell</span></pre>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- S5E · PIPE LAB                             -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="section" id="s5e">
+    <span class="section-tag">§ 05.03 — Pipe Lab</span>
+    <h2>Lab: Experiencing Pipes</h2>
+
+    <div class="hero-bar">
+      A <strong>pipe</strong> ( <code>|</code> ) connects the <strong>stdout</strong> of one process directly to the <strong>stdin</strong> of another — the OS creates a kernel buffer between them. No file is written. The two processes run concurrently; the left process produces, the right process consumes. This is the simplest and oldest form of IPC.
+    </div>
+
+    <p>The shell <code>|</code> character is syntactic sugar for the OS creating an anonymous pipe, wiring the write-end to the left process and the read-end to the right process, then spawning both. Data flows left to right as a byte stream.</p>
+
+    <!-- PIPE FLOW DIAGRAM -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 20px 10px;margin:20px 0;overflow:hidden;">
+      <svg viewBox="0 0 700 90" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+        <!-- Process A -->
+        <rect x="10" y="22" width="140" height="46" fill="#1d2733" stroke="rgba(176,127,240,0.5)" stroke-width="1.5" rx="5"/>
+        <text x="80" y="42" fill="#d4dce8" font-size="13" font-family="IBM Plex Mono,monospace" font-weight="600" text-anchor="middle">Process A</text>
+        <text x="80" y="58" fill="#586472" font-size="10" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">stdout (write end)</text>
+
+        <!-- Pipe buffer -->
+        <rect x="190" y="28" width="180" height="34" fill="rgba(0,200,200,0.07)" stroke="rgba(0,200,200,0.3)" stroke-width="1.5" rx="4"/>
+        <text x="280" y="44" fill="#00c8c8" font-size="11" font-family="IBM Plex Mono,monospace" font-weight="600" text-anchor="middle">PIPE BUFFER</text>
+        <text x="280" y="56" fill="#586472" font-size="9.5" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">kernel-managed byte stream</text>
+
+        <!-- Process B -->
+        <rect x="410" y="22" width="140" height="46" fill="#1d2733" stroke="rgba(176,127,240,0.5)" stroke-width="1.5" rx="5"/>
+        <text x="480" y="42" fill="#d4dce8" font-size="13" font-family="IBM Plex Mono,monospace" font-weight="600" text-anchor="middle">Process B</text>
+        <text x="480" y="58" fill="#586472" font-size="10" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">stdin (read end)</text>
+
+        <!-- Arrows -->
+        <line x1="150" y1="45" x2="188" y2="45" stroke="#f0a030" stroke-width="2" marker-end="url(#mm-a)"/>
+        <line x1="370" y1="45" x2="408" y2="45" stroke="#00c8c8" stroke-width="2" marker-end="url(#mm-b)"/>
+
+        <!-- Shell pipe character -->
+        <text x="588" y="50" fill="#3a4552" font-size="28" font-family="IBM Plex Mono,monospace" font-weight="700">|</text>
+        <text x="612" y="42" fill="#3a4552" font-size="10" font-family="IBM Plex Sans,sans-serif">shell</text>
+        <text x="612" y="54" fill="#3a4552" font-size="10" font-family="IBM Plex Sans,sans-serif">syntax</text>
+
+        <!-- Labels -->
+        <text x="165" y="38" fill="#f0a030" font-size="9" font-family="IBM Plex Mono,monospace" text-anchor="middle">write</text>
+        <text x="390" y="38" fill="#00c8c8" font-size="9" font-family="IBM Plex Mono,monospace" text-anchor="middle">read</text>
+
+        <!-- Caption -->
+        <text x="350" y="84" fill="#3a4552" font-size="9.5" font-family="IBM Plex Sans,sans-serif" text-anchor="middle" font-style="italic">OS wires stdout of A → pipe buffer → stdin of B. Both run concurrently. No file involved.</text>
+      </svg>
+    </div>
+
+    <!-- ── WINDOWS ── -->
+    <h3>🪟 Windows — CMD &amp; PowerShell</h3>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 5E-W · Pipes on Windows</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          <strong>Basic pipe — filter output.</strong> <code>dir</code> lists files; <code>findstr</code>
+          filters lines containing the pattern. The two processes communicate via pipe.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">CMD</span><span class="code-tag">anonymous pipe</span></div>
+        <pre><span class="com">:: List files, keep only .txt entries</span>
+<span class="cmd">dir</span> <span class="arg">/b</span> <span class="arg">|</span> <span class="cmd">findstr</span> <span class="str">".txt"</span>
+
+<span class="com">:: Count lines in a file</span>
+<span class="cmd">type</span> <span class="arg">myfile.txt</span> <span class="arg">|</span> <span class="cmd">find</span> <span class="arg">/c</span> <span class="str">""</span>
+
+<span class="com">:: Chain three processes</span>
+<span class="cmd">dir</span> <span class="arg">/b</span> <span class="arg">|</span> <span class="cmd">findstr</span> <span class="str">".txt"</span> <span class="arg">|</span> <span class="cmd">sort</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          <strong>PowerShell object pipe.</strong> PowerShell pipes .NET objects, not raw text —
+          each stage receives structured data, not a string.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">PowerShell</span><span class="code-tag">object pipe</span></div>
+        <pre><span class="com"># List processes, filter by name, show selected columns</span>
+<span class="cmd">Get-Process</span> <span class="arg">|</span> <span class="cmd">Where-Object</span> { <span class="str">$_.CPU -gt 1</span> } <span class="arg">|</span> <span class="cmd">Select-Object</span> <span class="arg">Name, CPU, Id</span>
+
+<span class="com"># Count running services</span>
+<span class="cmd">Get-Service</span> <span class="arg">|</span> <span class="cmd">Where-Object</span> <span class="arg">Status -eq</span> <span class="str">"Running"</span> <span class="arg">|</span> <span class="cmd">Measure-Object</span>
+
+<span class="com"># Sort files by size, show top 5</span>
+<span class="cmd">Get-ChildItem</span> <span class="arg">|</span> <span class="cmd">Sort-Object</span> <span class="arg">Length -Descending</span> <span class="arg">|</span> <span class="cmd">Select-Object</span> <span class="arg">-First 5</span> <span class="arg">Name, Length</span>
+
+<span class="com"># Echo text through a pipe chain</span>
+<span class="cmd">echo</span> <span class="str">"hello world"</span> <span class="arg">|</span> <span class="cmd">ForEach-Object</span> { <span class="arg">$_.ToUpper()</span> }</pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          <strong>Named pipe — two separate processes.</strong>
+          Open two PowerShell windows. Server writes; client reads. The OS holds the pipe buffer between them.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">PowerShell Window A · Named Pipe Server</span><span class="code-tag">named pipe</span></div>
+        <pre><span class="cmd">$pipe</span> = <span class="cmd">New-Object</span> System.IO.Pipes.NamedPipeServerStream(<span class="str">'ipclab'</span>, [System.IO.Pipes.PipeDirection]::Out)
+<span class="cmd">Write-Host</span> <span class="str">"Waiting for client..."</span>
+<span class="cmd">$pipe</span>.WaitForConnection()
+<span class="cmd">$writer</span> = <span class="cmd">New-Object</span> System.IO.StreamWriter(<span class="cmd">$pipe</span>)
+<span class="cmd">$writer</span>.AutoFlush = <span class="arg">$true</span>
+<span class="cmd">$writer</span>.WriteLine(<span class="str">"Hello from the pipe server!"</span>)
+<span class="cmd">$pipe</span>.Dispose()
+<span class="cmd">Write-Host</span> <span class="str">"Message sent."</span></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">PowerShell Window B · Named Pipe Client</span><span class="code-tag">named pipe</span></div>
+        <pre><span class="cmd">$pipe</span> = <span class="cmd">New-Object</span> System.IO.Pipes.NamedPipeClientStream(<span class="str">'.'</span>, <span class="str">'ipclab'</span>, [System.IO.Pipes.PipeDirection]::In)
+<span class="cmd">$pipe</span>.Connect()
+<span class="cmd">$reader</span> = <span class="cmd">New-Object</span> System.IO.StreamReader(<span class="cmd">$pipe</span>)
+<span class="cmd">Write-Host</span> (<span class="cmd">$reader</span>.ReadLine())   <span class="com"># prints: Hello from the pipe server!</span>
+<span class="cmd">$pipe</span>.Dispose()</pre>
+      </div>
+    </div>
+
+    <!-- ── LINUX ── -->
+    <h3>🐧 Linux — Bash</h3>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 5E-L · Pipes on Linux</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          <strong>Anonymous pipe chain.</strong> Classic Unix pipeline — each <code>|</code> creates one OS pipe between adjacent processes. All run simultaneously.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash</span><span class="code-tag">anonymous pipe</span></div>
+        <pre><span class="com"># List files, filter, sort, count</span>
+<span class="cmd">ls</span> <span class="arg">-la</span> <span class="arg">|</span> <span class="cmd">grep</span> <span class="str">".txt"</span> <span class="arg">|</span> <span class="cmd">sort</span> <span class="arg">|</span> <span class="cmd">wc -l</span>
+
+<span class="com"># Show top 5 CPU-consuming processes</span>
+<span class="cmd">ps aux</span> <span class="arg">|</span> <span class="cmd">sort</span> <span class="arg">-k3 -rn</span> <span class="arg">|</span> <span class="cmd">head</span> <span class="arg">-5</span>
+
+<span class="com"># Count unique IPs in a log file</span>
+<span class="cmd">cat</span> <span class="arg">access.log</span> <span class="arg">|</span> <span class="cmd">awk</span> <span class="str">'{print $1}'</span> <span class="arg">|</span> <span class="cmd">sort</span> <span class="arg">|</span> <span class="cmd">uniq -c</span> <span class="arg">|</span> <span class="cmd">sort</span> <span class="arg">-rn</span>
+
+<span class="com"># Generate data and process it — two custom processes</span>
+<span class="cmd">echo</span> <span class="str">"hello world from process A"</span> <span class="arg">|</span> <span class="cmd">tr</span> <span class="str">'a-z' 'A-Z'</span>   <span class="com"># → HELLO WORLD FROM PROCESS A</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          <strong>See the pipe in action — prove two processes run.</strong>
+          Check PIDs and pipe file descriptors while the pipeline is live.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash · inspect pipe internals</span><span class="code-tag">bash</span></div>
+        <pre><span class="com"># Run a slow pipeline, inspect it from another terminal</span>
+<span class="cmd">yes</span> <span class="arg">|</span> <span class="cmd">head</span> <span class="arg">-n 1000000</span> <span class="arg">|</span> <span class="cmd">wc -l</span>
+
+<span class="com"># In another terminal while above runs:</span>
+<span class="cmd">pgrep</span> <span class="arg">-a yes</span>                  <span class="com"># find PID of 'yes' process</span>
+<span class="cmd">ls</span> <span class="arg">-la /proc/&lt;PID&gt;/fd</span>         <span class="com"># see file descriptors — fd/1 is the pipe write end</span>
+<span class="cmd">lsof</span> <span class="arg">-p &lt;PID&gt;</span>                  <span class="com"># show open files including pipe</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          <strong>Named pipe (FIFO) — two independent terminals.</strong>
+          A FIFO has a filesystem entry; unrelated processes open it by name.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash · Named pipe (FIFO)</span><span class="code-tag">mkfifo</span></div>
+        <pre><span class="com"># Create the named pipe (appears in filesystem)</span>
+<span class="cmd">mkfifo</span> <span class="arg">/tmp/ipclab-pipe</span>
+<span class="cmd">ls</span> <span class="arg">-la /tmp/ipclab-pipe</span>       <span class="com"># shows: prw-r--r-- (p = pipe)</span>
+
+<span class="com">── Terminal A (reader — blocks until writer connects) ──</span>
+<span class="cmd">cat</span> <span class="arg">/tmp/ipclab-pipe</span>
+
+<span class="com">── Terminal B (writer) ──</span>
+<span class="cmd">echo</span> <span class="str">"IPC message via named pipe"</span> <span class="arg">&gt; /tmp/ipclab-pipe</span>
+<span class="com"># Terminal A immediately prints the message</span>
+
+<span class="com"># Cleanup</span>
+<span class="cmd">rm</span> <span class="arg">/tmp/ipclab-pipe</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">4</div>
+        <div class="lab-step-content">
+          <strong>Continuous FIFO stream — simulate a producer/consumer.</strong>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash · Producer / Consumer via FIFO</span><span class="code-tag">mkfifo</span></div>
+        <pre><span class="cmd">mkfifo</span> <span class="arg">/tmp/stream</span>
+
+<span class="com">── Terminal A (consumer) ──</span>
+<span class="cmd">while</span> <span class="cmd">read</span> <span class="arg">line</span>; <span class="cmd">do</span>
+  <span class="cmd">echo</span> <span class="str">"Received: $line"</span>
+<span class="cmd">done</span> <span class="arg">&lt; /tmp/stream</span>
+
+<span class="com">── Terminal B (producer) ──</span>
+<span class="cmd">for</span> <span class="arg">i</span> <span class="cmd">in</span> <span class="arg">1 2 3 4 5</span>; <span class="cmd">do</span>
+  <span class="cmd">echo</span> <span class="str">"Message $i"</span> <span class="arg">&gt; /tmp/stream</span>
+  <span class="cmd">sleep</span> <span class="arg">1</span>
+<span class="cmd">done</span>
+<span class="com"># Terminal A prints each message as it arrives — true IPC</span></pre>
+      </div>
+    </div>
+
+    <!-- ── MACOS ── -->
+    <h3>🍎 macOS — Zsh / Bash</h3>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 5E-M · Pipes on macOS</div>
+
+      <p style="font-size:13px;color:var(--dim);margin-bottom:14px;">
+        macOS is POSIX-compliant — all Linux bash pipe commands work identically.
+        The examples below highlight macOS-specific tools and differences.
+      </p>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          <strong>Anonymous pipe — macOS native tools.</strong>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">zsh / bash</span><span class="code-tag">anonymous pipe</span></div>
+        <pre><span class="com"># List running apps, filter, count</span>
+<span class="cmd">ps aux</span> <span class="arg">|</span> <span class="cmd">grep</span> <span class="arg">-i</span> <span class="str">"chrome"</span> <span class="arg">|</span> <span class="cmd">wc -l</span>
+
+<span class="com"># Show top memory consumers</span>
+<span class="cmd">ps aux</span> <span class="arg">|</span> <span class="cmd">sort</span> <span class="arg">-k4 -rn</span> <span class="arg">|</span> <span class="cmd">head</span> <span class="arg">-5</span>
+
+<span class="com"># List network connections, grep for LISTEN ports</span>
+<span class="cmd">netstat</span> <span class="arg">-an</span> <span class="arg">|</span> <span class="cmd">grep</span> <span class="str">"LISTEN"</span>
+
+<span class="com"># Pipe text to macOS clipboard</span>
+<span class="cmd">echo</span> <span class="str">"copied via pipe"</span> <span class="arg">|</span> <span class="cmd">pbcopy</span>
+<span class="cmd">pbpaste</span>                                <span class="com"># prints: copied via pipe</span>
+
+<span class="com"># Say text via speech synthesiser (fun demo)</span>
+<span class="cmd">echo</span> <span class="str">"IPC pipe works"</span> <span class="arg">|</span> <span class="cmd">say</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          <strong>Named pipe (FIFO) — identical to Linux.</strong>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">zsh · Named pipe</span><span class="code-tag">mkfifo</span></div>
+        <pre><span class="cmd">mkfifo</span> <span class="arg">/tmp/ipclab-pipe</span>
+
+<span class="com">── Terminal A (reader) ──</span>
+<span class="cmd">cat</span> <span class="arg">/tmp/ipclab-pipe</span>
+
+<span class="com">── Terminal B (writer) ──</span>
+<span class="cmd">echo</span> <span class="str">"Hello from macOS pipe"</span> <span class="arg">&gt; /tmp/ipclab-pipe</span>
+
+<span class="cmd">rm</span> <span class="arg">/tmp/ipclab-pipe</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          <strong>Process substitution</strong> — a macOS/Linux feature where the shell creates
+          a pipe transparently so a command that expects a file can consume live output instead.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">zsh · Process substitution</span><span class="code-tag">bash / zsh</span></div>
+        <pre><span class="com"># diff two command outputs without writing temp files</span>
+<span class="cmd">diff</span> <span class="arg">&lt;(ls /tmp)</span> <span class="arg">&lt;(ls /var/tmp)</span>
+<span class="com"># shell creates two pipes, runs both ls commands, feeds outputs to diff</span>
+
+<span class="com"># Compare sorted vs unsorted</span>
+<span class="cmd">diff</span> <span class="arg">&lt;(cat names.txt)</span> <span class="arg">&lt;(sort names.txt)</span>
+
+<span class="com"># Tee — send one pipe to multiple consumers simultaneously</span>
+<span class="cmd">ls</span> <span class="arg">-la</span> <span class="arg">|</span> <span class="cmd">tee</span> <span class="arg">/tmp/listing.txt</span> <span class="arg">|</span> <span class="cmd">wc -l</span>
+<span class="com"># stdout → screen AND → file at the same time</span></pre>
+      </div>
+    </div>
+
+    <!-- COMPARISON TABLE -->
+    <h3>Cross-Platform Comparison</h3>
+    <table class="ipc-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Windows CMD</th>
+          <th>Windows PowerShell</th>
+          <th>Linux bash</th>
+          <th>macOS zsh</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Anonymous pipe</td>
+          <td><code>cmd1 | cmd2</code></td>
+          <td><code>cmd1 | cmd2</code></td>
+          <td><code>cmd1 | cmd2</code></td>
+          <td><code>cmd1 | cmd2</code></td>
+        </tr>
+        <tr>
+          <td>Pipe carries</td>
+          <td>Text (bytes)</td>
+          <td>.NET objects</td>
+          <td>Text (bytes)</td>
+          <td>Text (bytes)</td>
+        </tr>
+        <tr>
+          <td>Named pipe</td>
+          <td><code>\\.\pipe\name</code></td>
+          <td><code>NamedPipeServerStream</code></td>
+          <td><code>mkfifo /path</code></td>
+          <td><code>mkfifo /path</code></td>
+        </tr>
+        <tr>
+          <td>Create FIFO</td>
+          <td>Not natively in CMD</td>
+          <td>.NET API</td>
+          <td><code>mkfifo</code></td>
+          <td><code>mkfifo</code></td>
+        </tr>
+        <tr>
+          <td>Inspect pipe FDs</td>
+          <td><code>handle.exe</code> (Sysinternals)</td>
+          <td>PowerShell + .NET</td>
+          <td><code>ls /proc/PID/fd</code></td>
+          <td><code>lsof -p PID</code></td>
+        </tr>
+        <tr>
+          <td>Process substitution</td>
+          <td>✗</td>
+          <td>Partial</td>
+          <td><code>&lt;(cmd)</code></td>
+          <td><code>&lt;(cmd)</code></td>
+        </tr>
+        <tr>
+          <td>Tee to multiple consumers</td>
+          <td>Limited</td>
+          <td><code>Tee-Object</code></td>
+          <td><code>tee</code></td>
+          <td><code>tee</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <strong>Key insight:</strong> On Linux and macOS a pipe is a real kernel object — you can see it in <code>/proc/PID/fd</code> as a file descriptor. On Windows, CMD pipes carry text bytes like POSIX; PowerShell pipes carry live .NET objects, which is fundamentally different — a filter like <code>Where-Object</code> receives a structured object it can query by property name, not a string it has to parse.
+    </div>
+
+  </section>
+
+  <hr class="divider">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- S6 · MESSAGE ANATOMY                       -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="section" id="s6">
+    <span class="section-tag">§ 06 — Messaging</span>
+    <h2>Anatomy of a Message</h2>
+
+    <p>All communication — whether IPC pipes, network packets, or HTTP requests — is fundamentally just a <strong>message</strong> sent from one process to another. Every message follows the same intuitive structure you'd recognise from ordinary postal mail.</p>
+
+    <h3>The Old-Day Mail Analogy</h3>
+    <div class="envelope-analogy">
+      <div class="envelope-side old">
+        <div class="env-title">✉️ Physical Letter</div>
+        <div class="env-item">
+          <span class="env-item-key">Envelope</span>
+          <span>The outer container — carries addressing info without revealing content</span>
+        </div>
+        <div class="env-item">
+          <span class="env-item-key">To:</span>
+          <span>Recipient name &amp; address — where it must be delivered</span>
+        </div>
+        <div class="env-item">
+          <span class="env-item-key">From:</span>
+          <span>Sender address — where to send a reply or return</span>
+        </div>
+        <div class="env-item">
+          <span class="env-item-key">Stamps &amp; marks</span>
+          <span>"Header" data — postmark, priority, postage, handling instructions</span>
+        </div>
+        <div class="env-item">
+          <span class="env-item-key">Letter inside</span>
+          <span>The <em>actual message</em> — content only the recipient reads</span>
+        </div>
+      </div>
+      <div class="envelope-side digital">
+        <div class="env-title">📦 Digital Message</div>
+        <div class="env-item">
+          <span class="env-item-key">Packet</span>
+          <span>The container — bytes on the wire carrying addressing and data</span>
+        </div>
+        <div class="env-item">
+          <span class="env-item-key">To:</span>
+          <span>Destination IP + port — the address of the receiving process</span>
+        </div>
+        <div class="env-item">
+          <span class="env-item-key">From:</span>
+          <span>Source IP + port — so the receiver knows who sent it and can reply</span>
+        </div>
+        <div class="env-item">
+          <span class="env-item-key">Header</span>
+          <span><strong>Metadata</strong> — protocol version, content type, length, auth tokens, timestamps…</span>
+        </div>
+        <div class="env-item">
+          <span class="env-item-key">Payload</span>
+          <span>The <strong>actual data</strong> — JSON body, file bytes, HTML, video frames, etc.</span>
+        </div>
+      </div>
+    </div>
+
+    <p>The <strong>header</strong> is everything <em>about</em> the message — it helps routers, proxies, and the receiving application decide what to do with it, without reading the payload. The <strong>payload</strong> is the application data itself — opaque to the network infrastructure, meaningful only to the endpoint processes.</p>
+
+    <h3>Generic Message Structure</h3>
+    <div class="msg-diagram">
+      <div class="msg-row">
+        <div class="msg-field to">To</div>
+        <div class="msg-val">Destination address: IP 203.0.113.42, Port 443 — <em>who receives this message</em></div>
+      </div>
+      <div class="msg-row">
+        <div class="msg-field from">From</div>
+        <div class="msg-val">Source address: IP 192.168.1.5, Port 51240 — <em>who sent it; where to reply</em></div>
+      </div>
+      <div class="msg-row">
+        <div class="msg-field header">Header</div>
+        <div class="msg-val">
+          Metadata: <code>Content-Type: application/json</code> · <code>Content-Length: 312</code> ·
+          <code>Authorization: Bearer eyJh…</code> · <code>X-Request-ID: f4a9</code><br>
+          <em style="font-size:12px; color:var(--muted)">— describes the message without being the message —</em>
+        </div>
+      </div>
+      <div class="msg-row">
+        <div class="msg-field payload">Payload</div>
+        <div class="msg-val payload-val">
+          { "userId": 42, "action": "createTask", "data": { "title": "Fix login bug", "priority": "high" } }<br>
+          <span style="font-size:11px; color:var(--muted); font-style:italic; font-family:var(--font)">← the actual application data — what the receiver cares about</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- S7 · HTTP ON TCP                           -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="section" id="s7">
+    <span class="section-tag">§ 07 — HTTP Protocol</span>
+    <h2>HTTP — A Message Protocol on Top of TCP</h2>
+
+    <p>HTTP (HyperText Transfer Protocol) is a text-based protocol that defines <em>how application-level messages are formatted</em>. It runs most commonly over TCP — but HTTP is not tied to TCP. HTTP/3 runs over QUIC (UDP-based). HTTP could theoretically run over any reliable byte stream.</p>
+
+    <p>Think of TCP as the <strong>postal road</strong> — the infrastructure for moving bytes from A to B. HTTP is the <strong>letter format</strong> — the convention for what those bytes mean (request / response, method, headers, body).</p>
+
+    <div class="tcp-stack">
+      <div class="tcp-layer app">Your Application (browser, curl, fetch())<div class="layer-note">talks HTTP</div></div>
+      <div class="tcp-layer http">HTTP / HTTP/2 / HTTP/3<div class="layer-note">message format — method, headers, body</div></div>
+      <div class="tcp-layer tcp">TCP (or QUIC for HTTP/3)<div class="layer-note">reliable byte stream — connection, ordering, retransmit</div></div>
+      <div class="tcp-layer ip">IP (Internet Protocol)<div class="layer-note">addressing &amp; routing across networks</div></div>
+      <div class="tcp-layer link">Ethernet / WiFi / Fibre<div class="layer-note">physical transmission of bits</div></div>
+    </div>
+
+    <h3>Workflow</h3>
+
+    <div class="http-flow">
+      <div class="http-actor-row">
+        <div class="http-actor client">CLIENT<div style="font-size:10px; font-weight:400; color:var(--muted); margin-top:2px;">browser / curl</div></div>
+        <div style="text-align:center; font-size:12px; font-family:var(--mono); color:var(--muted); padding:8px; border-top: 1px dashed var(--border); border-bottom:1px dashed var(--border);">
+          <div style="color:var(--blue)">①&nbsp; TCP SYN → SYN-ACK → ACK &nbsp; (3-way handshake)</div>
+        </div>
+        <div class="http-actor server">SERVER<div style="font-size:10px; font-weight:400; color:var(--muted); margin-top:2px;">nginx / express</div></div>
+      </div>
+
+      <div class="http-msg-wrap">
+        <div></div>
+        <div class="http-msg-line req">
+          <div class="http-arrow req">② &nbsp;─────────────── HTTP Request ──────────────→</div>
+          <div class="http-label">GET /users/42 HTTP/1.1 · Host · Accept · Cookie</div>
+        </div>
+        <div></div>
+      </div>
+
+      <div style="text-align:center; font-size:12px; font-family:var(--mono); color:var(--muted); padding: 6px;">③&nbsp; Server processes request, queries DB, builds response</div>
+
+      <div class="http-msg-wrap">
+        <div></div>
+        <div class="http-msg-line res">
+          <div class="http-arrow res">④ &nbsp;←────────────── HTTP Response ──────────────</div>
+          <div class="http-label" style="text-align:right;">200 OK · Content-Type: application/json · Body: {user data}</div>
+        </div>
+        <div></div>
+      </div>
+
+      <div style="text-align:center; font-size:12px; font-family:var(--mono); color:var(--muted); padding: 6px;">⑤&nbsp; TCP connection closed (HTTP/1.0) or kept alive (HTTP/1.1+)</div>
+    </div>
+
+    <h3>Stateless Nature</h3>
+    <p>HTTP is <strong>stateless</strong>: each request is completely independent. The server has no built-in memory of previous requests from the same client. After sending a response, the server forgets the exchange entirely.</p>
+    <p>Imagine calling a bank's customer service line, but the agent <em>cannot see your previous calls</em>. Every time you call, you must re-identify yourself ("account number is…", "last time I asked about…"). HTTP works the same way — each request must carry all necessary context.</p>
+
+    <div style="margin: 20px 0;">
+      <div class="stateless-row">
+        <div class="stateless-req">
+          GET /profile HTTP/1.1<br>
+          Cookie: session=abc123<br>
+          <div class="stateless-note">Must send session token every time — server has no memory of previous request</div>
+        </div>
+        <div class="stateless-arrow">→</div>
+        <div class="stateless-res">
+          200 OK<br>
+          { "name": "Alice" }<br>
+          <div class="stateless-note">Server looked up session, responded, then forgot Alice was ever here</div>
+        </div>
+      </div>
+      <div class="stateless-row">
+        <div class="stateless-req">
+          POST /orders HTTP/1.1<br>
+          Cookie: session=abc123<br>
+          { "item": "book" }<br>
+          <div class="stateless-note">Next request — totally new. Same session token sent again to re-establish identity</div>
+        </div>
+        <div class="stateless-arrow">→</div>
+        <div class="stateless-res">
+          201 Created<br>
+          { "orderId": 99 }<br>
+          <div class="stateless-note">Server processed, responded, forgot again. State lives in DB and cookie — not in the connection</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Statelessness enables scale:</strong> any server in a load-balanced pool can handle any request, because no server stores per-connection state. Sessions are tracked via cookies or tokens, not HTTP connections.
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- S8 · HTTP STRUCTURE                        -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="section" id="s8">
+    <span class="section-tag">§ 08 — HTTP Structure</span>
+    <h2>HTTP Request &amp; Response Structure</h2>
+
+    <div class="http-struct">
+      <div class="http-block">
+        <div class="http-block-title req">HTTP Request</div>
+        <pre><span class="hl-method">POST</span> <span class="hl-path">/api/users</span> HTTP/1.1
+<span class="hl-header">Host:</span>           api.example.com
+<span class="hl-header">Content-Type:</span>   application/json
+<span class="hl-header">Accept:</span>         application/json
+<span class="hl-header">Authorization:</span>  Bearer eyJhbGci...
+<span class="hl-header">Content-Length:</span> 47
+<span class="hl-header">Connection:</span>     keep-alive
+
+<span class="hl-body">{
+  "name": "Alice",
+  "email": "alice@example.com"
+}</span></pre>
+      </div>
+
+      <div class="http-block">
+        <div class="http-block-title res">HTTP Response</div>
+        <pre>HTTP/1.1 <span class="hl-status">201 Created</span>
+<span class="hl-header">Content-Type:</span>   application/json
+<span class="hl-header">Location:</span>       /api/users/42
+<span class="hl-header">Content-Length:</span> 62
+<span class="hl-header">Cache-Control:</span>  no-store
+<span class="hl-header">X-Request-ID:</span>   f4a9b2c1
+
+<span class="hl-body">{
+  "id": 42,
+  "name": "Alice",
+  "created": "2026-05-15"
+}</span></pre>
+      </div>
+    </div>
+
+    <table class="ipc-table" style="margin-top:24px;">
+      <thead>
+        <tr>
+          <th>Part</th>
+          <th>In Request</th>
+          <th>In Response</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Start Line</td>
+          <td><code>METHOD path HTTP/version</code></td>
+          <td><code>HTTP/version STATUS code reason</code></td>
+          <td>Identifies the action (request) or result (response)</td>
+        </tr>
+        <tr>
+          <td>Headers</td>
+          <td>Host, Content-Type, Auth, Cookie…</td>
+          <td>Content-Type, Set-Cookie, Location…</td>
+          <td>Metadata — describes the message and context</td>
+        </tr>
+        <tr>
+          <td>Blank Line</td>
+          <td colspan="2" style="text-align:center;"><code>\r\n\r\n</code></td>
+          <td>Separates headers from body. Required.</td>
+        </tr>
+        <tr>
+          <td>Body (Payload)</td>
+          <td>JSON, form data, file bytes</td>
+          <td>JSON, HTML, image, video…</td>
+          <td>The actual application data being exchanged</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Common HTTP Methods</h3>
+    <div class="card-grid col3" style="margin-top:12px;">
+      <div class="card">
+        <div class="card-title" style="color:var(--green)">GET</div>
+        <p>Read a resource. No body. Safe and idempotent — calling it 100 times has the same effect as once.</p>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--blue)">POST</div>
+        <p>Create a resource or trigger an action. Carries a body. Not idempotent — each call may create a new record.</p>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--amber)">PUT / PATCH</div>
+        <p>Update a resource. PUT replaces it entirely; PATCH modifies specific fields. Both idempotent.</p>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--red)">DELETE</div>
+        <p>Remove a resource. Idempotent — deleting something twice is the same as deleting it once.</p>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--purple)">OPTIONS</div>
+        <p>Ask the server what methods and headers it supports. Used by browsers in CORS preflight checks.</p>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--cyan)">HEAD</div>
+        <p>Like GET but returns headers only — no body. Useful for checking if a resource exists or its size.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- S9 · HTTP LAB                              -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="section" id="s9">
+    <span class="section-tag">§ 09 — HTTP Lab</span>
+    <h2>Lab: Exploring HTTP Communication</h2>
+
+    <h3>Tools</h3>
+    <div class="tool-grid">
+      <div class="tool-card">
+        <div class="tool-name">curl</div>
+        <div class="tool-plat">Linux · macOS · Windows (built-in)</div>
+        <div class="tool-desc">The standard CLI HTTP client. Supports all methods, headers, auth, file upload, and verbose inspection.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">wget</div>
+        <div class="tool-plat">Linux · macOS · Windows</div>
+        <div class="tool-desc">Primarily for downloading files, but also supports POST and header inspection.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">httpie</div>
+        <div class="tool-plat">Cross-platform (pip)</div>
+        <div class="tool-desc">Human-friendly HTTP client. Coloured output, intuitive JSON syntax. Install: <code>pip install httpie</code></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">Postman</div>
+        <div class="tool-plat">Windows · macOS · Linux (GUI)</div>
+        <div class="tool-desc">Full GUI tool for building, testing, and documenting HTTP API requests. Collections, environments, tests.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">Bruno</div>
+        <div class="tool-plat">Cross-platform (open source)</div>
+        <div class="tool-desc">Lightweight Postman alternative — stores collections as files in your repo. No cloud account needed.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">VS Code REST Client</div>
+        <div class="tool-plat">VS Code extension</div>
+        <div class="tool-desc">Write <code>.http</code> files directly in the editor and click "Send Request". Great for developers.</div>
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 9A — Basic curl requests</div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">GET request — read a resource</span>
+          <span class="code-tag">curl</span>
+        </div>
+        <pre><span class="com"># Basic GET</span>
+<span class="cmd">curl</span> <span class="arg">https://jsonplaceholder.typicode.com/posts/1</span>
+
+<span class="com"># GET with verbose output — see full request AND response headers</span>
+<span class="cmd">curl</span> <span class="arg">-v</span> <span class="arg">https://jsonplaceholder.typicode.com/posts/1</span>
+
+<span class="com"># Show only response headers</span>
+<span class="cmd">curl</span> <span class="arg">-I</span> <span class="arg">https://jsonplaceholder.typicode.com/posts/1</span>
+
+<span class="com"># Pretty-print JSON (pipe to jq)</span>
+<span class="cmd">curl</span> <span class="arg">https://jsonplaceholder.typicode.com/posts/1</span> <span class="arg">| jq .</span></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">POST request — create a resource</span>
+          <span class="code-tag">curl</span>
+        </div>
+        <pre><span class="cmd">curl</span> <span class="arg">-X POST</span> \
+     <span class="arg">-H</span> <span class="str">"Content-Type: application/json"</span> \
+     <span class="arg">-d</span> <span class="str">'{"title":"My Post","body":"Hello world","userId":1}'</span> \
+     <span class="arg">https://jsonplaceholder.typicode.com/posts</span>
+
+<span class="com"># With verbose to see the full round-trip</span>
+<span class="cmd">curl</span> <span class="arg">-v -X POST</span> \
+     <span class="arg">-H</span> <span class="str">"Content-Type: application/json"</span> \
+     <span class="arg">-d</span> <span class="str">'{"title":"Test"}'</span> \
+     <span class="arg">https://jsonplaceholder.typicode.com/posts</span></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Send custom headers &amp; inspect timing</span>
+          <span class="code-tag">curl</span>
+        </div>
+        <pre><span class="com"># Custom header</span>
+<span class="cmd">curl</span> <span class="arg">-H</span> <span class="str">"Authorization: Bearer my-token"</span> \
+     <span class="arg">-H</span> <span class="str">"Accept: application/json"</span> \
+     <span class="arg">https://jsonplaceholder.typicode.com/users/1</span>
+
+<span class="com"># Measure timing breakdown</span>
+<span class="cmd">curl</span> <span class="arg">-o /dev/null -s -w</span> \
+  <span class="str">"DNS: %{time_namelookup}s  TCP: %{time_connect}s  Total: %{time_total}s\n"</span> \
+  <span class="arg">https://jsonplaceholder.typicode.com/posts/1</span></pre>
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 9B — wget</div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">wget examples</span>
+          <span class="code-tag">wget</span>
+        </div>
+        <pre><span class="com"># Download a file</span>
+<span class="cmd">wget</span> <span class="arg">https://jsonplaceholder.typicode.com/posts/1</span>
+
+<span class="com"># Save to specific filename</span>
+<span class="cmd">wget</span> <span class="arg">-O post.json</span> <span class="arg">https://jsonplaceholder.typicode.com/posts/1</span>
+
+<span class="com"># Show headers only (server response headers)</span>
+<span class="cmd">wget</span> <span class="arg">--server-response --spider</span> <span class="arg">https://jsonplaceholder.typicode.com/posts/1</span>
+
+<span class="com"># POST with data</span>
+<span class="cmd">wget</span> <span class="arg">--post-data='{"title":"test"}'</span> \
+     <span class="arg">--header="Content-Type: application/json"</span> \
+     <span class="arg">-O -</span> <span class="arg">https://jsonplaceholder.typicode.com/posts</span></pre>
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 9C — httpie (human-friendly)</div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">httpie — coloured, readable output</span>
+          <span class="code-tag">httpie</span>
+        </div>
+        <pre><span class="com"># Install first</span>
+<span class="cmd">pip install httpie</span>
+
+<span class="com"># GET</span>
+<span class="cmd">http</span> <span class="arg">GET</span> <span class="arg">https://jsonplaceholder.typicode.com/posts/1</span>
+
+<span class="com"># POST JSON (httpie infers JSON automatically)</span>
+<span class="cmd">http</span> <span class="arg">POST</span> <span class="arg">https://jsonplaceholder.typicode.com/posts</span> \
+     <span class="str">title="My Post"</span> <span class="str">body="Hello"</span> <span class="str">userId:=1</span>
+
+<span class="com"># With custom header</span>
+<span class="cmd">http</span> <span class="arg">GET</span> <span class="arg">https://jsonplaceholder.typicode.com/users/1</span> \
+     <span class="str">Authorization:"Bearer my-token"</span>
+
+<span class="com"># Show full request + response (like curl -v but beautiful)</span>
+<span class="cmd">http</span> <span class="arg">--verbose</span> <span class="arg">GET</span> <span class="arg">https://jsonplaceholder.typicode.com/posts/1</span></pre>
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 9D — Postman workflow</div>
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">Download and install Postman from <code>postman.com</code>. Create a free account or use without signing in.</div>
+      </div>
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">Create a new <strong>Collection</strong> called <code>IPC Lab</code>. Add a new request inside it.</div>
+      </div>
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">Set method to <code>GET</code>, URL to <code>https://jsonplaceholder.typicode.com/posts</code>. Click Send. Inspect the response body, headers, and status code.</div>
+      </div>
+      <div class="lab-step">
+        <div class="lab-step-num">4</div>
+        <div class="lab-step-content">Change method to <code>POST</code>. Open the <strong>Body</strong> tab → select <strong>raw → JSON</strong>. Paste <code>{"title":"IPC Lab","body":"test","userId":1}</code>. Send and check the <code>201 Created</code> response.</div>
+      </div>
+      <div class="lab-step">
+        <div class="lab-step-num">5</div>
+        <div class="lab-step-content">Open the <strong>Console</strong> (bottom bar). See the exact HTTP request Postman sent — headers, body, timing. Compare to <code>curl -v</code> output for the same URL.</div>
+      </div>
+      <div class="lab-step">
+        <div class="lab-step-num">6</div>
+        <div class="lab-step-content"><strong>Observe statelessness:</strong> Send the GET request 5 times rapidly. Each response is identical — the server has no memory of previous requests. Now add a <code>Cookie: session=fake</code> header and notice the server still responds normally (since typicode ignores cookies) — demonstrating that state must be carried in each request.</div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Connecting everything:</strong> When curl or Postman sends an HTTP request, under the hood it: (1) resolves the hostname via DNS, (2) opens a TCP connection (3-way handshake), (3) writes an HTTP request message over that TCP stream, (4) reads the HTTP response, and (5) closes or reuses the TCP connection. You are now seeing every layer of the stack.
+    </div>
+
+    <div style="margin-top:48px; padding:24px; background:var(--bg3); border-radius:var(--radius); border:1px solid var(--border); text-align:center;">
+      <div style="font-family:var(--mono); font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:12px;">Summary Chain</div>
+      <div style="font-size:14px; color:var(--dim); line-height:2;">
+        <span style="color:var(--text)">OS</span> manages <span style="color:var(--amber)">P→R</span> and enables <span style="color:var(--blue)">P→P</span>
+        &nbsp;·&nbsp;
+        <span style="color:var(--blue)">IPC</span> ranges from local pipes to global sockets
+        <br>
+        <span style="color:var(--cyan)">TCP</span> = reliable ordered stream that travels worldwide
+        &nbsp;·&nbsp;
+        <span style="color:var(--amber)">HTTP</span> = message format on top of TCP
+        <br>
+        Every message has <span style="color:var(--green)">To</span> · <span style="color:var(--blue)">From</span> · <span style="color:var(--amber)">Header (metadata)</span> · <span style="color:var(--purple)">Payload (data)</span>
+        <br>
+        HTTP is <span style="color:var(--red)">stateless</span> — each request is self-contained, carries its own context
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+<script>
+// Active nav link on scroll
+const sections = document.querySelectorAll('section[id]');
+const links = document.querySelectorAll('.nav-link');
+
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+
+sections.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>
