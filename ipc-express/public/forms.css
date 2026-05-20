@@ -1,0 +1,87 @@
+/* ── Layout ── */
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: sans-serif;
+  background: #f5f5f5;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 360px;
+}
+
+h1 {
+  font-size: 20px;
+  margin-bottom: 24px;
+}
+
+/* ── Form row ── */
+.form-row {
+  margin-bottom: 16px;
+}
+
+/* ── Label ── */
+.field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #333;
+}
+
+/* ── Input (default / normal state) ── */
+.field-input {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+/* ── Error message (hidden by default) ── */
+.field-error {
+  display: block;
+  font-size: 12px;
+  min-height: 16px;
+  margin-top: 5px;
+  color: transparent;
+}
+
+/* ── Submit button ── */
+.submit-btn {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+/* ── Footer link ── */
+.card-footer {
+  margin-top: 20px;
+  font-size: 13px;
+  text-align: center;
+  color: #666;
+}
+
+.card-footer a { color: #111; }
+
+/* ── State classes ── */
+.field-input.fail    { border-color: #e53e3e; background: #fff5f5; }
+.field-error.fail    { color: #e53e3e; }
+.field-input.success { border-color: #38a169; background: #f0fff4; }

@@ -1,0 +1,8 @@
+{
+  "function": "match",
+  "pattern": "\\d+",
+  "flags": "g",
+  "result": [
+    "86"
+  ]
+}

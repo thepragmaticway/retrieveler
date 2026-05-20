@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPC Hands-On — Pipes, Sockets, HTTP &amp; Express</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #080c10;
+  --bg2:     #0f1419;
+  --bg3:     #161d26;
+  --bg4:     #1d2733;
+  --border:  rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.14);
+  --text:    #d4dce8;
+  --muted:   #586472;
+  --dim:     #8a9ab0;
+  --cyan:    #00c8c8;
+  --cyan-d:  rgba(0,200,200,0.10);
+  --cyan-b:  rgba(0,200,200,0.25);
+  --amber:   #f0a030;
+  --amber-d: rgba(240,160,48,0.10);
+  --green:   #3dd68c;
+  --green-d: rgba(61,214,140,0.10);
+  --red:     #f06060;
+  --red-d:   rgba(240,96,96,0.10);
+  --blue:    #60a8f0;
+  --blue-d:  rgba(96,168,240,0.10);
+  --purple:  #b07ff0;
+  --purple-d:rgba(176,127,240,0.10);
+  --font:    'IBM Plex Sans', sans-serif;
+  --mono:    'IBM Plex Mono', monospace;
+  --sidebar: 240px;
+  --radius:  6px;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.7;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar);
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  z-index: 100;
+  padding: 28px 0 40px;
+}
+.sidebar-brand {
+  padding: 0 20px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.sidebar-brand .label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 4px;
+}
+.sidebar-brand .title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cyan);
+  line-height: 1.3;
+}
+.nav-section {
+  padding: 8px 20px 4px;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.nav-link {
+  display: block;
+  padding: 7px 20px;
+  font-size: 13px;
+  color: var(--dim);
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+  border-left: 2px solid transparent;
+  line-height: 1.4;
+}
+.nav-link:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.nav-link.active { color: var(--cyan); border-left-color: var(--cyan); background: var(--cyan-d); }
+.overview-link {
+  display: block;
+  margin: 0 20px 18px;
+  padding: 8px 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  text-decoration: none;
+}
+.overview-link:hover { color: var(--text); }
+
+/* ── MAIN ── */
+main {
+  margin-left: var(--sidebar);
+  flex: 1;
+  max-width: 960px;
+  padding: 60px 64px 120px;
+}
+
+/* ── PAGE HEADER ── */
+.page-header {
+  margin-bottom: 56px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header .tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  display: block;
+  margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: 40px;
+  color: #eaf0f8;
+  font-weight: 600;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+.page-header .subtitle {
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 640px;
+  line-height: 1.6;
+}
+
+/* ── SECTION ── */
+.section { margin-bottom: 80px; }
+.section-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 10px;
+  display: block;
+}
+h1 {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: #eaf0f8;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #d4dce8;
+  margin-bottom: 16px;
+  margin-top: 40px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.3;
+}
+h2:first-child { margin-top: 0; }
+h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--amber);
+  margin: 24px 0 10px;
+}
+h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--blue);
+  margin: 18px 0 8px;
+  font-family: var(--mono);
+  letter-spacing: 0.5px;
+}
+p { margin-bottom: 14px; color: var(--dim); }
+strong { color: var(--text); font-weight: 500; }
+
+/* ── HERO BAR ── */
+.hero-bar {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--cyan);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 32px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--dim);
+}
+.hero-bar strong { color: var(--cyan); }
+
+/* ── LAB BOX ── */
+.lab-box {
+  background: rgba(0,200,200,0.04);
+  border: 1px solid rgba(0,200,200,0.2);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin: 24px 0;
+}
+.lab-box-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lab-box-title::before {
+  content: '▶';
+  font-size: 9px;
+}
+.lab-step {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.lab-step-num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--cyan-d);
+  border: 1px solid var(--cyan-b);
+  color: var(--cyan);
+  font-size: 11px;
+  font-family: var(--mono);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.lab-step-content { color: var(--dim); line-height: 1.6; }
+.lab-step-content code {
+  background: var(--bg4);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--cyan);
+}
+
+/* ── CODE BLOCK ── */
+.code-block {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 16px 0;
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+.code-label {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+.code-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  background: var(--bg4);
+  color: var(--muted);
+}
+.code-block pre {
+  padding: 16px;
+  font-size: 12.5px;
+  font-family: var(--mono);
+  line-height: 1.75;
+  color: var(--dim);
+  overflow-x: auto;
+  white-space: pre;
+}
+.code-block pre .cmd  { color: var(--cyan); }
+.code-block pre .arg  { color: var(--amber); }
+.code-block pre .str  { color: var(--green); }
+.code-block pre .com  { color: var(--muted); font-style: italic; }
+.code-block pre .out  { color: var(--purple); }
+
+/* ── NOTE BOX ── */
+.note {
+  background: rgba(240,160,48,0.06);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 12px 16px;
+  margin: 16px 0;
+  font-size: 13px;
+  color: var(--dim);
+}
+.note strong { color: var(--amber); }
+
+/* ── INFO BOX ── */
+.info {
+  background: rgba(96,168,240,0.06);
+  border-left: 3px solid var(--blue);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 12px 16px;
+  margin: 16px 0;
+  font-size: 13px;
+  color: var(--dim);
+}
+.info strong { color: var(--blue); }
+
+/* ── ARG TABLE ── */
+.arg-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 13px;
+}
+.arg-table th {
+  background: var(--bg4);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: var(--mono);
+  color: var(--muted);
+  border-bottom: 1px solid var(--border2);
+}
+.arg-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  color: var(--dim);
+}
+.arg-table tr:last-child td { border-bottom: none; }
+.arg-table td.flag {
+  font-family: var(--mono);
+  color: var(--amber);
+  font-size: 12px;
+  white-space: nowrap;
+  width: 180px;
+}
+
+/* ── DIVIDER ── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 60px 0;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+
+/* ── TERMINAL LABEL ── */
+.terminal-tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: var(--purple-d);
+  color: var(--purple);
+  letter-spacing: 1px;
+  margin-right: 6px;
+}
+
+/* ── LAYER STACK ── */
+.stack-wrap {
+  margin: 24px 0 32px;
+}
+.stack-label {
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 8px 0;
+}
+.stack-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 560px;
+  margin: 0 auto;
+}
+.stack-layer {
+  padding: 14px 20px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: relative;
+}
+.stack-layer:first-child { border-radius: 8px 8px 0 0; }
+.stack-layer:last-child  { border-radius: 0 0 8px 8px; }
+.stack-layer + .stack-layer { border-top: none; }
+.stack-layer .layer-name {
+  font-weight: 600;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+.stack-layer .layer-impl {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--muted);
+  text-align: right;
+}
+.stack-layer.l-app    { background: rgba(176,127,240,0.10); border-color: rgba(176,127,240,0.30); }
+.stack-layer.l-app    .layer-name { color: var(--purple); }
+.stack-layer.l-lib    { background: rgba(240,160,48,0.10);  border-color: rgba(240,160,48,0.30); }
+.stack-layer.l-lib    .layer-name { color: var(--amber); }
+.stack-layer.l-raw    { background: rgba(61,214,140,0.10);  border-color: rgba(61,214,140,0.30); }
+.stack-layer.l-raw    .layer-name { color: var(--green); }
+.stack-layer.l-socket { background: rgba(96,168,240,0.10);  border-color: rgba(96,168,240,0.30); }
+.stack-layer.l-socket .layer-name { color: var(--blue); }
+.stack-layer.l-ipc    { background: rgba(0,200,200,0.10);   border-color: var(--cyan-b); }
+.stack-layer.l-ipc    .layer-name { color: var(--cyan); }
+.stack-arrow {
+  text-align: center;
+  font-family: var(--mono);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  margin: 2px 0;
+}
+</style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <span class="label">IOJT 2026 · Lab</span>
+    <div class="title">IPC<br>Hands-On</div>
+  </div>
+
+  <a href="index.html" class="overview-link">Back to overview</a>
+  <a href="ipc-lab.html" class="overview-link">← IPC Lab (theory)</a>
+
+  <span class="nav-section">Setup</span>
+  <a href="#setup" class="nav-link active">Clone the repo</a>
+
+  <span class="nav-section">Pipes</span>
+  <a href="#pipe-intro" class="nav-link">Anonymous Pipe</a>
+  <a href="#pipe-regxer" class="nav-link">regxer.js pipes</a>
+
+  <span class="nav-section">Sockets</span>
+  <a href="#socket-intro" class="nav-link">socketer.js</a>
+  <a href="#socket-server" class="nav-link">Server &amp; Client</a>
+  <a href="#socket-broker" class="nav-link">Broadcast (broker)</a>
+  <a href="#socket-pipe" class="nav-link">Pipe ↔ Socket</a>
+
+  <span class="nav-section">HTTP</span>
+  <a href="#http-socketer" class="nav-link">http-socketer.js</a>
+  <a href="#http-server" class="nav-link">http-server.js</a>
+  <a href="#express" class="nav-link">express-server.js</a>
+</nav>
+
+<!-- ── MAIN ── -->
+<main>
+
+  <div class="page-header">
+    <span class="tag">IPC Lab — Hands-On</span>
+    <h1>IPC Hands-On</h1>
+    <p class="subtitle">Run real pipes and sockets between real processes — anonymous pipes with <code>regxer.js</code>, TCP sockets with <code>socketer.js</code>, then HTTP over raw sockets, Node's <code>http</code> module, and Express.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SETUP                                       -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="section" id="setup">
+    <span class="section-tag">§ 00 — Setup</span>
+    <h2>Clone the repository</h2>
+
+    <div class="hero-bar">
+      Every lab on this page uses the small Node.js CLIs in the <strong>ipc/</strong> and <strong>ipc-express/</strong> folders. Clone the repo first; then keep one terminal anchored in <code>ipc/</code> while you work through the labs.
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 0 — Get the source</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          Clone the project and switch into the <code>ipc/</code> folder. All <code>regxer.js</code>, <code>socketer.js</code>, <code>http-socketer.js</code>, and <code>http-server.js</code> commands assume you run them from here.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash · cmd · powershell</span><span class="code-tag">clone</span></div>
+<pre><span class="cmd">git</span> <span class="cmd">clone</span> <span class="arg">https://github.com/thepragmaticway/retrieveler.git</span>
+<span class="cmd">cd</span> <span class="arg">retrieveler/ipc</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          Confirm Node.js is available (any recent LTS works). The pipe and socket scripts have no dependencies.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">verify Node</span><span class="code-tag">node --version</span></div>
+<pre><span class="cmd">node</span> <span class="arg">--version</span>
+<span class="com"># expect: v18.x or newer</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          Compile <code>myecho.java</code> (a small Java CLI used throughout the pipe labs). Unlike the shell <code>echo</code>, <code>myecho</code> can <strong>also read from stdin</strong> when no argument is provided — useful when you need a producer at the end of a pipe.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">compile myecho</span><span class="code-tag">javac</span></div>
+<pre><span class="cmd">javac</span> <span class="arg">myecho.java</span>
+<span class="com"># produces myecho.class — run with: java myecho [text]</span>
+
+<span class="com"># Quick smoke tests</span>
+<span class="cmd">java</span> <span class="arg">myecho</span> <span class="str">"hello"</span>          <span class="com"># prints: hello   (argument mode)</span>
+<span class="cmd">echo</span> <span class="str">"hi"</span> <span class="arg">|</span> <span class="cmd">java</span> <span class="arg">myecho</span>      <span class="com"># reads stdin    (no-arg mode)</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">4</div>
+        <div class="lab-step-content">
+          The Express lab uses <code>ipc-express/</code>. When you reach it, install its dependencies once:
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">install Express dependencies</span><span class="code-tag">npm install</span></div>
+<pre><span class="cmd">cd</span> <span class="arg">../ipc-express</span>
+<span class="cmd">npm</span> <span class="arg">install</span></pre>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Tip:</strong> on Windows use <code>dir</code> where the labs say <code>ls</code>, and <code>findstr</code> where they say <code>grep</code>. Both produce a byte stream that the next stage can read.
+    </div>
+
+    <div class="info">
+      <strong>echo vs myecho:</strong> the shell <code>echo</code> only writes its <strong>arguments</strong> to stdout — it never reads stdin. So <code>echo</code> always needs text after it: <code>echo "test"</code>. <code>myecho</code> behaves like <code>echo</code> when given an argument <em>and</em> reads from stdin when no argument is provided, making it a drop-in producer or a passthrough in the middle of a pipe.
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- IPC: ANONYMOUS PIPE                         -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="section" id="pipe-intro">
+    <span class="section-tag">§ 01 — IPC: Anonymous Pipe</span>
+    <h2>IPC: Anonymous Pipe</h2>
+
+    <div class="hero-bar">
+      The shell <code>|</code> character asks the OS for an <strong>anonymous pipe</strong>: a kernel buffer with a write-end wired to the left process's <strong>stdout</strong> and a read-end wired to the right process's <strong>stdin</strong>. Both processes run concurrently. No file is written. This is the simplest, oldest, and most-used form of IPC.
+    </div>
+
+    <p>The labs below combine standard shell tools (<code>echo</code>, <code>ls</code>/<code>dir</code>, <code>findstr</code>/<code>grep</code>, <code>nc</code>/<code>ncat</code>) with <code>regxer.js</code>, a tiny Node.js CLI that runs a JavaScript regex against text from a file <em>or</em> from stdin — making it a natural pipe consumer.</p>
+
+    <h3>regxer.js arguments</h3>
+    <table class="arg-table">
+      <thead>
+        <tr><th>Flag</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="flag">-f &lt;name&gt;</td><td>Regex function: <code>search</code>, <code>match</code>, or <code>test</code></td></tr>
+        <tr><td class="flag">-r "&lt;pattern&gt;"</td><td>Regex pattern (quote it so the shell doesn't expand it)</td></tr>
+        <tr><td class="flag">-g</td><td>Enable global matching (match returns all matches)</td></tr>
+        <tr><td class="flag">-i &lt;file&gt;</td><td>Read input from a file</td></tr>
+        <tr><td class="flag">-o &lt;file&gt;</td><td>Write output to a file</td></tr>
+      </tbody>
+    </table>
+
+    <p>If <code>-i</code> is omitted, <code>regxer.js</code> reads from <strong>stdin</strong> when something is piped to it. If <code>-o</code> is omitted, output is printed as JSON on stdout — which means another pipe stage can consume it.</p>
+  </section>
+
+  <section class="section" id="pipe-regxer">
+    <span class="section-tag">§ 01.01 — Hands-On</span>
+    <h2>Pipe hands-on with regxer.js</h2>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 1A — <code>ls</code> / <code>dir</code> | regxer.js</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          List the files in the <code>ipc/</code> folder and pipe the listing into <code>regxer.js</code>. The regex function <code>match</code> with the global flag returns every match found in stdin.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash / macOS / Linux</span><span class="code-tag">ls | regxer.js</span></div>
+<pre><span class="com"># Find every ".js" file name fragment in the directory listing</span>
+<span class="cmd">ls</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">regxer.js</span> <span class="arg">-f</span> <span class="arg">match</span> <span class="arg">-g</span> <span class="arg">-r</span> <span class="str">"\\w+\\.js"</span></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">Windows · cmd / PowerShell</span><span class="code-tag">dir | regxer.js</span></div>
+<pre><span class="com">:: List file names only, then keep entries ending in .js</span>
+<span class="cmd">dir</span> <span class="arg">/b</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">regxer.js</span> <span class="arg">-f</span> <span class="arg">match</span> <span class="arg">-g</span> <span class="arg">-r</span> <span class="str">"\w+\.js"</span></pre>
+      </div>
+
+      <div class="info">
+        <strong>What just happened:</strong> the shell created a kernel pipe, started <code>ls</code> / <code>dir</code> as Process A, started <code>node regxer.js …</code> as Process B with its <code>stdin.isTTY</code> set to <code>false</code>. <code>regxer.js</code> detected piped input and read the directory listing as a string, then ran <code>String.prototype.match</code> against it. The JSON result is printed on stdout.
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 1B — echo "test123" | regxer.js</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          The simplest possible producer. <code>echo</code> writes its <strong>argument</strong> to stdout, and <code>regxer.js</code> reads it from stdin. <code>echo</code> does <strong>not</strong> read stdin — always give it text after the command.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">echo with an argument</span><span class="code-tag">echo | regxer.js</span></div>
+<pre><span class="com"># Does the input contain three or more digits?</span>
+<span class="cmd">echo</span> <span class="str">"test123"</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">regxer.js</span> <span class="arg">-f</span> <span class="arg">test</span> <span class="arg">-r</span> <span class="str">"\\d{3,}"</span>
+
+<span class="com"># Extract the matched digits</span>
+<span class="cmd">echo</span> <span class="str">"test123"</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">regxer.js</span> <span class="arg">-f</span> <span class="arg">match</span> <span class="arg">-r</span> <span class="str">"\\d+"</span>
+
+<span class="com"># Where does the digit run start? search returns an index</span>
+<span class="cmd">echo</span> <span class="str">"test123"</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">regxer.js</span> <span class="arg">-f</span> <span class="arg">search</span> <span class="arg">-r</span> <span class="str">"\\d+"</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          Compare the three function modes: <code>test</code> returns a boolean, <code>match</code> returns the matched text(s), <code>search</code> returns a zero-based index.
+        </div>
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 1C — myecho as producer (argument <em>or</em> stdin) | regxer.js</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          <code>myecho</code> covers the case <code>echo</code> can't: with an argument it behaves like <code>echo</code>; with <strong>no argument</strong> it reads from stdin. That makes it usable both at the start of a pipe (as a producer) and in the middle (as a passthrough that reads upstream stdin).
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">myecho — argument mode (producer)</span><span class="code-tag">myecho arg | regxer.js</span></div>
+<pre><span class="com"># Argument mode: myecho prints its argument, regxer consumes it</span>
+<span class="cmd">java</span> <span class="arg">myecho</span> <span class="str">"test123"</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">regxer.js</span> <span class="arg">-f</span> <span class="arg">match</span> <span class="arg">-r</span> <span class="str">"\\d+"</span>
+
+<span class="com"># Same shape as echo, but the producer is myecho</span>
+<span class="cmd">java</span> <span class="arg">myecho</span> <span class="str">"hello-2026"</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">regxer.js</span> <span class="arg">-f</span> <span class="arg">test</span> <span class="arg">-r</span> <span class="str">"\\d{4}"</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          With <strong>no argument</strong>, <code>myecho</code> reads stdin — so you can place it in the middle of a chain. Compare this with <code>echo</code> in Lab 1B, where echo could only sit at the start.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">myecho — stdin mode (passthrough)</span><span class="code-tag">echo | myecho | regxer.js</span></div>
+<pre><span class="com"># echo produces text → myecho reads it from stdin → regxer consumes it</span>
+<span class="cmd">echo</span> <span class="str">"test123"</span> <span class="arg">|</span> <span class="cmd">java</span> <span class="arg">myecho</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">regxer.js</span> <span class="arg">-f</span> <span class="arg">match</span> <span class="arg">-r</span> <span class="str">"\\d+"</span>
+
+<span class="com"># myecho as the consumer at the end of a pipe — argument is ignored when stdin has data?
+# No — myecho prefers argument when one is given; remove it to read stdin:</span>
+<span class="cmd">echo</span> <span class="str">"abc 42 xyz"</span> <span class="arg">|</span> <span class="cmd">java</span> <span class="arg">myecho</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          <strong>Interactive mode — myecho with no argument and no upstream pipe.</strong> Run <code>java myecho</code> at the head of the pipeline. It will sit and wait for stdin — <strong>type your text from the keyboard</strong>, press <kbd>Enter</kbd>, then send EOF to signal "input finished" so myecho can forward the bytes to the next stage.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">myecho — keyboard input</span><span class="code-tag">java myecho | regxer.js</span></div>
+<pre><span class="com"># No argument → myecho reads from your terminal (the keyboard is stdin)</span>
+<span class="cmd">java</span> <span class="arg">myecho</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">regxer.js</span> <span class="arg">-f</span> <span class="arg">match</span> <span class="arg">-r</span> <span class="str">"\\d+"</span>
+<span class="com">
+# Now type at the prompt:</span>
+<span class="out">test123</span>
+<span class="com"># Press Enter, then send EOF:
+#   Linux / macOS : Ctrl+D
+#   Windows       : Ctrl+Z then Enter
+# regxer prints the JSON match.</span></pre>
+      </div>
+
+      <div class="note">
+        <strong>Reminder:</strong> with no argument and no upstream pipe, <code>java myecho</code> blocks on the keyboard. <strong>Type your line and press Enter</strong>, then close stdin with <kbd>Ctrl+D</kbd> (Linux/macOS) or <kbd>Ctrl+Z</kbd> + <kbd>Enter</kbd> (Windows). Until you send EOF, downstream stages won't see anything — the pipe is still waiting for the producer.
+      </div>
+
+      <div class="info">
+        <strong>Why this matters:</strong> <code>regxer.js</code> checks <code>process.stdin.isTTY</code>. When you pipe to it, that flag is <code>false</code>, so it reads the byte stream. When you run it directly with no <code>-i</code> and no pipe, it refuses and prints a helpful error. <code>myecho</code> uses the same trick — argument vs stdin — so you can see two different programs agreeing on the same kernel convention.
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- IPC: SOCKET                                 -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="section" id="socket-intro">
+    <span class="section-tag">§ 02 — IPC: Socket</span>
+    <h2>IPC: Socket — socketer.js</h2>
+
+    <p>Before we dive in, here's the layered stack the rest of this page climbs through. Each layer is built on top of the one below — same bytes, more abstraction at each step. The labs below correspond one-to-one with the layers in this diagram.</p>
+
+    <div class="stack-wrap">
+      <div class="stack-label">↑ higher abstraction · your application</div>
+      <div class="stack-layers">
+        <div class="stack-layer l-app">
+          <span class="layer-name">HTTP Application</span>
+          <span class="layer-impl">express-server.js<br>(routing &amp; middleware)</span>
+        </div>
+        <div class="stack-layer l-lib">
+          <span class="layer-name">HTTP Library</span>
+          <span class="layer-impl">http-server.js<br>(Node <code>http</code> module)</span>
+        </div>
+        <div class="stack-layer l-raw">
+          <span class="layer-name">HTTP over Raw Socket</span>
+          <span class="layer-impl">http-socketer.js<br>(hand-parsed HTTP/1.1)</span>
+        </div>
+        <div class="stack-layer l-socket">
+          <span class="layer-name">Socket (TCP)</span>
+          <span class="layer-impl">socketer.js · nc / ncat<br>(raw byte stream)</span>
+        </div>
+        <div class="stack-layer l-ipc">
+          <span class="layer-name">IPC (OS Kernel)</span>
+          <span class="layer-impl">pipes · sockets · kernel buffers<br>(system calls)</span>
+        </div>
+      </div>
+      <div class="stack-label">↓ lower abstraction · OS / wire</div>
+    </div>
+
+    <div class="hero-bar">
+      Where pipes connect two processes on the <strong>same machine</strong> through the OS kernel, <strong>sockets</strong> connect two processes through the OS network stack — same machine or different machines, doesn't matter. <code>socketer.js</code> is a minimal TCP client / server written in Node, modelled on <code>nc</code> / <code>ncat</code>.
+    </div>
+
+    <h3>socketer.js arguments</h3>
+    <table class="arg-table">
+      <thead>
+        <tr><th>Flag</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="flag">-l &lt;port&gt;</td><td>Listen as a TCP server on the given port</td></tr>
+        <tr><td class="flag">[host]</td><td>Optional bind host in server mode (e.g. <code>127.0.0.1</code>)</td></tr>
+        <tr><td class="flag">-b, --broker</td><td>Broadcast every client's data to every <strong>other</strong> connected client (group chat)</td></tr>
+        <tr><td class="flag">&lt;host&gt; &lt;port&gt;</td><td>Run as a TCP client, connect to that server</td></tr>
+        <tr><td class="flag">-h, --help</td><td>Show help</td></tr>
+      </tbody>
+    </table>
+
+    <p>Server mode writes incoming client bytes to its own stdout, and forwards anything typed into its stdin to all connected clients. Client mode does the opposite: it pipes its stdin to the socket and writes the socket's response on stdout. When the client's stdin closes (e.g. a pipe finishes), the client closes its write side.</p>
+  </section>
+
+  <section class="section" id="socket-server">
+    <span class="section-tag">§ 02.01 — Server &amp; Client</span>
+    <h2>Server, client, one-to-one</h2>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 2A — Start a socketer server</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          Open <strong>Terminal 1</strong> and start a server on port 9000. It binds to all interfaces by default and prints the bind address on stderr.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label"><span class="terminal-tag">T1</span> server</span><span class="code-tag">socketer.js -l</span></div>
+<pre><span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">-l</span> <span class="arg">9000</span>
+<span class="com"># stderr: Listening on 0.0.0.0:9000</span>
+
+<span class="com"># Or bind to localhost only</span>
+<span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">-l</span> <span class="arg">9000</span> <span class="arg">127.0.0.1</span></pre>
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 2B — Start a socketer client</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          In <strong>Terminal 2</strong> connect to the running server. Anything you type into the client appears on the server's stdout, anything typed into the server appears on the client's stdout.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label"><span class="terminal-tag">T2</span> client</span><span class="code-tag">socketer.js host port</span></div>
+<pre><span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span>
+<span class="com"># type a line and press Enter, watch the server's terminal</span></pre>
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 2C — One-to-one communication</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          With Lab 2A + 2B running, type a few lines in <strong>each direction</strong>. This is a duplex TCP connection — both sides can read and write at the same time. The OS owns the buffers.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">duplex chat</span><span class="code-tag">T1 ⇄ T2</span></div>
+<pre><span class="com"># Terminal 1 (server)</span>
+<span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">-l</span> <span class="arg">9000</span>
+<span class="out">&gt; hi from server</span>
+
+<span class="com"># Terminal 2 (client)</span>
+<span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span>
+<span class="out">&gt; hi from client</span></pre>
+      </div>
+
+      <div class="info">
+        <strong>Compare with <code>nc</code> / <code>ncat</code>:</strong> the same flow works with the system tools — <code>ncat -l 9000</code> as the server and <code>ncat 127.0.0.1 9000</code> as the client. <code>socketer.js</code> is a drop-in equivalent so you can read every line of source code if you want to see what the kernel is doing for you.
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="socket-broker">
+    <span class="section-tag">§ 02.02 — Broadcast</span>
+    <h2>One-to-many broadcast (group chat)</h2>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 2D — Broker mode</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          The <code>-b</code> / <code>--broker</code> flag turns the server into a fan-out hub: every byte a client sends is forwarded to <strong>every other</strong> connected client. Combined with the server's own stdin (also broadcast), this gives you a tiny group chat.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label"><span class="terminal-tag">T1</span> broker</span><span class="code-tag">socketer.js -l -b</span></div>
+<pre><span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">-l</span> <span class="arg">9000</span> <span class="arg">-b</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          Open two more terminals and connect both as clients.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">two clients</span><span class="code-tag">T2 + T3</span></div>
+<pre><span class="com"># Terminal 2</span>
+<span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span>
+
+<span class="com"># Terminal 3</span>
+<span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          Type a line in <strong>Terminal 2</strong>. Terminal 3 sees it (broker forwarded it). Type in Terminal 3 — Terminal 2 sees it. Type into the broker server itself (Terminal 1) — both clients see it. You've built a chat hub in fewer than 250 lines of code.
+        </div>
+      </div>
+
+      <div class="note">
+        <strong>Try it:</strong> add a fourth client, then disconnect one with <kbd>Ctrl+C</kbd>. The remaining clients stay connected. <code>socketer.js</code> tracks the set of live sockets and drops the closed ones — read <code>startServer</code> in <code>socketer.js</code> to see the <code>Set&lt;Socket&gt;</code> in action.
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="socket-pipe">
+    <span class="section-tag">§ 02.03 — Pipe ↔ Socket</span>
+    <h2>Pipe hands-on with socketer.js</h2>
+
+    <div class="hero-bar">
+      Pipes and sockets compose. A client's <strong>stdin</strong> is a pipe; a client's <strong>socket</strong> is the network. <code>socketer.js</code> wires them together so anything piped into a client travels straight across TCP into the server's stdout. Combine that with <code>regxer.js</code> and you have a tiny stream-processing pipeline that spans machines.
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 2E — ls / dir | socketer (client)</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          Make sure a socketer server is already running (Lab 2A). Then in another terminal, pipe a directory listing through a client. The listing flows: <code>ls</code> stdout → kernel pipe → client stdin → TCP socket → server stdout.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">bash · client receives stdin</span><span class="code-tag">ls | socketer</span></div>
+<pre><span class="cmd">ls</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">Windows · cmd</span><span class="code-tag">dir | socketer</span></div>
+<pre><span class="cmd">dir</span> <span class="arg">/b</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span></pre>
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 2F — echo / myecho "Hello" | socketer</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          The shell <code>echo</code> writes its argument to stdout — <code>socketer.js</code> client forwards that stdout across TCP. Remember: <code>echo</code> needs an argument; it never reads stdin.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">echo with an argument</span><span class="code-tag">echo | socketer</span></div>
+<pre><span class="cmd">echo</span> <span class="str">"Hello"</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span>
+<span class="com"># server terminal prints: Hello</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          <code>myecho</code> works the same way in argument mode, and also lets you read from stdin when no argument is given — handy if you want a passthrough stage before the socket.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">myecho variants</span><span class="code-tag">myecho | socketer</span></div>
+<pre><span class="com"># Argument mode</span>
+<span class="cmd">java</span> <span class="arg">myecho</span> <span class="str">"Hello"</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span>
+
+<span class="com"># Stdin mode — myecho sits between echo and the socket</span>
+<span class="cmd">echo</span> <span class="str">"Hello"</span> <span class="arg">|</span> <span class="cmd">java</span> <span class="arg">myecho</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          <strong>Interactive mode — myecho with no argument.</strong> Use <code>java myecho</code> at the head of the pipe to send a line you <strong>type from the keyboard</strong> across the TCP socket to the server in Lab 2A.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">myecho — keyboard input → socket</span><span class="code-tag">java myecho | socketer</span></div>
+<pre><span class="com"># No argument → myecho reads from your keyboard, the socket carries it</span>
+<span class="cmd">java</span> <span class="arg">myecho</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span>
+<span class="com">
+# Type at the prompt, then send EOF:</span>
+<span class="out">Hello from the keyboard</span>
+<span class="com"># Press Enter, then:
+#   Linux / macOS : Ctrl+D
+#   Windows       : Ctrl+Z then Enter
+# server terminal prints the line you just typed.</span></pre>
+      </div>
+
+      <div class="note">
+        <strong>Reminder:</strong> <code>java myecho</code> with no argument blocks on the keyboard until you press Enter <em>and</em> send EOF (<kbd>Ctrl+D</kbd> on Linux/macOS, <kbd>Ctrl+Z</kbd> + <kbd>Enter</kbd> on Windows). Only then does myecho finish, which closes the pipe to socketer's stdin, which in turn calls <code>socket.end()</code> on the TCP connection.
+      </div>
+
+      <div class="info">
+        <strong>Behavior detail:</strong> when stdin ends (the echo / myecho process finishes), <code>wireProcessInput</code> in <code>socketer.js</code> calls <code>socket.end()</code> in client mode — the client cleanly closes its write side and exits. The server stays up for the next connection.
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 2G — Chain regxer + socketer</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          Now compose the CLIs into a single pipeline. <code>echo</code> (or <code>myecho</code>) produces text, <code>regxer.js</code> extracts a JSON match, the JSON travels across TCP into the server.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">three-stage pipeline · echo producer</span><span class="code-tag">echo | regxer | socketer</span></div>
+<pre><span class="cmd">echo</span> <span class="str">"test123"</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">regxer.js</span> <span class="arg">-f</span> <span class="arg">match</span> <span class="arg">-r</span> <span class="str">"\\d+"</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span>
+<span class="com"># server prints the JSON output of regxer</span></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">three-stage pipeline · myecho producer</span><span class="code-tag">myecho | regxer | socketer</span></div>
+<pre><span class="com"># Same pipeline, with myecho — works in argument mode...</span>
+<span class="cmd">java</span> <span class="arg">myecho</span> <span class="str">"test123"</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">regxer.js</span> <span class="arg">-f</span> <span class="arg">match</span> <span class="arg">-r</span> <span class="str">"\\d+"</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span>
+
+<span class="com"># ...and in stdin mode (four stages — myecho as passthrough)</span>
+<span class="cmd">echo</span> <span class="str">"test123"</span> <span class="arg">|</span> <span class="cmd">java</span> <span class="arg">myecho</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">regxer.js</span> <span class="arg">-f</span> <span class="arg">match</span> <span class="arg">-r</span> <span class="str">"\\d+"</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          You can replace the last stage with <code>nc</code> or <code>ncat</code> against the <strong>same</strong> server — they speak raw TCP too, so any TCP listener works.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">interop with ncat / nc</span><span class="code-tag">echo | regxer | nc</span></div>
+<pre><span class="com"># With ncat (nmap project) or nc (BSD/GNU)</span>
+<span class="cmd">echo</span> <span class="str">"test123"</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">regxer.js</span> <span class="arg">-f</span> <span class="arg">match</span> <span class="arg">-r</span> <span class="str">"\\d+"</span> <span class="arg">|</span> <span class="cmd">ncat</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span>
+
+<span class="com"># myecho works the same way</span>
+<span class="cmd">java</span> <span class="arg">myecho</span> <span class="str">"test123"</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">regxer.js</span> <span class="arg">-f</span> <span class="arg">match</span> <span class="arg">-r</span> <span class="str">"\\d+"</span> <span class="arg">|</span> <span class="cmd">ncat</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span>
+
+<span class="com"># Also works in reverse: ncat server, socketer client</span>
+<span class="cmd">ncat</span> <span class="arg">-l</span> <span class="arg">9000</span>                       <span class="com"># in terminal 1</span>
+<span class="cmd">echo</span> <span class="str">"hi"</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span></pre>
+      </div>
+
+      <div class="note">
+        <strong>Why interop works:</strong> at the wire level, TCP is just bytes. None of these tools impose a protocol; they ship the bytes you give them. Pipes glue them together at the process layer.
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- HTTP-SOCKETER                               -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="section" id="http-socketer">
+    <span class="section-tag">§ 03 — http-socketer.js</span>
+    <h2>HTTP over a raw TCP socket</h2>
+
+    <div class="hero-bar">
+      <code>http-socketer.js</code> takes the same raw <code>net.createServer</code> from <code>socketer.js</code> and adds just enough byte-level parsing to speak <strong>HTTP/1.1</strong> — a request line, CRLF-terminated headers, a blank line, and a body. It serves files from the current working directory.
+    </div>
+
+    <h3>Arguments</h3>
+    <table class="arg-table">
+      <thead><tr><th>Flag</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td class="flag">-l &lt;port&gt;</td><td>Listen mode, raw HTTP-over-TCP server</td></tr>
+        <tr><td class="flag">[host]</td><td>Optional bind host</td></tr>
+        <tr><td class="flag">-h, --help</td><td>Show help</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Behavior</h3>
+    <p>Only <code>GET</code> is supported. Targets must start with <code>/</code>. Files are resolved relative to the <strong>current working directory</strong> when you start the process. Missing files return <code>404 Not Found</code>; non-<code>GET</code> methods return <code>405</code>. Common text types (<code>.html</code>, <code>.js</code>, <code>.json</code>, <code>.css</code>, <code>.txt</code>) are served with inline-friendly content types.</p>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 3A — Start the raw-socket HTTP server</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          From inside <code>ipc/</code>, start the server on port 9000. The files in <code>ipc/</code> (including <code>test.txt</code> and <code>students.txt</code>) become reachable.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">start server</span><span class="code-tag">http-socketer.js -l</span></div>
+<pre><span class="cmd">node</span> <span class="arg">http-socketer.js</span> <span class="arg">-l</span> <span class="arg">9000</span>
+
+<span class="com"># Bind to localhost only</span>
+<span class="cmd">node</span> <span class="arg">http-socketer.js</span> <span class="arg">-l</span> <span class="arg">9000</span> <span class="arg">127.0.0.1</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          Open a browser and visit <code>http://127.0.0.1:9000/test.txt</code>. You should see the file contents. Request a missing path and observe <code>404 Not Found</code>.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">browser URLs</span><span class="code-tag">http://</span></div>
+<pre>http://127.0.0.1:9000/test.txt        <span class="com"># 200 OK, served from ipc/test.txt</span>
+http://127.0.0.1:9000/missing.txt     <span class="com"># 404 Not Found</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          You can also start it from the project root and reference deeper paths — the resolution is always against <code>process.cwd()</code>.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">from project root</span><span class="code-tag">cwd matters</span></div>
+<pre><span class="cmd">cd</span> <span class="arg">..</span>
+<span class="cmd">node</span> <span class="arg">ipc/http-socketer.js</span> <span class="arg">-l</span> <span class="arg">9000</span>
+<span class="com"># now /ipc/test.txt and /package.json (if present) are reachable</span></pre>
+      </div>
+
+      <div class="info">
+        <strong>Try it:</strong> open the file <code>http-socketer.js</code> and locate <code>sendResponse</code>. It builds the response by hand — status line, <code>Connection</code>, <code>Content-Length</code>, headers, blank line, body. This is exactly what the kernel transports as a TCP byte stream; the browser parses the same bytes.
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 3B — Send a hand-crafted HTTP request with socketer</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          Use the plain <code>socketer.js</code> client to <strong>type the request bytes yourself</strong>. With the HTTP server still running from Lab 3A:
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">raw HTTP from a TCP client</span><span class="code-tag">socketer → http-socketer</span></div>
+<pre><span class="cmd">node</span> <span class="arg">socketer.js</span> <span class="arg">127.0.0.1</span> <span class="arg">9000</span>
+<span class="com"># Then type, exactly:</span>
+<span class="out">GET /test.txt HTTP/1.1</span>
+<span class="out">Host: localhost</span>
+<span class="out">                       (← blank line — press Enter twice)</span></pre>
+      </div>
+
+      <p>You'll see the response status line, headers, blank line, and body stream back across the same socket. <strong>This is HTTP, fully visible.</strong></p>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- HTTP-SERVER                                 -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="section" id="http-server">
+    <span class="section-tag">§ 04 — http-server.js</span>
+    <h2>HTTP using Node's <code>http</code> module</h2>
+
+    <div class="hero-bar">
+      <code>http-server.js</code> does the same job as <code>http-socketer.js</code> with far less code — it uses Node's built-in <code>http</code> module, which handles the request line, header parsing, and response framing for you. Same behavior, half the surface area.
+    </div>
+
+    <h3>Arguments</h3>
+    <table class="arg-table">
+      <thead><tr><th>Flag</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td class="flag">-l &lt;port&gt;</td><td>Listen mode on the given port</td></tr>
+        <tr><td class="flag">[host]</td><td>Optional bind host</td></tr>
+        <tr><td class="flag">-h, --help</td><td>Show help</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Behavior</h3>
+    <p>Only <code>GET</code>; missing files return <code>404</code>; non-<code>GET</code> returns <code>405 Method Not Allowed</code> with an <code>Allow: GET</code> header; files resolved against <code>process.cwd()</code>. Compare to <code>http-socketer.js</code> — same contract, different layer.</p>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 4A — Run the http-module server</div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">start http-server</span><span class="code-tag">http-server.js -l</span></div>
+<pre><span class="cmd">node</span> <span class="arg">http-server.js</span> <span class="arg">-l</span> <span class="arg">9000</span>
+
+<span class="com"># Bind to localhost only</span>
+<span class="cmd">node</span> <span class="arg">http-server.js</span> <span class="arg">-l</span> <span class="arg">9000</span> <span class="arg">127.0.0.1</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          Visit <code>http://127.0.0.1:9000/test.txt</code> in your browser. Compare the response headers with <code>curl -I http://127.0.0.1:9000/test.txt</code> against the previous <code>http-socketer.js</code> server. They should be functionally identical.
+        </div>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          Try a non-<code>GET</code> request and observe the <code>405</code>:
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">trigger 405</span><span class="code-tag">curl -X</span></div>
+<pre><span class="cmd">curl</span> <span class="arg">-i</span> <span class="arg">-X</span> <span class="arg">POST</span> <span class="arg">http://127.0.0.1:9000/test.txt</span>
+<span class="com"># HTTP/1.1 405 Method Not Allowed</span>
+<span class="com"># Allow: GET</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- EXPRESS-SERVER                              -->
+  <!-- ══════════════════════════════════════════ -->
+  <section class="section" id="express">
+    <span class="section-tag">§ 05 — ipc-express / express-server.js</span>
+    <h2>Express — a framework on top of <code>http</code></h2>
+
+    <div class="hero-bar">
+      Express is a thin web-framework layer on top of Node's <code>http</code> module. It adds <strong>routing</strong>, <strong>middleware ordering</strong>, and ergonomics for sending JSON, serving static files, and producing typed responses. Same TCP stack underneath — same bytes on the wire.
+    </div>
+
+    <div class="info">
+      <strong>Reference:</strong> see <code>ipc-express/README.md</code> for the full description, and <code>ipc-express/express-server.js</code> for the source. The labs below mirror those instructions.
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 5A — Install Express dependencies</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          From the repo root, switch into <code>ipc-express/</code> and install once.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">install</span><span class="code-tag">npm install</span></div>
+<pre><span class="cmd">cd</span> <span class="arg">ipc-express</span>
+<span class="cmd">npm</span> <span class="arg">install</span></pre>
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 5B — Run the Express server</div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">start</span><span class="code-tag">express-server.js -l</span></div>
+<pre><span class="cmd">node</span> <span class="arg">express-server.js</span> <span class="arg">-l</span> <span class="arg">9000</span>
+
+<span class="com"># Or use the package script:</span>
+<span class="cmd">npm</span> <span class="arg">start</span> <span class="arg">--</span> <span class="arg">-l</span> <span class="arg">9000</span>
+
+<span class="com"># Or from the project root:</span>
+<span class="cmd">node</span> <span class="arg">ipc-express/express-server.js</span> <span class="arg">-l</span> <span class="arg">9000</span></pre>
+      </div>
+
+      <p>Static files are served from <code>ipc-express/public/</code> — open <code>http://127.0.0.1:9000/</code> to see <code>index.html</code>, and visit <code>http://127.0.0.1:9000/api/hello</code> for the sample JSON route.</p>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">URLs</span><span class="code-tag">browser</span></div>
+<pre>http://127.0.0.1:9000/                <span class="com"># serves public/index.html</span>
+http://127.0.0.1:9000/login.html      <span class="com"># serves public/login.html</span>
+http://127.0.0.1:9000/api/hello       <span class="com"># JSON: { message, method, path }</span>
+http://127.0.0.1:9000/missing.txt     <span class="com"># 404 Not Found</span></pre>
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 5C — Observe middleware order</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          Express resolves middleware top-to-bottom. In <code>express-server.js</code> the order is: (1) <code>GET /api/hello</code>, (2) <code>express.static(...)</code>, (3) catch-all <code>GET *</code> → <code>404</code>, (4) final middleware → <code>405 Method Not Allowed</code>.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">verify each branch</span><span class="code-tag">curl</span></div>
+<pre><span class="com"># 1. specific API route matches first</span>
+<span class="cmd">curl</span> <span class="arg">-i</span> <span class="arg">http://127.0.0.1:9000/api/hello</span>
+
+<span class="com"># 2. static file falls through to express.static</span>
+<span class="cmd">curl</span> <span class="arg">-i</span> <span class="arg">http://127.0.0.1:9000/index.html</span>
+
+<span class="com"># 3. unknown GET path falls through to the catch-all 404</span>
+<span class="cmd">curl</span> <span class="arg">-i</span> <span class="arg">http://127.0.0.1:9000/does-not-exist</span>
+
+<span class="com"># 4. non-GET method falls through to the 405 middleware</span>
+<span class="cmd">curl</span> <span class="arg">-i</span> <span class="arg">-X</span> <span class="arg">POST</span> <span class="arg">http://127.0.0.1:9000/api/hello</span></pre>
+      </div>
+
+      <div class="note">
+        <strong>The rule, in one line:</strong> register <em>specific</em> routes first, <em>generic</em> handlers last. Reverse the order and a wildcard <code>/api/*</code> will swallow the more specific <code>/api/hello</code>.
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 5D — Chain everything together</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          With the Express server still running, fetch <code>/api/hello</code> and pipe the response into <code>regxer.js</code> to prove that one tiny pipeline now spans an HTTP framework, the OS network stack, and a regex CLI — all the layers from this page in a single command.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">HTTP → pipe → regex</span><span class="code-tag">curl | regxer.js</span></div>
+<pre><span class="cmd">curl</span> <span class="arg">-s</span> <span class="arg">http://127.0.0.1:9000/api/hello</span> <span class="arg">|</span> <span class="cmd">node</span> <span class="arg">../ipc/regxer.js</span> <span class="arg">-f</span> <span class="arg">match</span> <span class="arg">-r</span> <span class="str">"\\\"message\\\":\\s*\\\"[^\\\"]+\\\""</span></pre>
+      </div>
+    </div>
+
+    <div style="margin-top:48px; padding:24px; background:var(--bg3); border-radius:var(--radius); border:1px solid var(--border); text-align:center;">
+      <div style="font-family:var(--mono); font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:12px;">From pipe to framework</div>
+      <div style="font-size:14px; color:var(--dim); line-height:2;">
+        <span style="color:var(--cyan)">pipe</span> connects stdout → stdin between processes on one host
+        &nbsp;·&nbsp;
+        <span style="color:var(--blue)">socket</span> connects two processes through the OS network stack
+        <br>
+        <span style="color:var(--amber)">HTTP</span> is a text protocol over a TCP socket — same bytes, structured into request &amp; response
+        <br>
+        <span style="color:var(--purple)">Express</span> adds routing &amp; middleware over Node's <code>http</code> module — but it's all still the same wire format
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+<script>
+const sections = document.querySelectorAll('section[id]');
+const links = document.querySelectorAll('.nav-link');
+
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+
+sections.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

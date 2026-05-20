@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+<link rel="stylesheet" href="/forms.css">
+</head>
+<body>
+
+<div class="card">
+
+  <h1>Log in</h1>
+
+  <form id="login-form" method="POST" action="/login">
+
+    <div class="form-row" data-field="username">
+      <label class="field-label" for="username">Username</label>
+      <input class="field-input" id="username" name="username" type="text" placeholder="Enter username" required>
+      <span class="field-error"></span>
+    </div>
+
+    <div class="form-row" data-field="password">
+      <label class="field-label" for="password">Password</label>
+      <input class="field-input" id="password" name="password" type="password" placeholder="Enter password" required>
+      <span class="field-error"></span>
+    </div>
+
+    <button class="submit-btn" type="submit">Log in</button>
+
+  </form>
+
+  <p class="card-footer">
+    No account? <a href="signup.html">Sign up</a>
+  </p>
+
+</div>
+
+</body>
+</html>
