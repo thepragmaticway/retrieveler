@@ -3,7 +3,9 @@
 
 Retrieveler means "data retrieval learner." The project is designed to teach data retrieval using three fundamental data structures, each organized to suit a particular type of information.
 
-Live site: https://thepragmaticway.github.io/retrieveler/
+[![Live site](https://img.shields.io/badge/Live%20site-thepragmaticway.github.io%2Fretrieveler-38bdf8?style=for-the-badge&logo=github)](https://thepragmaticway.github.io/retrieveler)
+
+🌐 **Live site:** [thepragmaticway.github.io/retrieveler](https://thepragmaticway.github.io/retrieveler)
 
 ## What is Retrieveler?
 
