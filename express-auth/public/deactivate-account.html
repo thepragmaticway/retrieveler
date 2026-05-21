@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deactivate Account</title>
+<link rel="stylesheet" href="/forms.css">
+</head>
+<body>
+<div class="card">
+  <h1>Deactivate account</h1>
+  <p class="page-note">This page teaches <code>DELETE /api/account</code>.</p>
+
+  <button id="deactivate-btn" class="submit-btn danger-btn" type="button">Send DELETE request</button>
+  <p id="message" class="status-message"></p>
+
+  <p class="card-footer">
+    <a href="/">Back to home</a>
+  </p>
+</div>
+<script>
+  const deactivateButton = document.getElementById("deactivate-btn");
+  const messageElement = document.getElementById("message");
+
+  function showMessage(text, type) {
+    messageElement.textContent = text;
+    messageElement.className = "status-message " + type;
+  }
+
+  deactivateButton.addEventListener("click", async function() {
+    const confirmed = window.confirm("Delete this account and log out?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/account", {
+        method: "DELETE"
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        showMessage(data.error || "Account deletion failed.", "error");
+        return;
+      }
+
+      window.location.href = data.redirect || "/signup";
+    } catch (error) {
+      showMessage("Request failed.", "error");
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTTP Capstone — Request/Reply with Express Auth</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #080c10;
+  --bg2:     #0f1419;
+  --bg3:     #161d26;
+  --bg4:     #1d2733;
+  --border:  rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.14);
+  --text:    #d4dce8;
+  --muted:   #586472;
+  --dim:     #8a9ab0;
+  --cyan:    #00c8c8;
+  --cyan-d:  rgba(0,200,200,0.10);
+  --cyan-b:  rgba(0,200,200,0.25);
+  --amber:   #f0a030;
+  --amber-d: rgba(240,160,48,0.10);
+  --green:   #3dd68c;
+  --green-d: rgba(61,214,140,0.10);
+  --red:     #f06060;
+  --red-d:   rgba(240,96,96,0.10);
+  --blue:    #60a8f0;
+  --blue-d:  rgba(96,168,240,0.10);
+  --purple:  #b07ff0;
+  --purple-d:rgba(176,127,240,0.10);
+  --font:    'IBM Plex Sans', sans-serif;
+  --mono:    'IBM Plex Mono', monospace;
+  --sidebar: 240px;
+  --radius:  6px;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.7;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: var(--sidebar);
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  z-index: 100;
+  padding: 28px 0 40px;
+}
+.sidebar-brand {
+  padding: 0 20px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.sidebar-brand .label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 4px;
+}
+.sidebar-brand .title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cyan);
+  line-height: 1.3;
+}
+.nav-section {
+  padding: 8px 20px 4px;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.nav-link {
+  display: block;
+  padding: 7px 20px;
+  font-size: 13px;
+  color: var(--dim);
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+  border-left: 2px solid transparent;
+  line-height: 1.4;
+}
+.nav-link:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.nav-link.active { color: var(--cyan); border-left-color: var(--cyan); background: var(--cyan-d); }
+.overview-link {
+  display: block;
+  margin: 0 20px 8px;
+  padding: 8px 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  text-decoration: none;
+}
+.overview-link:hover { color: var(--text); }
+
+/* MAIN */
+main {
+  margin-left: var(--sidebar);
+  flex: 1;
+  max-width: 960px;
+  padding: 60px 64px 120px;
+}
+
+/* PAGE HEADER */
+.page-header {
+  margin-bottom: 56px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header .tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  display: block;
+  margin-bottom: 12px;
+}
+.page-header h1 {
+  font-size: 40px;
+  color: #eaf0f8;
+  font-weight: 600;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+.page-header .subtitle {
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 640px;
+  line-height: 1.6;
+}
+
+/* SECTION */
+.section { margin-bottom: 80px; }
+.section-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 10px;
+  display: block;
+}
+h1 {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: #eaf0f8;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #d4dce8;
+  margin-bottom: 16px;
+  margin-top: 40px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.3;
+}
+h2:first-child { margin-top: 0; }
+h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--amber);
+  margin: 24px 0 10px;
+}
+h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--blue);
+  margin: 18px 0 8px;
+  font-family: var(--mono);
+  letter-spacing: 0.5px;
+}
+p { margin-bottom: 14px; color: var(--dim); }
+strong { color: var(--text); font-weight: 500; }
+code {
+  background: var(--bg4);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--cyan);
+}
+
+/* HERO BAR */
+.hero-bar {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--cyan);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 32px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--dim);
+}
+.hero-bar strong { color: var(--cyan); }
+
+/* LAB BOX */
+.lab-box {
+  background: rgba(0,200,200,0.04);
+  border: 1px solid rgba(0,200,200,0.2);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin: 24px 0;
+}
+.lab-box-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lab-box-title::before {
+  content: '▶';
+  font-size: 9px;
+}
+.lab-step {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.lab-step-num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--cyan-d);
+  border: 1px solid var(--cyan-b);
+  color: var(--cyan);
+  font-size: 11px;
+  font-family: var(--mono);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.lab-step-content { color: var(--dim); line-height: 1.6; }
+.lab-step-content code {
+  background: var(--bg4);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--cyan);
+}
+
+/* CODE BLOCK */
+.code-block {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 16px 0;
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+.code-label {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+.code-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  background: var(--bg4);
+  color: var(--muted);
+}
+.code-block pre {
+  padding: 16px;
+  font-size: 12.5px;
+  font-family: var(--mono);
+  line-height: 1.75;
+  color: var(--dim);
+  overflow-x: auto;
+  white-space: pre;
+}
+.code-block pre .cmd  { color: var(--cyan); }
+.code-block pre .arg  { color: var(--amber); }
+.code-block pre .str  { color: var(--green); }
+.code-block pre .com  { color: var(--muted); font-style: italic; }
+.code-block pre .out  { color: var(--purple); }
+.code-block pre .kw   { color: var(--blue); }
+.code-block pre .hdr  { color: var(--amber); }
+
+/* NOTE BOX */
+.note {
+  background: rgba(240,160,48,0.06);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 12px 16px;
+  margin: 16px 0;
+  font-size: 13px;
+  color: var(--dim);
+}
+.note strong { color: var(--amber); }
+
+/* INFO BOX */
+.info {
+  background: rgba(96,168,240,0.06);
+  border-left: 3px solid var(--blue);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 12px 16px;
+  margin: 16px 0;
+  font-size: 13px;
+  color: var(--dim);
+}
+.info strong { color: var(--blue); }
+
+/* ARG TABLE */
+.arg-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 13px;
+}
+.arg-table th {
+  background: var(--bg4);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: var(--mono);
+  color: var(--muted);
+  border-bottom: 1px solid var(--border2);
+}
+.arg-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  color: var(--dim);
+}
+.arg-table tr:last-child td { border-bottom: none; }
+.arg-table td.flag {
+  font-family: var(--mono);
+  color: var(--amber);
+  font-size: 12px;
+  white-space: nowrap;
+  width: 140px;
+}
+.arg-table td.method {
+  font-family: var(--mono);
+  font-size: 12px;
+  white-space: nowrap;
+  width: 80px;
+  font-weight: 600;
+}
+.arg-table td.method.get    { color: var(--green); }
+.arg-table td.method.post   { color: var(--amber); }
+.arg-table td.method.put    { color: var(--blue); }
+.arg-table td.method.delete { color: var(--red); }
+
+/* DIVIDER */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 60px 0;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+
+/* STATUS GROUPS */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 20px 0 8px;
+}
+.status-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  background: var(--bg3);
+}
+.status-card .range {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.status-card .title {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+.status-card .examples {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.status-card.s1 { border-left: 3px solid var(--purple); }
+.status-card.s1 .range { color: var(--purple); }
+.status-card.s2 { border-left: 3px solid var(--green); }
+.status-card.s2 .range { color: var(--green); }
+.status-card.s3 { border-left: 3px solid var(--blue); }
+.status-card.s3 .range { color: var(--blue); }
+.status-card.s4 { border-left: 3px solid var(--amber); }
+.status-card.s4 .range { color: var(--amber); }
+.status-card.s5 { border-left: 3px solid var(--red); }
+.status-card.s5 .range { color: var(--red); }
+
+/* MESSAGE DIAGRAM */
+.msg-diagram {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin: 24px 0 8px;
+}
+.msg-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  background: var(--bg3);
+}
+.msg-panel.req { border-left: 3px solid var(--amber); }
+.msg-panel.res { border-left: 3px solid var(--blue); }
+.msg-panel .role {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.msg-panel.req .role { color: var(--amber); }
+.msg-panel.res .role { color: var(--blue); }
+.msg-panel ol {
+  margin: 0;
+  padding-left: 22px;
+  font-size: 13px;
+  color: var(--dim);
+  line-height: 1.7;
+}
+.msg-panel ol li { margin-bottom: 6px; }
+.msg-panel ol li strong { color: var(--text); }
+@media (max-width: 720px) {
+  .msg-diagram { grid-template-columns: 1fr; }
+}
+
+/* TWO-WAY COMPARISON */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 22px 0;
+}
+.compare-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  background: var(--bg3);
+}
+.compare-card h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--text);
+  font-family: var(--mono);
+  letter-spacing: 0.5px;
+}
+.compare-card.form  { border-left: 3px solid var(--green); }
+.compare-card.form  h4 { color: var(--green); }
+.compare-card.ajax  { border-left: 3px solid var(--purple); }
+.compare-card.ajax  h4 { color: var(--purple); }
+.compare-card ul {
+  margin: 0;
+  padding-left: 22px;
+  font-size: 13px;
+  color: var(--dim);
+  line-height: 1.7;
+}
+.compare-card ul li { margin-bottom: 4px; }
+@media (max-width: 720px) {
+  .compare-grid { grid-template-columns: 1fr; }
+}
+
+/* CRUD MAP */
+.crud-map {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 13px;
+}
+.crud-map th, .crud-map td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.crud-map th {
+  background: var(--bg4);
+  text-align: left;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: var(--mono);
+  color: var(--muted);
+}
+.crud-map td.m { font-family: var(--mono); font-size: 12px; font-weight: 600; }
+.crud-map td.path { font-family: var(--mono); font-size: 12px; color: var(--amber); }
+.crud-map td.m.get    { color: var(--green); }
+.crud-map td.m.post   { color: var(--amber); }
+.crud-map td.m.put    { color: var(--blue); }
+.crud-map td.m.delete { color: var(--red); }
+.crud-map td .way {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  letter-spacing: 1px;
+  margin-left: 4px;
+  text-transform: uppercase;
+}
+.crud-map td .way.form { background: rgba(61,214,140,0.12); color: var(--green); }
+.crud-map td .way.ajax { background: rgba(176,127,240,0.12); color: var(--purple); }
+.crud-map td .way.nav  { background: rgba(96,168,240,0.12); color: var(--blue); }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <span class="label">IOJT 2026 · Capstone</span>
+    <div class="title">HTTP<br>Request/Reply</div>
+  </div>
+
+  <a href="index.html" class="overview-link">Back to overview</a>
+  <a href="ipc-lab.html" class="overview-link">← IPC Lab (theory)</a>
+  <a href="ipc-hands-on.html" class="overview-link">← IPC Hands-On</a>
+
+  <span class="nav-section">Setup</span>
+  <a href="#setup" class="nav-link active">Run express-auth</a>
+
+  <span class="nav-section">Concept</span>
+  <a href="#why-http" class="nav-link">Why HTTP</a>
+  <a href="#request" class="nav-link">Request structure</a>
+  <a href="#response" class="nav-link">Response structure</a>
+  <a href="#status" class="nav-link">Status codes</a>
+
+  <span class="nav-section">Capstone App</span>
+  <a href="#crud-map" class="nav-link">Methods → resources</a>
+  <a href="#two-ways" class="nav-link">Form vs AJAX</a>
+
+  <span class="nav-section">Hands-On</span>
+  <a href="#lab-signup" class="nav-link">Signup (POST form)</a>
+  <a href="#lab-login" class="nav-link">Login (POST form)</a>
+  <a href="#lab-password" class="nav-link">Change pw (PUT ajax)</a>
+  <a href="#lab-deactivate" class="nav-link">Deactivate (DELETE ajax)</a>
+
+  <span class="nav-section">Beyond</span>
+  <a href="#sessions" class="nav-link">Cookies &amp; sessions</a>
+  <a href="#inspect" class="nav-link">Inspecting traffic</a>
+  <a href="#wrap" class="nav-link">Wrap-up</a>
+</nav>
+
+<!-- MAIN -->
+<main>
+
+  <div class="page-header">
+    <span class="tag">IPC Capstone · HTTP Request/Reply</span>
+    <h1>HTTP Capstone — Request &amp; Reply</h1>
+    <p class="subtitle">A small capstone that wraps the IPC series: learn <strong>why</strong> most applications speak HTTP, the exact shape of a request and reply, and how the browser can send those requests two different ways — plain HTML forms and AJAX <code>fetch</code> — using the <code>express-auth</code> sample app.</p>
+  </div>
+
+  <!-- ================================ -->
+  <!-- SETUP                            -->
+  <!-- ================================ -->
+  <section class="section" id="setup">
+    <span class="section-tag">§ 00 — Setup</span>
+    <h2>Run the capstone app</h2>
+
+    <div class="hero-bar">
+      Every lab below uses the <strong>express-auth</strong> sample under <code>express-auth/</code>. It's an intentionally small Express app: one server file, one in-memory store, a few static HTML pages, and a handful of routes that cover all four CRUD verbs against a single <em>user account</em> resource.
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 0 — Install &amp; start</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          From the repo root, switch into <code>express-auth/</code> and install once. The only dependency is <code>express</code>.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">install</span><span class="code-tag">npm install</span></div>
+<pre><span class="cmd">cd</span> <span class="arg">express-auth</span>
+<span class="cmd">npm</span> <span class="arg">install</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          Start the server on port 3000 and leave it running. The process prints its bind address on stderr.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">start</span><span class="code-tag">express-server.js -l</span></div>
+<pre><span class="cmd">node</span> <span class="arg">express-server.js</span> <span class="arg">-l</span> <span class="arg">3000</span>
+<span class="com"># stderr: Listening on 0.0.0.0:3000</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          Open <code>http://127.0.0.1:3000/</code> in a browser. You'll be redirected to <code>/login</code> because there's no session cookie yet — that redirect is your first HTTP reply, and the rest of this page explains exactly what's flying back and forth.
+        </div>
+      </div>
+
+      <div class="info">
+        <strong>Why an auth app?</strong> Signup, login, change-password, and deactivate cover the four operations every CRUD app does: <em>create</em>, <em>read</em>, <em>update</em>, <em>delete</em>. Authentication just happens to be the most relatable example of the user resource.
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ================================ -->
+  <!-- WHY HTTP                         -->
+  <!-- ================================ -->
+  <section class="section" id="why-http">
+    <span class="section-tag">§ 01 — Concept</span>
+    <h2>Why most applications speak HTTP</h2>
+
+    <p>HTTP is a <strong>request/reply</strong> protocol over a TCP socket — the same socket layer you saw in the IPC Hands-On lab. A client sends one request; the server returns one response; the conversation is finished. That tiny contract turned out to be enough to build almost every application you use:</p>
+
+    <ul style="margin: 14px 0 18px 22px; color: var(--dim); line-height: 1.9;">
+      <li><strong>Universal client</strong> — every OS ships a browser, and every browser speaks HTTP. No client install needed.</li>
+      <li><strong>Stateless</strong> — each request is self-contained, so servers scale horizontally and load-balancers don't have to track conversations.</li>
+      <li><strong>Text on the wire</strong> — you can read raw HTTP with your eyes (you did exactly that with <code>socketer.js</code>) and inspect it with browser DevTools.</li>
+      <li><strong>Verb-based</strong> — four common methods cover almost every operation on a resource: read, create, update, delete.</li>
+      <li><strong>Layered</strong> — HTML, JSON, file downloads, AJAX, streaming — all the same envelope, different payloads.</li>
+    </ul>
+
+    <p>The recipe for writing most applications is the same every time:</p>
+
+    <ol style="margin: 6px 0 18px 22px; color: var(--dim); line-height: 1.9;">
+      <li>Pick the <strong>resources</strong> the app manages (users, posts, orders, …).</li>
+      <li>Decide which <strong>URL</strong> each resource lives at (<code>/users</code>, <code>/posts/42</code>).</li>
+      <li>For each operation, pick the matching <strong>method</strong> — GET to read, POST to create, PUT to update, DELETE to remove.</li>
+      <li>Choose how the browser sends the request — <strong>HTML form</strong> for whole-page flows, <strong>AJAX</strong> when the page controls its own flow.</li>
+      <li>Handle the <strong>reply</strong> — a new page (server-driven flow) or a JSON object (page-driven flow).</li>
+    </ol>
+
+    <div class="info">
+      <strong>From IPC to HTTP:</strong> in the previous lab you watched bytes flow through a kernel pipe, then through a TCP socket, then as a hand-typed HTTP request, then through Node's <code>http</code> module, then through Express. <strong>This page sits at the very top of that stack</strong> — same bytes, now structured into a contract you can build a whole product on.
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ================================ -->
+  <!-- REQUEST STRUCTURE                -->
+  <!-- ================================ -->
+  <section class="section" id="request">
+    <span class="section-tag">§ 02 — Request</span>
+    <h2>HTTP request — four parts</h2>
+
+    <p>Every HTTP request has the same four parts. Once you can name them, you can read any request the browser, <code>curl</code>, or DevTools shows you.</p>
+
+    <div class="msg-diagram">
+      <div class="msg-panel req">
+        <div class="role">Request</div>
+        <ol>
+          <li><strong>URL</strong> — where the resource lives</li>
+          <li><strong>Method</strong> — what operation to perform</li>
+          <li><strong>Headers</strong> — metadata about the request</li>
+          <li><strong>Body</strong> — the payload (when applicable)</li>
+        </ol>
+      </div>
+      <div class="msg-panel res">
+        <div class="role">A concrete example</div>
+<pre style="font-family: var(--mono); font-size: 12px; color: var(--dim); line-height: 1.6; margin: 0;"><span style="color: var(--amber)">POST</span> <span style="color: var(--cyan)">/login</span> <span style="color: var(--muted)">HTTP/1.1</span>
+<span style="color: var(--blue)">Host:</span> 127.0.0.1:3000
+<span style="color: var(--blue)">Content-Type:</span> application/x-www-form-urlencoded
+<span style="color: var(--blue)">Cookie:</span> session=abc123…
+<span style="color: var(--blue)">Content-Length:</span> 38
+
+<span style="color: var(--green)">username=alice&amp;password=hunter2</span></pre>
+      </div>
+    </div>
+
+    <h3>1. URL — the resource location</h3>
+    <p>The URL identifies <strong>which resource</strong> the request is about. In <code>express-auth</code>:</p>
+
+    <table class="arg-table">
+      <thead><tr><th>URL</th><th>Identifies</th></tr></thead>
+      <tbody>
+        <tr><td class="flag">/</td><td>the protected home page (read your own session)</td></tr>
+        <tr><td class="flag">/login</td><td>the login form (and the action that creates a session)</td></tr>
+        <tr><td class="flag">/signup</td><td>the signup form (and the action that creates a user)</td></tr>
+        <tr><td class="flag">/api/password</td><td>the current user's password</td></tr>
+        <tr><td class="flag">/api/account</td><td>the current user's account</td></tr>
+      </tbody>
+    </table>
+
+    <h3>2. Method — the operation</h3>
+    <p>The method tells the server <strong>what to do</strong> with the resource. Four methods cover almost every CRUD app:</p>
+
+    <table class="arg-table">
+      <thead><tr><th>Method</th><th>Meaning</th><th>In express-auth</th></tr></thead>
+      <tbody>
+        <tr><td class="method get">GET</td><td>Read / retrieve a resource. Should be safe (no side effects).</td><td>Fetch a page like <code>/login</code> or the home view</td></tr>
+        <tr><td class="method post">POST</td><td>Create a new resource (or perform a non-idempotent action).</td><td><code>POST /signup</code> creates a user; <code>POST /login</code> creates a session</td></tr>
+        <tr><td class="method put">PUT</td><td>Update / replace an existing resource.</td><td><code>PUT /api/password</code> updates the current user's password</td></tr>
+        <tr><td class="method delete">DELETE</td><td>Remove an existing resource.</td><td><code>DELETE /api/account</code> deactivates the current user</td></tr>
+      </tbody>
+    </table>
+
+    <h3>3. Headers — metadata about the request</h3>
+    <p>Headers carry extra information <em>about</em> the request that isn't part of the URL or body. A few you'll see constantly:</p>
+
+    <table class="arg-table">
+      <thead><tr><th>Header</th><th>What it carries</th></tr></thead>
+      <tbody>
+        <tr><td class="flag">Host</td><td>Which virtual host the request is for (required in HTTP/1.1)</td></tr>
+        <tr><td class="flag">Content-Type</td><td>Format of the body: <code>application/x-www-form-urlencoded</code> for forms, <code>application/json</code> for AJAX</td></tr>
+        <tr><td class="flag">Content-Length</td><td>Size of the body in bytes</td></tr>
+        <tr><td class="flag">Cookie</td><td>Stored cookies the browser sends back — this is how <code>express-auth</code> recognizes a logged-in user (<code>Cookie: session=…</code>)</td></tr>
+        <tr><td class="flag">Authorization</td><td>Credentials for API-style auth (e.g. <code>Bearer &lt;token&gt;</code>) — not used in this app, but ubiquitous in APIs</td></tr>
+        <tr><td class="flag">Accept</td><td>What content types the client wants back (<code>text/html</code>, <code>application/json</code>, …)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info">
+      <strong>Two important headers in this app:</strong>
+      <ul style="margin: 6px 0 0 22px; line-height: 1.7;">
+        <li><strong>Cookie</strong> (request) — <code>express-auth</code> reads the <code>session=…</code> cookie on every request to look up the logged-in user.</li>
+        <li><strong>Content-Type</strong> (request) — forms send <code>application/x-www-form-urlencoded</code>; the AJAX pages send <code>application/json</code>. Express picks a different body parser based on this header.</li>
+      </ul>
+    </div>
+
+    <h3>4. Body — the payload</h3>
+    <p>The body carries the data the server needs to act on. GET requests almost never have one; POST/PUT/DELETE often do. The body's format is whatever the <code>Content-Type</code> header says.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-label">form body — url-encoded</span><span class="code-tag">POST /login</span></div>
+<pre><span class="hdr">Content-Type:</span> application/x-www-form-urlencoded
+
+<span class="str">username=alice%40example.com&amp;password=hunter2</span></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-label">ajax body — json</span><span class="code-tag">PUT /api/password</span></div>
+<pre><span class="hdr">Content-Type:</span> application/json
+
+<span class="str">{
+  "currentPassword": "hunter2",
+  "newPassword":     "correct horse battery staple"
+}</span></pre>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ================================ -->
+  <!-- RESPONSE STRUCTURE               -->
+  <!-- ================================ -->
+  <section class="section" id="response">
+    <span class="section-tag">§ 03 — Response</span>
+    <h2>HTTP response — three parts</h2>
+
+    <p>The reply has a symmetric shape — a status, headers, and a body — but no URL or method (the request already told the server what to do).</p>
+
+    <div class="msg-diagram">
+      <div class="msg-panel req">
+        <div class="role">Response</div>
+        <ol>
+          <li><strong>Status</strong> — did it work? (three-digit code + reason)</li>
+          <li><strong>Headers</strong> — metadata about the reply</li>
+          <li><strong>Body</strong> — the payload (HTML page or JSON data)</li>
+        </ol>
+      </div>
+      <div class="msg-panel res">
+        <div class="role">A concrete example</div>
+<pre style="font-family: var(--mono); font-size: 12px; color: var(--dim); line-height: 1.6; margin: 0;"><span style="color: var(--muted)">HTTP/1.1</span> <span style="color: var(--green)">302 Found</span>
+<span style="color: var(--blue)">Location:</span> /
+<span style="color: var(--blue)">Set-Cookie:</span> session=abc123…; HttpOnly; Path=/
+<span style="color: var(--blue)">Content-Length:</span> 0
+
+<span style="color: var(--muted)">(empty body — the browser follows Location)</span></pre>
+      </div>
+    </div>
+
+    <h3>1. Headers — metadata about the reply</h3>
+    <p>Headers tell the browser how to interpret what comes next. The most useful ones for this app:</p>
+
+    <table class="arg-table">
+      <thead><tr><th>Header</th><th>What it carries</th></tr></thead>
+      <tbody>
+        <tr><td class="flag">Content-Type</td><td>Format of the body: <code>text/html</code>, <code>application/json</code>, <code>text/plain</code>, …</td></tr>
+        <tr><td class="flag">Content-Length</td><td>Size of the body in bytes</td></tr>
+        <tr><td class="flag">Set-Cookie</td><td>Asks the browser to <strong>store a cookie</strong>. <code>express-auth</code> uses it to start and clear sessions: <code>Set-Cookie: session=…; HttpOnly; Path=/</code></td></tr>
+        <tr><td class="flag">Location</td><td>Used with a <code>3xx</code> status — tells the browser where to go next</td></tr>
+        <tr><td class="flag">Allow</td><td>Used with <code>405 Method Not Allowed</code> — lists the methods this URL accepts</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info">
+      <strong>How sessions stay alive between requests:</strong> the server sends <code>Set-Cookie: session=…</code> once (after login). The browser stores it. On every later request, the browser includes <code>Cookie: session=…</code> automatically. The server reads the cookie, looks up the session, and recognizes the user. <strong>This is the whole session loop.</strong>
+    </div>
+
+    <h3>2. Body — the payload</h3>
+    <p>The body is whatever the page or API needs to deliver. Two common shapes in this app:</p>
+
+    <div class="compare-grid">
+      <div class="compare-card form">
+        <h4>Page content (view)</h4>
+        <ul>
+          <li><code>Content-Type: text/html</code></li>
+          <li>The full HTML document the browser renders</li>
+          <li>Used by <code>GET /</code>, <code>GET /login</code>, <code>GET /signup</code></li>
+        </ul>
+      </div>
+      <div class="compare-card ajax">
+        <h4>Data only (JSON)</h4>
+        <ul>
+          <li><code>Content-Type: application/json</code></li>
+          <li>A small JSON object the page's JavaScript reads</li>
+          <li>Used by <code>PUT /api/password</code>, <code>DELETE /api/account</code></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ================================ -->
+  <!-- STATUS CODES                     -->
+  <!-- ================================ -->
+  <section class="section" id="status">
+    <span class="section-tag">§ 03.01 — Status</span>
+    <h2>Status codes — five groups</h2>
+
+    <p>The first digit of the status tells you which <strong>family</strong> it belongs to. Memorize the families, then the specific codes follow naturally.</p>
+
+    <div class="status-grid">
+      <div class="status-card s1">
+        <div class="range">1xx</div>
+        <div class="title">Informational</div>
+        <div class="examples">100 Continue<br>101 Switching Protocols</div>
+      </div>
+      <div class="status-card s2">
+        <div class="range">2xx</div>
+        <div class="title">Success</div>
+        <div class="examples">200 OK<br>201 Created<br>204 No Content</div>
+      </div>
+      <div class="status-card s3">
+        <div class="range">3xx</div>
+        <div class="title">Redirect</div>
+        <div class="examples">301 Moved Permanently<br>302 Found<br>304 Not Modified</div>
+      </div>
+      <div class="status-card s4">
+        <div class="range">4xx</div>
+        <div class="title">Client error</div>
+        <div class="examples">400 Bad Request<br>401 Unauthorized<br>403 Forbidden<br>404 Not Found<br>405 Method Not Allowed</div>
+      </div>
+      <div class="status-card s5">
+        <div class="range">5xx</div>
+        <div class="title">Server error</div>
+        <div class="examples">500 Internal Server Error<br>502 Bad Gateway<br>503 Service Unavailable</div>
+      </div>
+    </div>
+
+    <h3>The codes you'll see in this app</h3>
+    <table class="arg-table">
+      <thead><tr><th>Code</th><th>Meaning</th><th>Where it appears</th></tr></thead>
+      <tbody>
+        <tr><td class="flag">200 OK</td><td>Request succeeded; body holds the result</td><td>Most GETs; successful <code>PUT /api/password</code></td></tr>
+        <tr><td class="flag">201 Created</td><td>A new resource was created</td><td>Common shape for "create" endpoints (this app uses <code>302</code> redirects instead, but <code>201</code> is the textbook answer)</td></tr>
+        <tr><td class="flag">302 Found</td><td>Temporary redirect — follow <code>Location</code></td><td>After login, signup, logout — the server steers the browser to the next page</td></tr>
+        <tr><td class="flag">304 Not Modified</td><td>Cached copy is still fresh</td><td>Static assets like <code>/forms.css</code> on a reload</td></tr>
+        <tr><td class="flag">400 Bad Request</td><td>Client sent invalid data</td><td><code>PUT /api/password</code> with a short or missing password</td></tr>
+        <tr><td class="flag">401 Unauthorized</td><td>No (or invalid) credentials</td><td><code>PUT /api/password</code> or <code>DELETE /api/account</code> without a session cookie</td></tr>
+        <tr><td class="flag">403 Forbidden</td><td>Authenticated but not allowed</td><td>Not used here, but common in apps with roles</td></tr>
+        <tr><td class="flag">404 Not Found</td><td>No resource at this URL</td><td>Any unknown GET path — the catch-all in <code>express-server.js</code></td></tr>
+        <tr><td class="flag">500 Internal Server Error</td><td>The server crashed handling the request</td><td>Bugs in your handler — what every developer wants to avoid in production</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <strong>Rule of thumb:</strong> if the status is <code>4xx</code>, fix the request. If it's <code>5xx</code>, fix the server. <code>3xx</code> means "I'm not the right place — try here." <code>2xx</code> means everything worked.
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ================================ -->
+  <!-- CRUD MAP                         -->
+  <!-- ================================ -->
+  <section class="section" id="crud-map">
+    <span class="section-tag">§ 04 — Capstone app</span>
+    <h2>Mapping methods to resources</h2>
+
+    <p>The capstone app uses every method against one resource — the <em>user</em>. Read the table below as the contract you'll exercise in the labs that follow.</p>
+
+    <table class="crud-map">
+      <thead>
+        <tr><th>Method</th><th>URL</th><th>Operation</th><th>Sent by</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="m get">GET</td>
+          <td class="path">/</td>
+          <td>Read your own session and show the home view<span class="way nav">browser nav</span></td>
+          <td>Browser navigation</td>
+        </tr>
+        <tr>
+          <td class="m get">GET</td>
+          <td class="path">/login</td>
+          <td>Retrieve the login form page<span class="way nav">browser nav</span></td>
+          <td>Browser navigation</td>
+        </tr>
+        <tr>
+          <td class="m post">POST</td>
+          <td class="path">/signup</td>
+          <td>Create a new user resource<span class="way form">form</span></td>
+          <td>HTML form (no JS)</td>
+        </tr>
+        <tr>
+          <td class="m post">POST</td>
+          <td class="path">/login</td>
+          <td>Create a login session resource<span class="way form">form</span></td>
+          <td>HTML form (no JS)</td>
+        </tr>
+        <tr>
+          <td class="m put">PUT</td>
+          <td class="path">/api/password</td>
+          <td>Update the current user's password<span class="way ajax">ajax</span></td>
+          <td>AJAX <code>fetch</code></td>
+        </tr>
+        <tr>
+          <td class="m delete">DELETE</td>
+          <td class="path">/api/account</td>
+          <td>Delete the current user resource<span class="way ajax">ajax</span></td>
+          <td>AJAX <code>fetch</code></td>
+        </tr>
+        <tr>
+          <td class="m get">GET</td>
+          <td class="path">/logout</td>
+          <td>Clear the session cookie and redirect<span class="way nav">browser nav</span></td>
+          <td>Browser navigation</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="info">
+      <strong>Notice the split:</strong> page routes (<code>/</code>, <code>/login</code>, <code>/signup</code>, …) speak HTML and use forms or navigation. API routes (<code>/api/password</code>, <code>/api/account</code>) speak JSON and are called from AJAX. <strong>Same server, two response formats</strong>, chosen by who needs to read the reply.
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ================================ -->
+  <!-- TWO WAYS                         -->
+  <!-- ================================ -->
+  <section class="section" id="two-ways">
+    <span class="section-tag">§ 05 — Two ways</span>
+    <h2>Two ways a browser sends HTTP requests</h2>
+
+    <p>From a browser, there are exactly two practical ways to send an HTTP request. They look the same to the server — same TCP socket, same HTTP envelope — but they give the developer <strong>very different control</strong> over the user's page flow.</p>
+
+    <div class="compare-grid">
+      <div class="compare-card form">
+        <h4>1. HTML form (no script needed)</h4>
+        <ul>
+          <li>The browser submits when the user clicks the button.</li>
+          <li>Body is automatically <code>application/x-www-form-urlencoded</code>.</li>
+          <li>The browser <strong>follows the server's reply</strong> — if the response is HTML, it renders; if it's a <code>302</code>, it navigates.</li>
+          <li>No JavaScript required. Works with JS disabled.</li>
+          <li><strong>Page flow is controlled by the server.</strong></li>
+          <li>Used here for: <code>POST /signup</code>, <code>POST /login</code>.</li>
+        </ul>
+      </div>
+      <div class="compare-card ajax">
+        <h4>2. AJAX (<code>fetch</code> from script)</h4>
+        <ul>
+          <li>JavaScript builds and sends the request itself.</li>
+          <li>You pick the body format (<code>application/json</code> is the default).</li>
+          <li>The reply lands in a JS object — the page <strong>decides</strong> what to render or where to navigate.</li>
+          <li>Required for whole methods like <code>PUT</code> and <code>DELETE</code> (HTML forms only do GET/POST).</li>
+          <li><strong>Page flow is controlled by the page (client).</strong></li>
+          <li>Used here for: <code>PUT /api/password</code>, <code>DELETE /api/account</code>.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Why forms can't do PUT/DELETE on the wire:</strong> the HTML spec's <code>&lt;form method&gt;</code> attribute only accepts <code>get</code>, <code>post</code>, and <code>dialog</code>. Writing <code>method="PUT"</code> is an <em>invalid value</em> and the browser silently falls back to <code>GET</code>. To put a real PUT or DELETE on the wire from a browser, you need script — which is why <code>express-auth</code> uses AJAX for those endpoints.
+    </div>
+
+    <div class="info">
+      <strong>The <code>_method</code> override trick:</strong> some frameworks (Rails, Laravel, Express with <code>method-override</code>) let a form post a hidden field like <code>&lt;input type="hidden" name="_method" value="PUT"&gt;</code> and rewrite <code>req.method</code> server-side. <strong>On the wire it's still a POST</strong> — the framework just <em>pretends</em> it was a PUT inside the handler. Useful for progressive enhancement, but it isn't a real PUT request, and it can't reach a strict <code>app.put(...)</code> route on a server that doesn't run the override middleware.
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ================================ -->
+  <!-- LAB SIGNUP                       -->
+  <!-- ================================ -->
+  <section class="section" id="lab-signup">
+    <span class="section-tag">§ 06 — Hands-On · Form</span>
+    <h2>POST + form — signup</h2>
+
+    <div class="hero-bar">
+      <strong>Goal:</strong> create a new user with a plain HTML form. The browser submits the form, the server creates the user resource, and the server's response steers the browser to the next page. <strong>No JavaScript involved.</strong>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 1A — Submit the signup form</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          Open <code>http://127.0.0.1:3000/signup</code>. The page is just <code>public/signup.html</code> — three text inputs inside a <code>&lt;form method="POST" action="/signup"&gt;</code>. The browser will do all the work.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">signup.html (excerpt)</span><span class="code-tag">html form</span></div>
+<pre><span class="kw">&lt;form</span> <span class="hdr">method</span>=<span class="str">"POST"</span> <span class="hdr">action</span>=<span class="str">"/signup"</span><span class="kw">&gt;</span>
+  <span class="kw">&lt;input</span> <span class="hdr">name</span>=<span class="str">"displayName"</span> <span class="hdr">required</span><span class="kw">&gt;</span>
+  <span class="kw">&lt;input</span> <span class="hdr">name</span>=<span class="str">"username"</span>    <span class="hdr">type</span>=<span class="str">"email"</span> <span class="hdr">required</span><span class="kw">&gt;</span>
+  <span class="kw">&lt;input</span> <span class="hdr">name</span>=<span class="str">"password"</span>    <span class="hdr">type</span>=<span class="str">"password"</span> <span class="hdr">required</span><span class="kw">&gt;</span>
+  <span class="kw">&lt;button</span> <span class="hdr">type</span>=<span class="str">"submit"</span><span class="kw">&gt;</span>Sign up<span class="kw">&lt;/button&gt;</span>
+<span class="kw">&lt;/form&gt;</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          Fill in the fields and click <strong>Sign up</strong>. Open DevTools → Network <em>before</em> you click so you can see the request the browser sends. You'll see exactly one POST.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">what the browser sends</span><span class="code-tag">POST /signup</span></div>
+<pre><span class="cmd">POST</span> <span class="arg">/signup</span> <span class="com">HTTP/1.1</span>
+<span class="hdr">Host:</span> 127.0.0.1:3000
+<span class="hdr">Content-Type:</span> application/x-www-form-urlencoded
+<span class="hdr">Content-Length:</span> 71
+
+<span class="str">displayName=Alice&amp;username=alice%40example.com&amp;password=hunter2</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          The server validates the form, creates the user in <code>store.js</code>, and replies with a <code>302</code> redirect to <code>/login</code>. The browser <strong>follows the redirect automatically</strong> — you end up on the login page without writing any JS.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">what the server sends back</span><span class="code-tag">302 redirect</span></div>
+<pre><span class="com">HTTP/1.1</span> <span class="out">302 Found</span>
+<span class="hdr">Location:</span> /login
+<span class="hdr">Content-Length:</span> 0</pre>
+      </div>
+
+      <div class="info">
+        <strong>Server-driven page flow:</strong> the page didn't decide where to go — the server did, by returning <code>Location: /login</code>. Try submitting with an existing username; the server redirects to <code>/signup?error=Username+already+exists.</code> and the page reads the error from the URL.
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 1B — Reproduce the form post with curl</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          A form post is just plain HTTP — there is nothing magical about the browser. Send the same bytes from <code>curl</code> to confirm it.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">curl form post</span><span class="code-tag">-d url-encoded</span></div>
+<pre><span class="cmd">curl</span> <span class="arg">-i</span> <span class="arg">-X</span> <span class="arg">POST</span> <span class="arg">http://127.0.0.1:3000/signup</span> \
+  <span class="arg">-H</span> <span class="str">"Content-Type: application/x-www-form-urlencoded"</span> \
+  <span class="arg">--data-urlencode</span> <span class="str">"displayName=Bob"</span> \
+  <span class="arg">--data-urlencode</span> <span class="str">"username=bob@example.com"</span> <span class="arg">--data-urlencode</span> <span class="str">"password=secret-1"</span>
+<span class="com"># HTTP/1.1 302 Found
+# Location: /login</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ================================ -->
+  <!-- LAB LOGIN                        -->
+  <!-- ================================ -->
+  <section class="section" id="lab-login">
+    <span class="section-tag">§ 07 — Hands-On · Form</span>
+    <h2>POST + form — login (creates a session)</h2>
+
+    <div class="hero-bar">
+      <strong>Goal:</strong> create a <em>session</em> resource. Same shape as signup — a plain HTML form posts <code>username</code> and <code>password</code> — but this time the server's reply includes a <strong><code>Set-Cookie</code></strong> header that the browser stores for every future request.
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 2A — Log in and watch the cookie appear</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          Open DevTools → Application → Cookies → <code>http://127.0.0.1:3000</code>. It's empty. Now open <code>http://127.0.0.1:3000/login</code>, fill in the user you just created in Lab 1A, and submit.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">browser POST</span><span class="code-tag">POST /login</span></div>
+<pre><span class="cmd">POST</span> <span class="arg">/login</span> <span class="com">HTTP/1.1</span>
+<span class="hdr">Host:</span> 127.0.0.1:3000
+<span class="hdr">Content-Type:</span> application/x-www-form-urlencoded
+
+<span class="str">username=alice%40example.com&amp;password=hunter2</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          The server validates the credentials, creates a session id, and returns a <code>302</code> redirect to <code>/</code> — but it also attaches a <strong><code>Set-Cookie</code></strong> header. The browser stores the cookie before following the redirect.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">server response</span><span class="code-tag">302 + Set-Cookie</span></div>
+<pre><span class="com">HTTP/1.1</span> <span class="out">302 Found</span>
+<span class="hdr">Location:</span> /
+<span class="hdr">Set-Cookie:</span> session=8f3c…ab12; HttpOnly; Path=/
+<span class="hdr">Content-Length:</span> 0</pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          The browser follows the redirect by sending <code>GET /</code> — and this time it includes <strong><code>Cookie: session=…</code></strong> in the request. The server reads the cookie, looks up the session, and renders the protected home page.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">next request from the browser</span><span class="code-tag">GET / with cookie</span></div>
+<pre><span class="cmd">GET</span> <span class="arg">/</span> <span class="com">HTTP/1.1</span>
+<span class="hdr">Host:</span> 127.0.0.1:3000
+<span class="hdr">Cookie:</span> session=8f3c…ab12</pre>
+      </div>
+
+      <div class="info">
+        <strong>This is the session loop:</strong>
+        <ol style="margin: 6px 0 0 22px;">
+          <li><code>Set-Cookie</code> goes <em>server → browser</em> once.</li>
+          <li><code>Cookie</code> goes <em>browser → server</em> on every subsequent request.</li>
+          <li>The server uses the cookie to find the user. No login form needed again.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 2B — Log in with curl and reuse the cookie</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          Use <code>-c cookies.txt</code> to capture the <code>Set-Cookie</code> jar, then <code>-b cookies.txt</code> to send it back. This is exactly what the browser does silently.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">curl — capture and reuse cookies</span><span class="code-tag">-c / -b</span></div>
+<pre><span class="com"># Log in, save the Set-Cookie into cookies.txt</span>
+<span class="cmd">curl</span> <span class="arg">-i</span> <span class="arg">-c</span> <span class="arg">cookies.txt</span> <span class="arg">-X</span> <span class="arg">POST</span> <span class="arg">http://127.0.0.1:3000/login</span> \
+  <span class="arg">-H</span> <span class="str">"Content-Type: application/x-www-form-urlencoded"</span> \
+  <span class="arg">--data-urlencode</span> <span class="str">"username=alice@example.com"</span> <span class="arg">--data-urlencode</span> <span class="str">"password=hunter2"</span>
+
+<span class="com"># Now use the cookie on the protected page</span>
+<span class="cmd">curl</span> <span class="arg">-i</span> <span class="arg">-b</span> <span class="arg">cookies.txt</span> <span class="arg">http://127.0.0.1:3000/</span>
+<span class="com"># HTTP/1.1 200 OK
+# Content-Type: text/html
+# &lt;... home page HTML ...&gt;</span></pre>
+      </div>
+
+      <div class="note">
+        <strong>Try this:</strong> request <code>GET /</code> <em>without</em> <code>-b cookies.txt</code>. You'll get a <code>302 → /login</code> instead — exactly the same path the browser takes the first time you visit, before any session exists.
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ================================ -->
+  <!-- LAB CHANGE PASSWORD              -->
+  <!-- ================================ -->
+  <section class="section" id="lab-password">
+    <span class="section-tag">§ 08 — Hands-On · AJAX</span>
+    <h2>PUT + AJAX — change password</h2>
+
+    <div class="hero-bar">
+      <strong>Goal:</strong> update the current user's password using a <strong>method (PUT)</strong> that HTML forms can't send. The page builds the request itself, sends JSON, reads JSON back, and decides where to navigate. <strong>Page flow stays in the page's hands.</strong>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 3A — Send a PUT from the page</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          With your session cookie still in place from Lab 2, open <code>http://127.0.0.1:3000/change-password</code>. The page renders two inputs and a button. The button is <strong>not</strong> a form submit — it runs a small <code>fetch</code> call.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">change-password.html (excerpt)</span><span class="code-tag">fetch PUT</span></div>
+<pre><span class="kw">const</span> response = <span class="kw">await</span> <span class="cmd">fetch</span>(<span class="str">"/api/password"</span>, {
+  <span class="hdr">method</span>: <span class="str">"PUT"</span>,
+  <span class="hdr">headers</span>: { <span class="str">"Content-Type"</span>: <span class="str">"application/json"</span> },
+  <span class="hdr">body</span>: <span class="cmd">JSON</span>.stringify({
+    currentPassword: currentPassword,
+    newPassword:     newPassword
+  })
+});
+
+<span class="kw">const</span> data = <span class="kw">await</span> response.json();
+<span class="kw">if</span> (!response.ok) showMessage(data.error, <span class="str">"error"</span>);
+<span class="kw">else</span>            window.location.href = <span class="str">"/"</span>;</pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          Enter your current password and a new one (8+ characters), and click <strong>Send PUT request</strong>. Watch DevTools → Network. You'll see exactly one request, with method <code>PUT</code> and a JSON body.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">browser request</span><span class="code-tag">PUT /api/password</span></div>
+<pre><span class="cmd">PUT</span> <span class="arg">/api/password</span> <span class="com">HTTP/1.1</span>
+<span class="hdr">Host:</span> 127.0.0.1:3000
+<span class="hdr">Content-Type:</span> application/json
+<span class="hdr">Cookie:</span> session=8f3c…ab12
+
+<span class="str">{"currentPassword":"hunter2","newPassword":"correct-horse-staple"}</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          The server replies with JSON. On success, <code>200 OK</code> and a small <code>{message}</code>. On failure, <code>400</code> or <code>401</code> with an <code>{error}</code> field.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">server reply — success</span><span class="code-tag">200 OK · JSON</span></div>
+<pre><span class="com">HTTP/1.1</span> <span class="out">200 OK</span>
+<span class="hdr">Content-Type:</span> application/json
+
+<span class="str">{"message":"Password updated successfully."}</span></pre>
+      </div>
+
+      <div class="info">
+        <strong>Client-driven page flow:</strong> notice the JS reads <code>data.message</code> and chooses to navigate to <code>/</code> itself with <code>window.location.href = "/"</code>. The <em>server didn't tell it to</em> — the page made the decision. That's the difference from the form labs.
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 3B — Trigger the 401 by killing the cookie</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          In DevTools → Application → Cookies, delete the <code>session</code> cookie. Without it, the server can't identify you. Click <strong>Send PUT request</strong> again.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">server reply — no session</span><span class="code-tag">401 Unauthorized</span></div>
+<pre><span class="com">HTTP/1.1</span> <span class="out">401 Unauthorized</span>
+<span class="hdr">Content-Type:</span> application/json
+
+<span class="str">{"error":"Login required."}</span></pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          The page handler reads <code>response.ok === false</code> and shows the error in-place instead of navigating. The user stays on the same URL — that would be impossible with a plain form.
+        </div>
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 3C — Reproduce the PUT with curl</div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">curl PUT with cookie + JSON</span><span class="code-tag">-X PUT</span></div>
+<pre><span class="cmd">curl</span> <span class="arg">-i</span> <span class="arg">-b</span> <span class="arg">cookies.txt</span> <span class="arg">-X</span> <span class="arg">PUT</span> <span class="arg">http://127.0.0.1:3000/api/password</span> \
+  <span class="arg">-H</span> <span class="str">"Content-Type: application/json"</span> \
+  <span class="arg">-d</span> <span class="str">'{"currentPassword":"hunter2","newPassword":"correct-horse-staple"}'</span>
+<span class="com"># HTTP/1.1 200 OK
+# Content-Type: application/json
+# {"message":"Password updated successfully."}</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ================================ -->
+  <!-- LAB DEACTIVATE                   -->
+  <!-- ================================ -->
+  <section class="section" id="lab-deactivate">
+    <span class="section-tag">§ 09 — Hands-On · AJAX</span>
+    <h2>DELETE + AJAX — deactivate account</h2>
+
+    <div class="hero-bar">
+      <strong>Goal:</strong> remove the current user resource. <code>DELETE</code> is the cleanest expression of "destroy this thing" — and again, HTML forms can't send it. AJAX is the only browser-native way to issue a <code>DELETE</code>.
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 4A — Send the DELETE</div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">1</div>
+        <div class="lab-step-content">
+          Make sure you're logged in (re-run Lab 2A if you cleared the cookie). Open <code>http://127.0.0.1:3000/deactivate-account</code>. The page is a single button. Read the page source.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">deactivate-account.html (excerpt)</span><span class="code-tag">fetch DELETE</span></div>
+<pre><span class="kw">const</span> confirmed = <span class="cmd">window</span>.confirm(<span class="str">"Delete this account and log out?"</span>);
+<span class="kw">if</span> (!confirmed) <span class="kw">return</span>;
+
+<span class="kw">const</span> response = <span class="kw">await</span> <span class="cmd">fetch</span>(<span class="str">"/api/account"</span>, { <span class="hdr">method</span>: <span class="str">"DELETE"</span> });
+<span class="kw">const</span> data     = <span class="kw">await</span> response.json();
+
+<span class="cmd">window</span>.location.href = data.redirect <span class="kw">||</span> <span class="str">"/signup"</span>;</pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">2</div>
+        <div class="lab-step-content">
+          Click <strong>Send DELETE request</strong>. Confirm the prompt. Watch the Network tab — a single <code>DELETE</code> request with no body.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">browser request</span><span class="code-tag">DELETE /api/account</span></div>
+<pre><span class="cmd">DELETE</span> <span class="arg">/api/account</span> <span class="com">HTTP/1.1</span>
+<span class="hdr">Host:</span> 127.0.0.1:3000
+<span class="hdr">Cookie:</span> session=8f3c…ab12</pre>
+      </div>
+
+      <div class="lab-step">
+        <div class="lab-step-num">3</div>
+        <div class="lab-step-content">
+          The server deletes the user, clears the session cookie with <code>Set-Cookie: session=; Max-Age=0</code>, and returns JSON with a <code>redirect</code> field. The page reads that field and navigates to <code>/signup</code>.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">server reply</span><span class="code-tag">200 OK · clear cookie</span></div>
+<pre><span class="com">HTTP/1.1</span> <span class="out">200 OK</span>
+<span class="hdr">Set-Cookie:</span> session=; HttpOnly; Path=/; Max-Age=0
+<span class="hdr">Content-Type:</span> application/json
+
+<span class="str">{"message":"Account deleted.","redirect":"/signup"}</span></pre>
+      </div>
+
+      <div class="note">
+        <strong>Two cookie operations, same header:</strong> <code>Set-Cookie</code> is used to <em>start</em> a session (login) and to <em>end</em> one (logout, deactivate). The "end" version sends an empty value and <code>Max-Age=0</code>, which tells the browser to forget the cookie immediately.
+      </div>
+    </div>
+
+    <div class="lab-box">
+      <div class="lab-box-title">Lab 4B — Reproduce with curl</div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">curl DELETE</span><span class="code-tag">-X DELETE</span></div>
+<pre><span class="cmd">curl</span> <span class="arg">-i</span> <span class="arg">-b</span> <span class="arg">cookies.txt</span> <span class="arg">-X</span> <span class="arg">DELETE</span> <span class="arg">http://127.0.0.1:3000/api/account</span>
+<span class="com"># HTTP/1.1 200 OK
+# Set-Cookie: session=; Max-Age=0
+# {"message":"Account deleted.","redirect":"/signup"}</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ================================ -->
+  <!-- SESSIONS                         -->
+  <!-- ================================ -->
+  <section class="section" id="sessions">
+    <span class="section-tag">§ 10 — Beyond</span>
+    <h2>Cookies &amp; sessions in one picture</h2>
+
+    <p>HTTP itself is <strong>stateless</strong> — every request stands alone. Sessions are the trick that makes a stateless protocol feel like a continuous conversation. The whole mechanism is just two headers:</p>
+
+    <table class="arg-table">
+      <thead><tr><th>Direction</th><th>Header</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td class="flag">server → browser</td><td><code>Set-Cookie: session=…</code></td><td>Ask the browser to store this cookie</td></tr>
+        <tr><td class="flag">browser → server</td><td><code>Cookie: session=…</code></td><td>Send all stored cookies automatically on every request to the same origin</td></tr>
+      </tbody>
+    </table>
+
+    <p>In <code>express-auth</code> the value is just a random hex string (a session id). The server keeps a <code>Map&lt;sessionId → user&gt;</code> in memory in <code>store.js</code>. Combine the two and you get:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-label">full session lifecycle</span><span class="code-tag">login → use → logout</span></div>
+<pre><span class="com"># 1. login — server starts a session</span>
+<span class="cmd">POST</span> <span class="arg">/login</span>      → <span class="out">302</span> + <span class="hdr">Set-Cookie: session=abc</span>
+
+<span class="com"># 2. every later request — browser sends the cookie automatically</span>
+<span class="cmd">GET</span> <span class="arg">/</span>            ← <span class="hdr">Cookie: session=abc</span>  → <span class="out">200 OK · home page</span>
+<span class="cmd">PUT</span> <span class="arg">/api/password</span> ← <span class="hdr">Cookie: session=abc</span>  → <span class="out">200 OK</span>
+
+<span class="com"># 3. logout / deactivate — server clears the cookie</span>
+<span class="cmd">GET</span> <span class="arg">/logout</span>     → <span class="out">302</span> + <span class="hdr">Set-Cookie: session=; Max-Age=0</span></pre>
+    </div>
+
+    <div class="info">
+      <strong>HttpOnly:</strong> <code>express-auth</code> sets the cookie with <code>HttpOnly</code>. That tells the browser to hide the cookie from <code>document.cookie</code> — JavaScript on the page can't read it. The browser still sends it on every request, but XSS scripts can't steal the session id. <strong>Always set <code>HttpOnly</code> on session cookies.</strong>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ================================ -->
+  <!-- INSPECTING                       -->
+  <!-- ================================ -->
+  <section class="section" id="inspect">
+    <span class="section-tag">§ 11 — Beyond</span>
+    <h2>Inspecting HTTP traffic</h2>
+
+    <p>Everything in this lab is text on a TCP socket. You have three ways to see it — pick whichever fits the moment.</p>
+
+    <h3>1. Browser DevTools — Network tab</h3>
+    <p>Open DevTools, switch to <strong>Network</strong>, click any request. The right panel shows <strong>Headers</strong> (request + response), <strong>Payload</strong> (body), <strong>Response</strong> (raw body), and <strong>Cookies</strong>. This is the fastest way to see what your page is actually sending.</p>
+
+    <h3>2. <code>curl -i</code> from a terminal</h3>
+    <p><code>curl -i</code> prints the full response (status + headers + body). Combine with <code>-c / -b</code> for cookies and <code>-X / -H / -d</code> for request shaping. Every lab above includes a <code>curl</code> equivalent for this reason.</p>
+
+    <h3>3. Raw socket — like IPC Hands-On Lab 3B</h3>
+    <p>Because HTTP is just bytes, you can speak it with <code>socketer.js</code> or <code>ncat</code>. Connect to port 3000 and type the request yourself:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span class="code-label">raw HTTP over socketer</span><span class="code-tag">type the request</span></div>
+<pre><span class="cmd">node</span> <span class="arg">../ipc/socketer.js</span> <span class="arg">127.0.0.1</span> <span class="arg">3000</span>
+<span class="com"># then type, exactly:</span>
+<span class="out">GET /login HTTP/1.1</span>
+<span class="out">Host: localhost</span>
+<span class="out">                  (← blank line — press Enter twice)</span>
+<span class="com"># Server replies with the full HTTP response stream.</span></pre>
+    </div>
+
+    <div class="note">
+      <strong>This is the moment the stack collapses:</strong> the same socket you used in IPC Hands-On is now carrying HTTP. The same HTTP is what your browser sends. The same browser-built request is what <code>fetch</code> assembles. <strong>One protocol, every layer.</strong>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ================================ -->
+  <!-- WRAP UP                          -->
+  <!-- ================================ -->
+  <section class="section" id="wrap">
+    <span class="section-tag">§ 12 — Wrap-up</span>
+    <h2>Wrap-up — the whole picture</h2>
+
+    <p>You now have the full vocabulary for building HTTP applications:</p>
+
+    <ul style="margin: 10px 0 18px 22px; color: var(--dim); line-height: 1.9;">
+      <li>A <strong>request</strong> = URL + method + headers + body.</li>
+      <li>A <strong>response</strong> = status + headers + body.</li>
+      <li>Five <strong>status families</strong> (1xx info, 2xx ok, 3xx redirect, 4xx client error, 5xx server error).</li>
+      <li>Four <strong>methods</strong> map to CRUD: <code>GET</code> read, <code>POST</code> create, <code>PUT</code> update, <code>DELETE</code> remove.</li>
+      <li>Two ways the browser sends requests: <strong>HTML form</strong> (server controls flow) or <strong>AJAX</strong> (page controls flow).</li>
+      <li>Two cookie headers — <code>Set-Cookie</code> and <code>Cookie</code> — turn stateless HTTP into a session.</li>
+    </ul>
+
+    <div style="margin-top:36px; padding:24px; background:var(--bg3); border-radius:var(--radius); border:1px solid var(--border); text-align:center;">
+      <div style="font-family:var(--mono); font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:12px;">From bytes to applications</div>
+      <div style="font-size:14px; color:var(--dim); line-height:2;">
+        <span style="color:var(--cyan)">pipe</span> moves stdout → stdin between processes
+        &nbsp;·&nbsp;
+        <span style="color:var(--blue)">socket</span> moves bytes between processes over TCP
+        <br>
+        <span style="color:var(--amber)">HTTP</span> structures those bytes into request &amp; reply
+        &nbsp;·&nbsp;
+        <span style="color:var(--green)">Form / AJAX</span> picks who controls page flow
+        <br>
+        <span style="color:var(--purple)">Express</span> + <span style="color:var(--purple)">Set-Cookie</span> turn the whole stack into a real product
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+const sections = document.querySelectorAll('section[id]');
+const links = document.querySelectorAll('.nav-link');
+
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+
+sections.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>
