@@ -214,6 +214,26 @@ How to use it:
 
 This session shows how retrieval and communication depend on the operating system and network protocols that move data between programs.
 
+## Video Foundations
+
+The [Video Foundations](./lab-video-foundation.html) lab takes learners from raw pixels to real-time streams, covering the concepts and tooling behind every video management system (VMS).
+
+What it is:
+
+- a slide-based walkthrough of how digital video is stored, compressed, and transported
+- coverage of containers versus codecs, spatial and temporal compression, and I/P/B frames
+- practical FFmpeg workflows for inspecting, remuxing, transcoding, and building adaptive bitrate ladders
+- a networking segment comparing TCP and UDP, then standing up and consuming an RTSP stream
+
+How to use it:
+
+- start with the tooling setup to install FFmpeg, VLC, and grab the sample footage
+- inspect files with `ffprobe` to see how one container wraps multiple codec-compressed streams
+- run the FFmpeg remux and transcode commands to compare size, quality, and resolution tradeoffs
+- stand up a fake RTSP camera with VLC, then play, record, and transcode the live stream
+
+This session connects data transfer and storage concepts to the real pipeline of a VMS: pull RTSP from cameras, record or transcode, then store and restream.
+
 ## Why this project matters
 
 Understanding these three data structures is essential for anyone working with data retrieval, because each structure shapes how data is stored, searched, and joined.

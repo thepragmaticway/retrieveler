@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab — Video Foundations</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d1117; --bg2: #161b22; --bg3: #21262d; --bg4: #080c11;
+  --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.15);
+  --text: #e6edf3; --muted: #7d8590;
+  --teal: #2dd4bf; --teal-dim: rgba(45,212,191,0.10); --teal-border: rgba(45,212,191,0.28);
+  --amber: #f59e0b; --amber-dim: rgba(245,158,11,0.10); --amber-border: rgba(245,158,11,0.28);
+  --blue: #60a5fa; --blue-dim: rgba(96,165,250,0.10); --blue-border: rgba(96,165,250,0.28);
+  --purple: #a78bfa; --purple-dim: rgba(167,139,250,0.10); --purple-border: rgba(167,139,250,0.28);
+  --green: #4ade80; --green-dim: rgba(74,222,128,0.10); --green-border: rgba(74,222,128,0.28);
+  --red: #f87171; --red-dim: rgba(248,113,113,0.10); --red-border: rgba(248,113,113,0.28);
+  --font: 'DM Sans', sans-serif; --mono: 'DM Mono', monospace;
+}
+html, body { width:100%; height:100%; background:var(--bg); color:var(--text); font-family:var(--font); overflow:hidden; }
+
+.deck { width:100%; height:100%; position:relative; transform:scale(1.28); transform-origin:center center; }
+.slide {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  padding:44px 64px 76px;
+  opacity:0; pointer-events:none;
+  transform:translateY(14px); transition:opacity 0.3s ease, transform 0.3s ease;
+}
+.slide.active { opacity:1; pointer-events:all; transform:translateY(0); }
+
+.nav { position:fixed; bottom:24px; left:0; right:0; display:flex; align-items:center; justify-content:center; gap:16px; z-index:100; }
+.nav-btn { background:var(--bg2); border:1px solid var(--border2); color:var(--text); font-family:var(--font); font-size:13px; padding:7px 18px; border-radius:8px; cursor:pointer; transition:background 0.15s, border-color 0.15s; }
+.nav-btn:hover { background:var(--bg3); border-color:var(--teal); }
+.nav-btn:disabled { opacity:0.2; cursor:default; }
+.counter { font-size:12px; color:var(--muted); font-family:var(--mono); min-width:54px; text-align:center; }
+.progress { position:fixed; top:0; left:0; right:0; height:2px; background:var(--border); z-index:100; }
+.progress-bar { height:100%; background:var(--teal); transition:width 0.3s ease; }
+
+.slide-title { font-size:25px; font-weight:600; letter-spacing:-0.02em; text-align:center; margin-bottom:24px; line-height:1.2; flex-shrink:0; }
+.slide-title em { font-style:normal; color:var(--teal); }
+.slide-sub { font-size:12px; font-family:var(--mono); color:var(--muted); text-align:center; margin-top:-18px; margin-bottom:22px; letter-spacing:0.04em; flex-shrink:0; }
+
+pre { background:var(--bg4); border:1px solid var(--border); border-radius:10px; padding:13px 17px; font-family:var(--mono); font-size:11.5px; line-height:1.7; color:#cdd9e5; overflow-x:auto; white-space:pre; }
+.cm  { color:#8b949e; font-style:italic; }
+.kw  { color:#ff7b72; }
+.str { color:#a5d6ff; }
+.fl  { color:#79c0ff; }
+.out { color:#7ee787; }
+
+.cols { display:grid; gap:16px; width:100%; max-width:940px; }
+.cols-2 { grid-template-columns:1fr 1fr; }
+.cols-3 { grid-template-columns:1fr 1fr 1fr; }
+.col { display:flex; flex-direction:column; gap:10px; }
+
+.label { font-size:10px; font-family:var(--mono); letter-spacing:0.1em; text-transform:uppercase; padding:5px 12px; border-radius:6px; display:inline-block; width:fit-content; }
+.label.teal   { background:var(--teal-dim);   color:var(--teal);   border:1px solid var(--teal-border); }
+.label.amber  { background:var(--amber-dim);  color:var(--amber);  border:1px solid var(--amber-border); }
+.label.blue   { background:var(--blue-dim);   color:var(--blue);   border:1px solid var(--blue-border); }
+.label.purple { background:var(--purple-dim); color:var(--purple); border:1px solid var(--purple-border); }
+.label.green  { background:var(--green-dim);  color:var(--green);  border:1px solid var(--green-border); }
+.label.red    { background:var(--red-dim);    color:var(--red);    border:1px solid var(--red-border); }
+
+.note { border-radius:10px; padding:12px 17px; font-size:12.5px; line-height:1.6; width:100%; max-width:940px; flex-shrink:0; }
+.note.teal   { background:var(--teal-dim);   border:1px solid var(--teal-border);   }
+.note.amber  { background:var(--amber-dim);  border:1px solid var(--amber-border);  }
+.note.purple { background:var(--purple-dim); border:1px solid var(--purple-border); }
+.note.blue   { background:var(--blue-dim);   border:1px solid var(--blue-border);   }
+.note.red    { background:var(--red-dim);    border:1px solid var(--red-border);    }
+.note strong { color:var(--teal); }
+.note.amber strong { color:var(--amber); }
+.note.purple strong { color:var(--purple); }
+.note.blue strong { color:var(--blue); }
+.note.red strong { color:var(--red); }
+.note code { font-family:var(--mono); font-size:11.5px; color:var(--teal); background:var(--bg4); padding:1px 6px; border-radius:4px; }
+
+/* COVER */
+.cover-tag { font-size:11px; font-family:var(--mono); color:var(--teal); letter-spacing:0.12em; text-transform:uppercase; border:1px solid var(--teal-border); background:var(--teal-dim); padding:4px 14px; border-radius:20px; margin-bottom:22px; }
+.cover-title { font-size:46px; font-weight:600; letter-spacing:-0.03em; text-align:center; line-height:1.1; margin-bottom:14px; }
+.cover-title em { font-style:normal; color:var(--teal); }
+.cover-desc { font-size:14px; color:var(--muted); text-align:center; max-width:520px; line-height:1.65; margin-bottom:30px; }
+.topic-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; max-width:660px; width:100%; }
+.topic-item { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:9px 10px; font-size:11px; font-family:var(--mono); color:var(--muted); text-align:center; line-height:1.4; }
+.topic-item span { display:block; color:var(--teal); font-size:10px; margin-bottom:3px; }
+
+/* DOWNLOAD CARDS */
+.dl-grid { display:grid; gap:14px; width:100%; max-width:940px; }
+.dl-card { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:8px; }
+.dl-card .dl-name { font-size:14px; font-weight:600; display:flex; align-items:center; gap:8px; }
+.dl-card .dl-name svg { flex-shrink:0; }
+.dl-card .dl-desc { font-size:11.5px; color:var(--muted); line-height:1.5; }
+.dl-card a { color:var(--blue); font-family:var(--mono); font-size:10.5px; text-decoration:none; word-break:break-all; line-height:1.5; }
+.dl-card a:hover { color:var(--teal); text-decoration:underline; }
+.file-pill { display:inline-block; font-family:var(--mono); font-size:10px; background:var(--bg4); border:1px solid var(--border); border-radius:5px; padding:3px 8px; color:var(--teal); margin:2px 4px 0 0; }
+
+/* CMP TABLE */
+.cmp-table { width:100%; max-width:900px; border-collapse:collapse; font-size:12px; }
+.cmp-table th, .cmp-table td { padding:9px 14px; text-align:left; border-bottom:1px solid var(--border); }
+.cmp-table th { font-family:var(--mono); font-size:9.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--muted); background:var(--bg2); }
+.cmp-table th:first-child { border-radius:8px 0 0 0; }
+.cmp-table th:last-child  { border-radius:0 8px 0 0; }
+.cmp-table tr:last-child td { border-bottom:none; }
+.cmp-table td:first-child { color:var(--text); font-family:var(--mono); font-size:11.5px; }
+.cmp-table tbody tr:hover { background:var(--bg2); }
+.cmp-table .g { color:var(--green); } .cmp-table .a { color:var(--amber); } .cmp-table .r { color:var(--red); } .cmp-table .b { color:var(--blue); } .cmp-table .m { color:var(--muted); font-family:var(--mono); font-size:11px; }
+
+/* STACK (container anatomy) */
+.stack { display:flex; flex-direction:column; gap:6px; width:100%; max-width:420px; background:var(--bg4); border:2px solid var(--purple-border); border-radius:12px; padding:14px; }
+.stack-head { font-family:var(--mono); font-size:11px; color:var(--purple); letter-spacing:0.06em; text-transform:uppercase; text-align:center; padding-bottom:4px; }
+.stack-row { border-radius:8px; padding:11px 14px; font-size:12px; display:flex; justify-content:space-between; align-items:center; }
+.stack-row .sr-name { font-weight:500; }
+.stack-row .sr-codec { font-family:var(--mono); font-size:10.5px; }
+.stack-row.video { background:var(--blue-dim); border:1px solid var(--blue-border); color:var(--blue); }
+.stack-row.audio { background:var(--green-dim); border:1px solid var(--green-border); color:var(--green); }
+.stack-row.meta  { background:var(--amber-dim); border:1px solid var(--amber-border); color:var(--amber); }
+
+/* STEPS */
+.steps { display:flex; flex-direction:column; gap:9px; width:100%; max-width:560px; }
+.step { display:flex; gap:13px; align-items:flex-start; background:var(--bg2); border:1px solid var(--border); border-radius:9px; padding:11px 15px; }
+.step-num { flex-shrink:0; width:24px; height:24px; border-radius:50%; background:var(--teal-dim); border:1px solid var(--teal-border); color:var(--teal); font-family:var(--mono); font-size:12px; display:flex; align-items:center; justify-content:center; }
+.step-txt { font-size:12.5px; line-height:1.5; padding-top:2px; }
+.step-txt code { font-family:var(--mono); font-size:11px; color:var(--teal); }
+
+.center { display:flex; flex-direction:column; align-items:center; gap:16px; width:100%; }
+svg text { font-family:var(--mono); }
+</style>
+</head>
+<body>
+
+<div class="progress"><div class="progress-bar" id="bar"></div></div>
+<a href="index.html" class="overview-link" style="position:fixed;top:14px;left:18px;z-index:100;color:var(--teal);text-decoration:none;font-family:var(--mono);font-size:12px;letter-spacing:0.04em;">← Back to overview</a>
+<div class="deck">
+
+<!-- ════════ 1 · COVER ════════ -->
+<div class="slide active">
+  <div class="cover-tag">Lab · Video Engineering</div>
+  <div class="cover-title"><em>Video</em> Foundations</div>
+  <div class="cover-desc">From raw pixels to real-time streams — the tooling and concepts behind every VMS. Containers, codecs, compression, FFmpeg, and RTSP.</div>
+  <div class="topic-grid">
+    <div class="topic-item"><span>01</span>Tooling setup</div>
+    <div class="topic-item"><span>02</span>Format anatomy</div>
+    <div class="topic-item"><span>03</span>Containers</div>
+    <div class="topic-item"><span>04</span>Codecs</div>
+    <div class="topic-item"><span>05</span>Raw size</div>
+    <div class="topic-item"><span>06</span>Spatial compress</div>
+    <div class="topic-item"><span>07</span>I / P / B frames</div>
+    <div class="topic-item"><span>08</span>Bitrate</div>
+    <div class="topic-item"><span>09</span>FFmpeg transcode</div>
+    <div class="topic-item"><span>10</span>Pipeline</div>
+    <div class="topic-item"><span>11</span>TCP vs UDP</div>
+    <div class="topic-item"><span>12</span>RTSP streaming</div>
+  </div>
+</div>
+
+<!-- ════════ 2 · SETUP DOWNLOADS ════════ -->
+<div class="slide">
+  <div class="slide-title">01 — <em>Setup</em> · Download the Tools</div>
+  <div class="dl-grid cols-2" style="display:grid;">
+    <div class="dl-card">
+      <div class="dl-name"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="14" rx="2" stroke="var(--teal)" stroke-width="1.6"/><path d="M9 9l4 2.5L9 14V9z" fill="var(--teal)"/></svg>FFmpeg <span class="file-pill">CLI engine</span></div>
+      <div class="dl-desc">Static build — no installer, just an executable. Pick by OS:</div>
+      <div><strong style="font-size:11px;color:var(--blue);">Windows</strong><br><a href="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip">github.com/BtbN/FFmpeg-Builds → win64-gpl-shared.zip</a></div>
+      <div><strong style="font-size:11px;color:var(--amber);">macOS</strong><br><a href="https://evermeet.cx/ffmpeg/">evermeet.cx/ffmpeg — ffmpeg, ffprobe, ffplay</a></div>
+    </div>
+    <div class="dl-card">
+      <div class="dl-name"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 4h7l5 5v11a1 1 0 01-1 1H7a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="var(--amber)" stroke-width="1.6"/><path d="M13 4v5h5" stroke="var(--amber)" stroke-width="1.6"/></svg>VLC <span class="file-pill">player + server</span></div>
+      <div class="dl-desc">Plays anything. We also use it to stand up a fake RTSP camera later.</div>
+      <a href="https://images.videolan.org/vlc/">images.videolan.org/vlc/</a>
+      <div class="dl-name" style="margin-top:6px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="var(--green)" stroke-width="1.6"/><path d="M10 8l5 4-5 4V8z" fill="var(--green)"/></svg>Test footage <span class="file-pill">Big Buck Bunny</span></div>
+      <a href="https://download.blender.org/peach/bigbuckbunny_movies/">download.blender.org/peach/bigbuckbunny_movies/</a>
+      <div>
+        <span class="file-pill">BigBuckBunny_320x180.mp4</span>
+        <span class="file-pill">BigBuckBunny_640x360.m4v</span>
+        <span class="file-pill">big_buck_bunny_1080p_h264.mov</span>
+      </div>
+    </div>
+  </div>
+  <div class="note teal" style="margin-top:14px;">Three resolutions of the <strong>same clip</strong>, in three different containers — perfect for comparing size, quality, and conversions. Grab all three.</div>
+</div>
+
+<!-- ════════ 3 · PUT FFMPEG ON PATH ════════ -->
+<div class="slide">
+  <div class="slide-title">01 — <em>Setup</em> · Put FFmpeg on PATH</div>
+  <div class="slide-sub">a "well-known path" so you can type <span style="color:var(--teal)">ffmpeg</span> from any folder</div>
+  <div class="cols cols-2">
+    <div class="col">
+      <div class="label blue">windows</div>
+      <pre><span class="cm"># Unzip, then move the bin folder to:</span>
+C:\ffmpeg\bin\
+
+<span class="cm"># Add it to PATH (PowerShell, as admin):</span>
+setx /M PATH "$env:PATH;C:\ffmpeg\bin"
+
+<span class="cm"># Open a NEW terminal, then verify:</span>
+ffmpeg -version
+ffprobe -version</pre>
+    </div>
+    <div class="col">
+      <div class="label amber">macos</div>
+      <pre><span class="cm"># Move binaries to a folder on PATH:</span>
+sudo mv ffmpeg ffprobe ffplay /usr/local/bin/
+
+<span class="cm"># Gatekeeper may block — allow once:</span>
+xattr -d com.apple.quarantine /usr/local/bin/ffmpeg
+
+<span class="cm"># Verify:</span>
+ffmpeg -version</pre>
+    </div>
+  </div>
+  <div class="note amber" style="margin-top:14px;"><strong>Goal:</strong> typing <code>ffmpeg -version</code> from <em>any</em> directory prints a version. If "command not found" → the PATH entry didn't take, or you didn't open a fresh terminal.</div>
+</div>
+
+<!-- ════════ 4 · ANATOMY · FFPROBE ════════ -->
+<div class="slide">
+  <div class="slide-title">02 — <em>Anatomy</em> · Look Inside with ffprobe</div>
+  <div class="cols cols-2" style="max-width:960px;">
+    <div class="col">
+      <div class="label teal">inspect a file</div>
+      <pre><span class="kw">ffprobe</span> big_buck_bunny_1080p_h264.mov</pre>
+      <pre><span class="cm">Input #0, mov,mp4,m4a ...     ← container</span>
+  Duration: 00:09:56.46,
+  bitrate: 9282 kb/s
+  <span class="out">Stream #0:0</span>: <span class="str">Video: h264</span>   <span class="cm">← video</span>
+    1920x1080, 24 fps
+  <span class="out">Stream #0:1</span>: <span class="str">Audio: aac</span>    <span class="cm">← audio</span>
+    48000 Hz, stereo</pre>
+      <div class="note blue">One <strong>file</strong> = one <strong>container</strong> wrapping multiple <strong>streams</strong>, each compressed by a <strong>codec</strong>.</div>
+    </div>
+    <div class="col" style="align-items:center;justify-content:center;">
+      <div class="stack">
+        <div class="stack-head">.mov file = container</div>
+        <div class="stack-row video"><span class="sr-name">▣ Video stream</span><span class="sr-codec">codec: H.264</span></div>
+        <div class="stack-row audio"><span class="sr-name">♪ Audio stream</span><span class="sr-codec">codec: AAC</span></div>
+        <div class="stack-row meta"><span class="sr-name">ℹ Metadata</span><span class="sr-codec">title · subtitles · timecode</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ 5 · CONTAINERS ════════ -->
+<div class="slide">
+  <div class="slide-title">03 — <em>Containers</em> · The Wrapper</div>
+  <div class="slide-sub">a container holds streams + sync info — it is NOT the codec</div>
+  <table class="cmp-table">
+    <thead><tr><th>Container</th><th>Born</th><th>Where you see it</th><th>Typical codecs</th></tr></thead>
+    <tbody>
+      <tr><td class="b">MP4</td><td class="m">2001</td><td>The web default — phones, browsers, everything</td><td class="m">H.264/H.265 + AAC</td></tr>
+      <tr><td class="b">MOV</td><td class="m">1998</td><td>Apple QuickTime — editing, cameras</td><td class="m">H.264/ProRes</td></tr>
+      <tr><td class="b">WebM</td><td class="m">2010</td><td>Google / open web, YouTube delivery</td><td class="m">VP9/AV1 + Opus</td></tr>
+      <tr><td class="b">AVI</td><td class="m">1992</td><td>Legacy Windows — old, bulky, fading</td><td class="m">many / older</td></tr>
+      <tr><td class="b">Ogg</td><td class="m">2002</td><td>Fully open-source / Xiph projects</td><td class="m">Theora + Vorbis</td></tr>
+    </tbody>
+  </table>
+  <div class="note purple" style="margin-top:16px;">Think of a container like a <strong>shipping box</strong> 📦 — the box style (MP4 vs MOV) is separate from what's <em>inside</em> it (the codec). You can re-box without re-compressing. More on that in the lab.</div>
+</div>
+
+<!-- ════════ 6 · CODEC ENCODE/DECODE ════════ -->
+<div class="slide">
+  <div class="slide-title">04 — <em>Codecs</em> · Encode &amp; Decode</div>
+  <div class="slide-sub">codec = COder + DECoder — squeeze raw pixels small, then rebuild them</div>
+  <div class="center">
+    <svg viewBox="0 0 900 220" width="100%" style="max-width:900px;">
+      <!-- RAW in -->
+      <rect x="10" y="70" width="150" height="80" rx="10" fill="var(--blue-dim)" stroke="var(--blue-border)"/>
+      <text x="85" y="100" fill="var(--blue)" font-size="13" text-anchor="middle" font-weight="600">RAW frames</text>
+      <text x="85" y="120" fill="var(--muted)" font-size="10.5" text-anchor="middle">every pixel</text>
+      <text x="85" y="135" fill="var(--blue)" font-size="11" text-anchor="middle">~1.5 GB / min</text>
+      <!-- arrow -->
+      <line x1="160" y1="110" x2="245" y2="110" stroke="var(--muted)" stroke-width="2" marker-end="url(#ah)"/>
+      <text x="200" y="100" fill="var(--muted)" font-size="10" text-anchor="middle">encode</text>
+      <!-- ENCODER -->
+      <rect x="250" y="60" width="160" height="100" rx="10" fill="var(--amber-dim)" stroke="var(--amber-border)"/>
+      <text x="330" y="100" fill="var(--amber)" font-size="14" text-anchor="middle" font-weight="600">ENCODER</text>
+      <text x="330" y="120" fill="var(--muted)" font-size="10" text-anchor="middle">compress · throw</text>
+      <text x="330" y="134" fill="var(--muted)" font-size="10" text-anchor="middle">away redundancy</text>
+      <!-- arrow -->
+      <line x1="410" y1="110" x2="495" y2="110" stroke="var(--muted)" stroke-width="2" marker-end="url(#ah)"/>
+      <!-- COMPRESSED -->
+      <rect x="500" y="70" width="150" height="80" rx="10" fill="var(--teal-dim)" stroke="var(--teal-border)"/>
+      <text x="575" y="100" fill="var(--teal)" font-size="13" text-anchor="middle" font-weight="600">Bitstream</text>
+      <text x="575" y="120" fill="var(--muted)" font-size="10.5" text-anchor="middle">H.264 / H.265</text>
+      <text x="575" y="135" fill="var(--teal)" font-size="11" text-anchor="middle">~10 MB / min</text>
+      <!-- arrow -->
+      <line x1="650" y1="110" x2="735" y2="110" stroke="var(--muted)" stroke-width="2" marker-end="url(#ah)"/>
+      <text x="692" y="100" fill="var(--muted)" font-size="10" text-anchor="middle">decode</text>
+      <!-- DECODER -->
+      <rect x="740" y="60" width="150" height="100" rx="10" fill="var(--green-dim)" stroke="var(--green-border)"/>
+      <text x="815" y="100" fill="var(--green)" font-size="14" text-anchor="middle" font-weight="600">DECODER</text>
+      <text x="815" y="120" fill="var(--muted)" font-size="10" text-anchor="middle">rebuild pixels</text>
+      <text x="815" y="134" fill="var(--muted)" font-size="10" text-anchor="middle">→ to screen</text>
+      <defs><marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--muted)"/></marker></defs>
+    </svg>
+  </div>
+  <div class="note teal" style="margin-top:8px;">The encoder <strong>discards what your eyes won't miss</strong> (lossy). The decoder reconstructs an approximation. ~150× smaller, near-identical to look at.</div>
+</div>
+
+<!-- ════════ 7 · RAW SIZE + RESOLUTIONS ════════ -->
+<div class="slide">
+  <div class="slide-title">05 — <em>Raw Size</em> · Why Compression Exists</div>
+  <div class="cols cols-2" style="max-width:980px;">
+    <div class="col" style="justify-content:center;">
+      <div class="label red">raw frame math</div>
+      <pre><span class="cm"># One uncompressed 1080p frame</span>
+1920 × 1080 px × 3 bytes  <span class="cm">(R,G,B)</span>
+  = 6.2 MB  <span class="cm">per frame</span>
+
+  + alpha (RGBA) → × 4 = 8.3 MB
+
+<span class="cm"># At 24 frames per second:</span>
+6.2 MB × 24 × 60 = <span class="out">~9 GB / min</span> 😱</pre>
+      <div class="note red">A 10-min raw 1080p clip ≈ <strong>90 GB</strong>. Codecs get it to ~1 GB.</div>
+    </div>
+    <div class="col" style="align-items:center;justify-content:center;">
+      <div class="label teal" style="margin-bottom:6px;">resolution = pixel count = size</div>
+      <svg viewBox="0 0 360 300" width="100%" style="max-width:340px;">
+        <!-- nested rects anchored bottom-left, to scale -->
+        <rect x="20" y="20"  width="300" height="169" fill="none" stroke="var(--purple-border)" stroke-dasharray="4 3"/>
+        <text x="324" y="32" fill="var(--purple)" font-size="9" text-anchor="end">4K 3840×2160</text>
+        <rect x="20" y="105" width="150" height="84" fill="var(--blue-dim)" stroke="var(--blue-border)"/>
+        <text x="166" y="116" fill="var(--blue)" font-size="9" text-anchor="end">FHD 1920×1080</text>
+        <rect x="20" y="133" width="100" height="56" fill="var(--teal-dim)" stroke="var(--teal-border)"/>
+        <text x="116" y="129" fill="var(--teal)" font-size="9" text-anchor="end">720p</text>
+        <rect x="20" y="153" width="67" height="36" fill="var(--amber-dim)" stroke="var(--amber-border)"/>
+        <text x="60" y="148" fill="var(--amber)" font-size="8.5" text-anchor="middle">480p</text>
+        <rect x="20" y="165" width="50" height="24" fill="var(--green-dim)" stroke="var(--green-border)"/>
+        <text x="45" y="180" fill="var(--green)" font-size="8" text-anchor="middle">360</text>
+        <text x="20" y="290" fill="var(--muted)" font-size="9.5">8K = 4× a 4K = 16× a 1080p in pixels</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ 8 · COMPRESSED SIZE BY CODEC ════════ -->
+<div class="slide">
+  <div class="slide-title">04 — <em>Codecs</em> · Newer = Smaller</div>
+  <div class="slide-sub">same 1080p clip, same visual quality — file size by codec generation</div>
+  <div class="center">
+    <svg viewBox="0 0 760 250" width="100%" style="max-width:760px;">
+      <!-- bars -->
+      <g font-size="11">
+        <text x="120" y="44" fill="var(--text)" text-anchor="end">H.264 (2003)</text>
+        <rect x="130" y="32" width="560" height="20" rx="4" fill="var(--red-dim)" stroke="var(--red-border)"/>
+        <text x="700" y="47" fill="var(--red)" text-anchor="start" font-size="11">100%</text>
+
+        <text x="120" y="92" fill="var(--text)" text-anchor="end">H.265 / HEVC</text>
+        <rect x="130" y="80" width="280" height="20" rx="4" fill="var(--amber-dim)" stroke="var(--amber-border)"/>
+        <text x="420" y="95" fill="var(--amber)" text-anchor="start">~50%</text>
+
+        <text x="120" y="140" fill="var(--text)" text-anchor="end">VP9</text>
+        <rect x="130" y="128" width="290" height="20" rx="4" fill="var(--blue-dim)" stroke="var(--blue-border)"/>
+        <text x="430" y="143" fill="var(--blue)" text-anchor="start">~52%</text>
+
+        <text x="120" y="188" fill="var(--text)" text-anchor="end">AV1 (2018)</text>
+        <rect x="130" y="176" width="200" height="20" rx="4" fill="var(--green-dim)" stroke="var(--green-border)"/>
+        <text x="340" y="191" fill="var(--green)" text-anchor="start">~35%</text>
+      </g>
+      <text x="130" y="230" fill="var(--muted)" font-size="10">← smaller file for the same quality · newer codecs cost more CPU to encode</text>
+    </svg>
+  </div>
+  <div class="note amber" style="margin-top:6px;">The trade-off: H.265/AV1 are <strong>much smaller</strong> but <strong>slower to encode</strong> and need newer hardware to decode smoothly. H.264 is still the safe, universal default.</div>
+</div>
+
+<!-- ════════ 9 · SPATIAL COMPRESSION ════════ -->
+<div class="slide">
+  <div class="slide-title">06 — <em>Spatial</em> · Compress Within One Frame</div>
+  <div class="slide-sub">intra-frame · flat areas compress hard · busy detail resists</div>
+  <div class="cols cols-2" style="max-width:840px;">
+    <div class="col" style="align-items:center;">
+      <div class="label green">flat content · cartoon</div>
+      <svg viewBox="0 0 200 130" width="200">
+        <rect x="0" y="0" width="200" height="80" fill="#3b82f6"/>
+        <circle cx="100" cy="80" r="34" fill="#fbbf24"/>
+        <rect x="0" y="80" width="200" height="50" fill="#4ade80"/>
+      </svg>
+      <div class="note green" style="font-size:11.5px;">Huge blocks of identical color → "this whole region is blue." <strong>Compresses tiny.</strong></div>
+    </div>
+    <div class="col" style="align-items:center;">
+      <div class="label red">rich content · real movie</div>
+      <svg viewBox="0 0 200 130" width="200">
+        <defs><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="3"/><feColorMatrix type="saturate" values="2"/></filter></defs>
+        <rect x="0" y="0" width="200" height="130" filter="url(#n)" opacity="0.9"/>
+      </svg>
+      <div class="note red" style="font-size:11.5px;">Every pixel differs from its neighbor → little to abbreviate. <strong>Stays large.</strong></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ 10 · TEMPORAL I/P/B ════════ -->
+<div class="slide">
+  <div class="slide-title">07 — <em>Temporal</em> · I, P &amp; B Frames</div>
+  <div class="slide-sub">inter-frame · don't store every frame — store the CHANGES between them</div>
+  <div class="center">
+    <svg viewBox="0 0 820 230" width="100%" style="max-width:820px;">
+      <!-- I -->
+      <rect x="20" y="60" width="110" height="80" rx="8" fill="var(--blue-dim)" stroke="var(--blue-border)" stroke-width="2"/>
+      <text x="75" y="95" fill="var(--blue)" font-size="22" text-anchor="middle" font-weight="700">I</text>
+      <text x="75" y="118" fill="var(--muted)" font-size="9.5" text-anchor="middle">full image</text>
+      <text x="75" y="160" fill="var(--blue)" font-size="10" text-anchor="middle">keyframe · big</text>
+      <!-- P -->
+      <rect x="200" y="75" width="90" height="55" rx="8" fill="var(--green-dim)" stroke="var(--green-border)" stroke-width="2"/>
+      <text x="245" y="105" fill="var(--green)" font-size="20" text-anchor="middle" font-weight="700">P</text>
+      <text x="245" y="160" fill="var(--green)" font-size="10" text-anchor="middle">"diff from past"</text>
+      <rect x="340" y="78" width="80" height="48" rx="8" fill="var(--green-dim)" stroke="var(--green-border)" stroke-width="2"/>
+      <text x="380" y="106" fill="var(--green)" font-size="18" text-anchor="middle" font-weight="700">P</text>
+      <!-- B -->
+      <rect x="475" y="85" width="55" height="34" rx="6" fill="var(--purple-dim)" stroke="var(--purple-border)" stroke-width="2"/>
+      <text x="502" y="107" fill="var(--purple)" font-size="14" text-anchor="middle" font-weight="700">B</text>
+      <rect x="555" y="85" width="55" height="34" rx="6" fill="var(--purple-dim)" stroke="var(--purple-border)" stroke-width="2"/>
+      <text x="582" y="107" fill="var(--purple)" font-size="14" text-anchor="middle" font-weight="700">B</text>
+      <text x="555" y="160" fill="var(--purple)" font-size="10" text-anchor="middle">"diff from past + future" · tiniest</text>
+      <!-- next I -->
+      <rect x="680" y="60" width="110" height="80" rx="8" fill="var(--blue-dim)" stroke="var(--blue-border)" stroke-width="2"/>
+      <text x="735" y="95" fill="var(--blue)" font-size="22" text-anchor="middle" font-weight="700">I</text>
+      <text x="735" y="118" fill="var(--muted)" font-size="9.5" text-anchor="middle">new keyframe</text>
+      <!-- arrows -->
+      <path d="M200 100 Q165 100 130 100" stroke="var(--green)" stroke-width="1.5" fill="none" marker-end="url(#ah2)"/>
+      <path d="M475 102 Q448 60 420 78" stroke="var(--purple)" stroke-width="1.3" fill="none" marker-end="url(#ah3)"/>
+      <path d="M610 102 Q645 60 680 90" stroke="var(--purple)" stroke-width="1.3" fill="none" marker-end="url(#ah3)"/>
+      <defs>
+        <marker id="ah2" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L5,3 L0,6 Z" fill="var(--green)"/></marker>
+        <marker id="ah3" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L5,3 L0,6 Z" fill="var(--purple)"/></marker>
+      </defs>
+      <text x="405" y="205" fill="var(--muted)" font-size="10" text-anchor="middle">time →  one Group of Pictures (GOP)</text>
+    </svg>
+  </div>
+  <div class="note teal" style="margin-top:4px;">Only <strong>I-frames</strong> are whole pictures. <strong>P/B-frames</strong> store just motion + differences, so they're a fraction of the size.</div>
+</div>
+
+<!-- ════════ 11 · STEADY VS MOTION ════════ -->
+<div class="slide">
+  <div class="slide-title">07 — <em>Temporal</em> · Less Motion, Less Data</div>
+  <div class="slide-sub">P/B frames win big when little changes between frames</div>
+  <div class="cols cols-2" style="max-width:880px;">
+    <div class="col" style="align-items:center;">
+      <div class="label green">steady scene · CCTV, slides</div>
+      <svg viewBox="0 0 360 70" width="100%" style="max-width:360px;">
+        <rect x="2"   y="20" width="40" height="40" rx="5" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="22" y="45" fill="var(--blue)" font-size="13" text-anchor="middle">I</text>
+        <rect x="62"  y="30" width="14" height="20" rx="3" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="69" y="44" fill="var(--green)" font-size="8" text-anchor="middle">P</text>
+        <rect x="96"  y="30" width="14" height="20" rx="3" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="103" y="44" fill="var(--green)" font-size="8" text-anchor="middle">P</text>
+        <rect x="130" y="32" width="12" height="16" rx="3" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="136" y="44" fill="var(--green)" font-size="7" text-anchor="middle">P</text>
+        <rect x="162" y="32" width="12" height="16" rx="3" fill="var(--green-dim)" stroke="var(--green-border)"/>
+        <rect x="194" y="33" width="10" height="14" rx="3" fill="var(--green-dim)" stroke="var(--green-border)"/>
+        <text x="270" y="44" fill="var(--green)" font-size="11">tiny diffs →</text>
+      </svg>
+      <div class="note green" style="font-size:11.5px;">Wall, empty corridor — frames barely change. P-frames near-empty. <strong>Small files.</strong></div>
+    </div>
+    <div class="col" style="align-items:center;">
+      <div class="label red">high motion · sports, action</div>
+      <svg viewBox="0 0 360 70" width="100%" style="max-width:360px;">
+        <rect x="2"   y="20" width="40" height="40" rx="5" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="22" y="45" fill="var(--blue)" font-size="13" text-anchor="middle">I</text>
+        <rect x="56"  y="22" width="34" height="36" rx="4" fill="var(--red-dim)" stroke="var(--red-border)"/><text x="73" y="44" fill="var(--red)" font-size="11" text-anchor="middle">P</text>
+        <rect x="104" y="22" width="34" height="36" rx="4" fill="var(--red-dim)" stroke="var(--red-border)"/><text x="121" y="44" fill="var(--red)" font-size="11" text-anchor="middle">P</text>
+        <rect x="152" y="22" width="34" height="36" rx="4" fill="var(--red-dim)" stroke="var(--red-border)"/><text x="169" y="44" fill="var(--red)" font-size="11" text-anchor="middle">P</text>
+        <text x="270" y="44" fill="var(--red)" font-size="11">big diffs →</text>
+      </svg>
+      <div class="note red" style="font-size:11.5px;">Everything moves every frame — P-frames stay fat. <strong>Big files, higher bitrate needed.</strong></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ 12 · BITRATE + ABR ════════ -->
+<div class="slide">
+  <div class="slide-title">08 — <em>Bitrate</em> · Quality vs Bandwidth</div>
+  <div class="slide-sub">bitrate = data per second = the master quality/size dial</div>
+  <div class="cols cols-2" style="max-width:940px;">
+    <div class="col" style="justify-content:center;">
+      <table class="cmp-table" style="font-size:11.5px;">
+        <thead><tr><th>Same 1080p clip</th><th>Bitrate</th><th>Look</th></tr></thead>
+        <tbody>
+          <tr><td class="m">Low</td><td class="b">1 Mb/s</td><td class="r">blocky, smeary</td></tr>
+          <tr><td class="m">Medium</td><td class="b">5 Mb/s</td><td class="a">good</td></tr>
+          <tr><td class="m">High</td><td class="b">12 Mb/s</td><td class="g">crisp, no artifacts</td></tr>
+        </tbody>
+      </table>
+      <div class="note blue" style="font-size:11.5px;">More bitrate → more detail kept → bigger file &amp; more bandwidth to stream.</div>
+    </div>
+    <div class="col" style="align-items:center;justify-content:center;">
+      <div class="label purple">adaptive bitrate (ABR)</div>
+      <svg viewBox="0 0 340 200" width="100%" style="max-width:330px;">
+        <rect x="10" y="14"  width="200" height="26" rx="5" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="20" y="31" fill="var(--green)" font-size="10">1080p · 8 Mb/s</text>
+        <rect x="10" y="50"  width="150" height="26" rx="5" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="20" y="67" fill="var(--blue)" font-size="10">720p · 4 Mb/s</text>
+        <rect x="10" y="86"  width="105" height="26" rx="5" fill="var(--amber-dim)" stroke="var(--amber-border)"/><text x="20" y="103" fill="var(--amber)" font-size="10">480p · 2 Mb/s</text>
+        <rect x="10" y="122" width="70" height="26" rx="5" fill="var(--red-dim)" stroke="var(--red-border)"/><text x="20" y="139" fill="var(--red)" font-size="10">240p · 0.5</text>
+        <path d="M230 30 q40 50 0 95" stroke="var(--purple)" stroke-width="1.6" fill="none" stroke-dasharray="3 3" marker-end="url(#ah4)"/>
+        <text x="248" y="80" fill="var(--purple)" font-size="9">player picks</text>
+        <text x="248" y="93" fill="var(--purple)" font-size="9">by network</text>
+        <defs><marker id="ah4" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L5,3 L0,6 Z" fill="var(--purple)"/></marker></defs>
+        <text x="20" y="180" fill="var(--muted)" font-size="9.5">encode several versions → player switches live</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ 13 · FFMPEG REMUX (CONTAINER ONLY) ════════ -->
+<div class="slide">
+  <div class="slide-title">09 — <em>FFmpeg</em> · Remux — Change the Box Only</div>
+  <div class="slide-sub">swap container, keep codec → instant, lossless, no re-encoding</div>
+  <div class="cols cols-2">
+    <div class="col">
+      <pre><span class="cm"># .mov → .mp4 , copy streams as-is</span>
+<span class="kw">ffmpeg</span> -i big_buck_bunny_1080p_h264.mov \
+       -c <span class="str">copy</span> \
+       output.mp4</pre>
+      <div class="note teal"><code>-c copy</code> = stream copy. No decode, no encode. Finishes in <strong>seconds</strong>, pixel-identical.</div>
+    </div>
+    <div class="col" style="align-items:center;justify-content:center;">
+      <svg viewBox="0 0 300 150" width="100%" style="max-width:300px;">
+        <rect x="20" y="40" width="90" height="70" rx="8" fill="var(--bg2)" stroke="var(--blue-border)"/>
+        <text x="65" y="35" fill="var(--blue)" font-size="11" text-anchor="middle">.mov</text>
+        <rect x="32" y="55" width="66" height="22" rx="3" fill="var(--blue-dim)"/><text x="65" y="70" fill="var(--blue)" font-size="9" text-anchor="middle">H.264</text>
+        <rect x="32" y="82" width="66" height="18" rx="3" fill="var(--green-dim)"/><text x="65" y="95" fill="var(--green)" font-size="8" text-anchor="middle">AAC</text>
+        <line x1="120" y1="75" x2="180" y2="75" stroke="var(--teal)" stroke-width="2" marker-end="url(#ah5)"/>
+        <text x="150" y="68" fill="var(--teal)" font-size="9" text-anchor="middle">re-box</text>
+        <rect x="190" y="40" width="90" height="70" rx="8" fill="var(--bg2)" stroke="var(--purple-border)"/>
+        <text x="235" y="35" fill="var(--purple)" font-size="11" text-anchor="middle">.mp4</text>
+        <rect x="202" y="55" width="66" height="22" rx="3" fill="var(--blue-dim)"/><text x="235" y="70" fill="var(--blue)" font-size="9" text-anchor="middle">H.264</text>
+        <rect x="202" y="82" width="66" height="18" rx="3" fill="var(--green-dim)"/><text x="235" y="95" fill="var(--green)" font-size="8" text-anchor="middle">AAC</text>
+        <text x="150" y="135" fill="var(--muted)" font-size="9.5" text-anchor="middle">same codecs · different wrapper</text>
+        <defs><marker id="ah5" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L5,3 L0,6 Z" fill="var(--teal)"/></marker></defs>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ 14 · FFMPEG TRANSCODE CODEC ════════ -->
+<div class="slide">
+  <div class="slide-title">09 — <em>FFmpeg</em> · Transcode the Codec</div>
+  <div class="slide-sub">re-encode pixels → H.264 to H.265 → real decode + encode work</div>
+  <div class="cols cols-2">
+    <div class="col">
+      <div class="label red">CPU — slow, universal</div>
+      <pre><span class="kw">ffmpeg</span> -i input.mp4 \
+  -c:v <span class="str">libx265</span> -crf 28 \
+  -c:a copy  out_h265.mp4</pre>
+      <div class="label green">GPU — fast, if available</div>
+      <pre><span class="cm"># NVIDIA</span>
+-c:v <span class="str">hevc_nvenc</span>
+<span class="cm"># Apple Silicon</span>
+-c:v <span class="str">hevc_videotoolbox</span></pre>
+    </div>
+    <div class="col" style="justify-content:center;">
+      <div class="note red"><strong>⚠ Transcoding is CPU-heavy.</strong> Software H.265 can run at &lt;1× realtime and peg every core. Watch your task manager during the lab.</div>
+      <div class="note green"><strong>GPU encoders</strong> (NVENC, VideoToolbox, QSV) offload to dedicated silicon — often 5–20× faster, slightly larger files at the same quality. Use them when present.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ 15 · COMPARE OUTPUTS TABLE ════════ -->
+<div class="slide">
+  <div class="slide-title">09 — <em>FFmpeg</em> · Resolution × Codec × Bitrate</div>
+  <div class="slide-sub">run these, then compare — size vs quality vs dimensions</div>
+  <pre style="max-width:900px;"><span class="cm"># Downscale to 720p, H.265, target 2 Mb/s</span>
+<span class="kw">ffmpeg</span> -i big_buck_bunny_1080p_h264.mov \
+  -vf <span class="str">scale=1280:720</span> -c:v <span class="str">libx265</span> -b:v <span class="fl">2M</span> -c:a aac  bbb_720_h265_2M.mp4</pre>
+  <table class="cmp-table" style="margin-top:14px;max-width:900px;">
+    <thead><tr><th>Output</th><th>Res</th><th>Codec</th><th>Bitrate</th><th>~Size (10 min)</th><th>Look</th></tr></thead>
+    <tbody>
+      <tr><td class="m">source</td><td class="b">1080p</td><td>H.264</td><td>9 Mb/s</td><td class="r">~690 MB</td><td class="g">reference</td></tr>
+      <tr><td class="m">A</td><td class="b">1080p</td><td>H.265</td><td>4 Mb/s</td><td class="a">~300 MB</td><td class="g">≈ same</td></tr>
+      <tr><td class="m">B</td><td class="b">720p</td><td>H.265</td><td>2 Mb/s</td><td class="g">~150 MB</td><td class="a">good on phones</td></tr>
+      <tr><td class="m">C</td><td class="b">480p</td><td>H.264</td><td>0.8 Mb/s</td><td class="g">~60 MB</td><td class="a">soft</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ════════ 16 · PIPELINE DIAGRAM ════════ -->
+<div class="slide">
+  <div class="slide-title">10 — <em>Pipeline</em> · How a Command Reads</div>
+  <div class="slide-sub">input opts → input → decode → filters → encode → output opts → output</div>
+  <div class="center">
+    <svg viewBox="0 0 880 170" width="100%" style="max-width:880px;">
+      <g font-size="11.5">
+        <rect x="10" y="55" width="150" height="60" rx="9" fill="var(--blue-dim)" stroke="var(--blue-border)"/>
+        <text x="85" y="80" fill="var(--blue)" text-anchor="middle" font-weight="600">INPUT</text>
+        <text x="85" y="98" fill="var(--muted)" font-size="9.5" text-anchor="middle">-i file · options</text>
+
+        <rect x="200" y="55" width="150" height="60" rx="9" fill="var(--amber-dim)" stroke="var(--amber-border)"/>
+        <text x="275" y="80" fill="var(--amber)" text-anchor="middle" font-weight="600">DECODE</text>
+        <text x="275" y="98" fill="var(--muted)" font-size="9.5" text-anchor="middle">→ raw frames</text>
+
+        <rect x="390" y="55" width="150" height="60" rx="9" fill="var(--purple-dim)" stroke="var(--purple-border)"/>
+        <text x="465" y="80" fill="var(--purple)" text-anchor="middle" font-weight="600">FILTERS</text>
+        <text x="465" y="98" fill="var(--muted)" font-size="9.5" text-anchor="middle">scale · crop · -vf</text>
+
+        <rect x="580" y="55" width="150" height="60" rx="9" fill="var(--teal-dim)" stroke="var(--teal-border)"/>
+        <text x="655" y="80" fill="var(--teal)" text-anchor="middle" font-weight="600">ENCODE</text>
+        <text x="655" y="98" fill="var(--muted)" font-size="9.5" text-anchor="middle">-c:v · -b:v</text>
+
+        <rect x="755" y="55" width="115" height="60" rx="9" fill="var(--green-dim)" stroke="var(--green-border)"/>
+        <text x="812" y="80" fill="var(--green)" text-anchor="middle" font-weight="600">OUTPUT</text>
+        <text x="812" y="98" fill="var(--muted)" font-size="9.5" text-anchor="middle">out.mp4</text>
+      </g>
+      <g stroke="var(--muted)" stroke-width="2" marker-end="url(#ahp)">
+        <line x1="160" y1="85" x2="198" y2="85"/><line x1="350" y1="85" x2="388" y2="85"/>
+        <line x1="540" y1="85" x2="578" y2="85"/><line x1="730" y1="85" x2="753" y2="85"/>
+      </g>
+      <defs><marker id="ahp" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L5,3 L0,6 Z" fill="var(--muted)"/></marker></defs>
+    </svg>
+    <pre style="max-width:820px;"><span class="kw">ffmpeg</span> <span class="blue">-ss 5 -i in.mp4</span>  <span class="purple">-vf scale=1280:-2</span>  <span class="teal">-c:v libx264 -b:v 3M</span>  <span class="out">out.mp4</span></pre>
+  </div>
+</div>
+
+<!-- ════════ 17 · MULTI OUTPUT / FILTERGRAPH ════════ -->
+<div class="slide">
+  <div class="slide-title">09 — <em>FFmpeg</em> · One Pass, Many Outputs</div>
+  <div class="cols cols-2">
+    <div class="col">
+      <div class="label teal">single input → 3 renditions</div>
+      <pre><span class="kw">ffmpeg</span> -i in.mp4 \
+ -vf scale=1920:-2 -b:v 8M out_1080.mp4 \
+ -vf scale=1280:-2 -b:v 4M out_720.mp4 \
+ -vf scale=640:-2  -b:v 1M out_360.mp4</pre>
+      <div class="note teal" style="font-size:11.5px;">Decode once, fan out — the classic ABR ladder build.</div>
+    </div>
+    <div class="col">
+      <div class="label purple">multi-input · filter graph</div>
+      <pre><span class="cm"># overlay logo onto video</span>
+<span class="kw">ffmpeg</span> -i video.mp4 -i logo.png \
+ -filter_complex \
+   <span class="str">"[0:v][1:v]overlay=10:10"</span> \
+ out.mp4</pre>
+      <svg viewBox="0 0 300 90" width="100%" style="max-width:280px;">
+        <rect x="6" y="10" width="70" height="26" rx="5" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="41" y="27" fill="var(--blue)" font-size="9" text-anchor="middle">video</text>
+        <rect x="6" y="52" width="70" height="26" rx="5" fill="var(--amber-dim)" stroke="var(--amber-border)"/><text x="41" y="69" fill="var(--amber)" font-size="9" text-anchor="middle">logo</text>
+        <rect x="120" y="30" width="80" height="30" rx="6" fill="var(--purple-dim)" stroke="var(--purple-border)"/><text x="160" y="49" fill="var(--purple)" font-size="9" text-anchor="middle">overlay</text>
+        <rect x="240" y="30" width="55" height="30" rx="6" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="267" y="49" fill="var(--green)" font-size="9" text-anchor="middle">out</text>
+        <line x1="76" y1="23" x2="118" y2="40" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ahf)"/>
+        <line x1="76" y1="65" x2="118" y2="50" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ahf)"/>
+        <line x1="200" y1="45" x2="238" y2="45" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ahf)"/>
+        <defs><marker id="ahf" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L4,3 L0,6 Z" fill="var(--muted)"/></marker></defs>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ 18 · TCP VS UDP ════════ -->
+<div class="slide">
+  <div class="slide-title">11 — <em>Realtime</em> · TCP vs UDP</div>
+  <div class="slide-sub">why live video protocols lean on UDP</div>
+  <div class="cols cols-2" style="max-width:900px;">
+    <div class="col" style="align-items:center;">
+      <div class="label blue">TCP — reliable, ordered</div>
+      <svg viewBox="0 0 300 100" width="100%" style="max-width:300px;">
+        <circle cx="30" cy="30" r="14" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="30" y="34" fill="var(--blue)" font-size="9" text-anchor="middle">src</text>
+        <circle cx="270" cy="30" r="14" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="270" y="34" fill="var(--blue)" font-size="9" text-anchor="middle">dst</text>
+        <line x1="46" y1="26" x2="254" y2="26" stroke="var(--blue)" stroke-width="1.6" marker-end="url(#ahb)"/>
+        <line x1="254" y1="40" x2="46" y2="40" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#ahg)"/>
+        <text x="150" y="20" fill="var(--blue)" font-size="8.5" text-anchor="middle">data</text>
+        <text x="150" y="54" fill="var(--muted)" font-size="8.5" text-anchor="middle">ACK · resend if lost</text>
+        <text x="150" y="86" fill="var(--muted)" font-size="9">guarantees delivery → adds delay</text>
+        <defs><marker id="ahb" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L4,3 L0,6 Z" fill="var(--blue)"/></marker>
+        <marker id="ahg" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L4,3 L0,6 Z" fill="var(--muted)"/></marker></defs>
+      </svg>
+    </div>
+    <div class="col" style="align-items:center;">
+      <div class="label green">UDP — fast, fire-and-forget</div>
+      <svg viewBox="0 0 300 100" width="100%" style="max-width:300px;">
+        <circle cx="30" cy="33" r="14" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="30" y="37" fill="var(--green)" font-size="9" text-anchor="middle">src</text>
+        <circle cx="270" cy="33" r="14" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="270" y="37" fill="var(--green)" font-size="9" text-anchor="middle">dst</text>
+        <line x1="46" y1="33" x2="254" y2="33" stroke="var(--green)" stroke-width="1.6" marker-end="url(#ahc)"/>
+        <text x="150" y="26" fill="var(--green)" font-size="8.5" text-anchor="middle">data · data · data</text>
+        <text x="150" y="86" fill="var(--muted)" font-size="9">no ACK → low delay, may drop</text>
+        <defs><marker id="ahc" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L4,3 L0,6 Z" fill="var(--green)"/></marker></defs>
+      </svg>
+    </div>
+  </div>
+  <div class="note green" style="margin-top:14px;">For <strong>live</strong> video a late frame is useless — you want the <em>next</em> frame, not a retransmit of the old one. So RTSP / RTMP favor low-latency UDP transport over waiting for guaranteed delivery.</div>
+</div>
+
+<!-- ════════ 19 · CCTV / RTSP ════════ -->
+<div class="slide">
+  <div class="slide-title">12 — <em>RTSP</em> · The Camera Is a Server</div>
+  <div class="slide-sub">nearly every IP / CCTV camera exposes an RTSP URL you pull from</div>
+  <div class="center">
+    <svg viewBox="0 0 760 160" width="100%" style="max-width:760px;">
+      <rect x="20" y="50" width="160" height="70" rx="10" fill="var(--amber-dim)" stroke="var(--amber-border)"/>
+      <text x="100" y="80" fill="var(--amber)" font-size="13" text-anchor="middle" font-weight="600">📷 IP Camera</text>
+      <text x="100" y="100" fill="var(--muted)" font-size="9.5" text-anchor="middle">RTSP server</text>
+      <line x1="180" y1="85" x2="300" y2="85" stroke="var(--teal)" stroke-width="2" marker-end="url(#ahr)"/>
+      <text x="240" y="76" fill="var(--teal)" font-size="9" text-anchor="middle">pull stream</text>
+      <rect x="310" y="50" width="200" height="70" rx="10" fill="var(--teal-dim)" stroke="var(--teal-border)"/>
+      <text x="410" y="84" fill="var(--teal)" font-size="11" text-anchor="middle" font-family="DM Mono">rtsp://ip:554/stream</text>
+      <line x1="510" y1="85" x2="600" y2="85" stroke="var(--blue)" stroke-width="2" marker-end="url(#ahr2)"/>
+      <rect x="610" y="50" width="130" height="70" rx="10" fill="var(--blue-dim)" stroke="var(--blue-border)"/>
+      <text x="675" y="80" fill="var(--blue)" font-size="12" text-anchor="middle" font-weight="600">VMS / client</text>
+      <text x="675" y="100" fill="var(--muted)" font-size="9.5" text-anchor="middle">ffplay · ffmpeg</text>
+      <defs><marker id="ahr" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L5,3 L0,6 Z" fill="var(--teal)"/></marker>
+      <marker id="ahr2" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L5,3 L0,6 Z" fill="var(--blue)"/></marker></defs>
+    </svg>
+  </div>
+  <div class="note amber">No camera on hand? We'll <strong>fake one with VLC</strong> — serve Big Buck Bunny over RTSP and treat it exactly like a real camera feed.</div>
+</div>
+
+<!-- ════════ 20 · VLC RTSP SERVER SETUP ════════ -->
+<div class="slide">
+  <div class="slide-title">12 — <em>RTSP</em> · Fake a Camera with VLC</div>
+  <div class="cols cols-2" style="max-width:960px;align-items:start;">
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-txt">VLC → <strong>Media ▸ Stream…</strong>, add <code>BigBuckBunny_640x360.m4v</code></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-txt">Click <strong>Stream</strong> → Next</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-txt">New destination → <strong>RTSP</strong> → Add</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-txt">Set path <code>/stream</code>, port <code>8554</code></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-txt">Turn <strong>off</strong> transcoding (keep original codec)</div></div>
+      <div class="step"><div class="step-num">6</div><div class="step-txt">Stream → it now serves <code>rtsp://127.0.0.1:8554/stream</code></div></div>
+    </div>
+    <div class="col" style="justify-content:center;">
+      <div class="note teal"><strong>Tip:</strong> enable the <em>"Loop"</em> option so the clip repeats endlessly — behaves like a live camera that never stops.</div>
+      <pre><span class="cm"># Or the one-line CLI equivalent:</span>
+<span class="kw">cvlc</span> BigBuckBunny_640x360.m4v \
+  --loop \
+  --sout <span class="str">'#rtp{sdp=rtsp://:8554/stream}'</span></pre>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ 21 · CONSUME THE STREAM ════════ -->
+<div class="slide">
+  <div class="slide-title">12 — <em>RTSP</em> · Play, Record, Transcode</div>
+  <div class="slide-sub">treat the RTSP URL just like any other input</div>
+  <div class="cols cols-3" style="max-width:980px;align-items:start;">
+    <div class="col">
+      <div class="label blue">play it</div>
+      <pre><span class="kw">ffplay</span> \
+ rtsp://127.0.0.1:8554/stream</pre>
+      <div class="note blue" style="font-size:11px;">Live window opens — your "camera" feed.</div>
+    </div>
+    <div class="col">
+      <div class="label green">record · keep codec</div>
+      <pre><span class="kw">ffmpeg</span> -i \
+ rtsp://127.0.0.1:8554/stream \
+ -c <span class="str">copy</span> -t 30 clip.mp4</pre>
+      <div class="note green" style="font-size:11px;">No re-encode → cheap. Just saves the stream to disk.</div>
+    </div>
+    <div class="col">
+      <div class="label red">record · transcode</div>
+      <pre><span class="kw">ffmpeg</span> -i \
+ rtsp://127.0.0.1:8554/stream \
+ -c:v <span class="str">libx265</span> -b:v 1M \
+ -t 30 clip_h265.mkv</pre>
+      <div class="note red" style="font-size:11px;">Convert live → CPU cost, smaller archive.</div>
+    </div>
+  </div>
+  <div class="note teal" style="margin-top:14px;">This is the heart of a VMS: <strong>pull RTSP from cameras → record (copy) or transcode → store / restream.</strong> Everything you just learned scales straight into the capstone.</div>
+</div>
+
+</div><!-- /deck -->
+
+<div class="nav">
+  <button class="nav-btn" id="prev" disabled>← Prev</button>
+  <div class="counter" id="counter">1 / 21</div>
+  <button class="nav-btn" id="next">Next →</button>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const bar = document.getElementById('bar');
+const prev = document.getElementById('prev');
+const next = document.getElementById('next');
+const ctr  = document.getElementById('counter');
+let cur = 0;
+function go(n) {
+  slides[cur].classList.remove('active');
+  cur = n;
+  slides[cur].classList.add('active');
+  bar.style.width = ((cur + 1) / slides.length * 100) + '%';
+  ctr.textContent = (cur + 1) + ' / ' + slides.length;
+  prev.disabled = cur === 0;
+  next.disabled = cur === slides.length - 1;
+}
+prev.addEventListener('click', () => cur > 0 && go(cur - 1));
+next.addEventListener('click', () => cur < slides.length - 1 && go(cur + 1));
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { if (cur < slides.length - 1) go(cur + 1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { if (cur > 0) go(cur - 1); }
+});
+go(0);
+</script>
+</body>
+</html>
