@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab — Video Streaming</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d1117; --bg2: #161b22; --bg3: #21262d; --bg4: #080c11;
+  --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.15);
+  --text: #e6edf3; --muted: #7d8590;
+  --teal: #2dd4bf; --teal-dim: rgba(45,212,191,0.10); --teal-border: rgba(45,212,191,0.28);
+  --amber: #f59e0b; --amber-dim: rgba(245,158,11,0.10); --amber-border: rgba(245,158,11,0.28);
+  --blue: #60a5fa; --blue-dim: rgba(96,165,250,0.10); --blue-border: rgba(96,165,250,0.28);
+  --purple: #a78bfa; --purple-dim: rgba(167,139,250,0.10); --purple-border: rgba(167,139,250,0.28);
+  --green: #4ade80; --green-dim: rgba(74,222,128,0.10); --green-border: rgba(74,222,128,0.28);
+  --red: #f87171; --red-dim: rgba(248,113,113,0.10); --red-border: rgba(248,113,113,0.28);
+  --font: 'DM Sans', sans-serif; --mono: 'DM Mono', monospace;
+}
+html, body { width:100%; height:100%; background:var(--bg); color:var(--text); font-family:var(--font); overflow:hidden; }
+.deck { width:100%; height:100%; position:relative; }
+.slide { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:44px 64px 76px; opacity:0; pointer-events:none; transform:translateY(14px); transition:opacity 0.3s ease, transform 0.3s ease; }
+.slide.active { opacity:1; pointer-events:all; transform:translateY(0); }
+.nav { position:fixed; bottom:24px; left:0; right:0; display:flex; align-items:center; justify-content:center; gap:16px; z-index:100; }
+.nav-btn { background:var(--bg2); border:1px solid var(--border2); color:var(--text); font-family:var(--font); font-size:13px; padding:7px 18px; border-radius:8px; cursor:pointer; transition:background 0.15s, border-color 0.15s; }
+.nav-btn:hover { background:var(--bg3); border-color:var(--teal); }
+.nav-btn:disabled { opacity:0.2; cursor:default; }
+.counter { font-size:12px; color:var(--muted); font-family:var(--mono); min-width:54px; text-align:center; }
+.progress { position:fixed; top:0; left:0; right:0; height:2px; background:var(--border); z-index:100; }
+.progress-bar { height:100%; background:var(--teal); transition:width 0.3s ease; }
+.slide-title { font-size:25px; font-weight:600; letter-spacing:-0.02em; text-align:center; margin-bottom:22px; line-height:1.2; flex-shrink:0; }
+.slide-title em { font-style:normal; color:var(--teal); }
+.slide-sub { font-size:12px; font-family:var(--mono); color:var(--muted); text-align:center; margin-top:-16px; margin-bottom:24px; letter-spacing:0.04em; flex-shrink:0; }
+pre { background:var(--bg4); border:1px solid var(--border); border-radius:10px; padding:13px 17px; font-family:var(--mono); font-size:11.5px; line-height:1.7; color:#cdd9e5; overflow-x:auto; white-space:pre; }
+.cm { color:#8b949e; font-style:italic; } .kw { color:#ff7b72; } .str { color:#a5d6ff; } .fl { color:#79c0ff; } .out { color:#7ee787; } .tag { color:#7ee787; }
+.cols { display:grid; gap:16px; width:100%; max-width:940px; }
+.cols-2 { grid-template-columns:1fr 1fr; } .cols-3 { grid-template-columns:1fr 1fr 1fr; }
+.col { display:flex; flex-direction:column; gap:10px; }
+.label { font-size:10px; font-family:var(--mono); letter-spacing:0.1em; text-transform:uppercase; padding:5px 12px; border-radius:6px; display:inline-block; width:fit-content; }
+.label.teal { background:var(--teal-dim); color:var(--teal); border:1px solid var(--teal-border); }
+.label.amber { background:var(--amber-dim); color:var(--amber); border:1px solid var(--amber-border); }
+.label.blue { background:var(--blue-dim); color:var(--blue); border:1px solid var(--blue-border); }
+.label.purple { background:var(--purple-dim); color:var(--purple); border:1px solid var(--purple-border); }
+.label.green { background:var(--green-dim); color:var(--green); border:1px solid var(--green-border); }
+.label.red { background:var(--red-dim); color:var(--red); border:1px solid var(--red-border); }
+.note { border-radius:10px; padding:12px 17px; font-size:12.5px; line-height:1.6; width:100%; max-width:940px; flex-shrink:0; }
+.note.teal { background:var(--teal-dim); border:1px solid var(--teal-border); }
+.note.amber { background:var(--amber-dim); border:1px solid var(--amber-border); }
+.note.purple { background:var(--purple-dim); border:1px solid var(--purple-border); }
+.note.blue { background:var(--blue-dim); border:1px solid var(--blue-border); }
+.note.red { background:var(--red-dim); border:1px solid var(--red-border); }
+.note.green { background:var(--green-dim); border:1px solid var(--green-border); }
+.note strong { color:var(--teal); } .note.amber strong { color:var(--amber); } .note.purple strong { color:var(--purple); } .note.blue strong { color:var(--blue); } .note.red strong { color:var(--red); } .note.green strong { color:var(--green); }
+.note code { font-family:var(--mono); font-size:11.5px; color:var(--teal); background:var(--bg4); padding:1px 6px; border-radius:4px; }
+.cover-tag { font-size:11px; font-family:var(--mono); color:var(--teal); letter-spacing:0.12em; text-transform:uppercase; border:1px solid var(--teal-border); background:var(--teal-dim); padding:4px 14px; border-radius:20px; margin-bottom:22px; }
+.cover-title { font-size:46px; font-weight:600; letter-spacing:-0.03em; text-align:center; line-height:1.1; margin-bottom:14px; }
+.cover-title em { font-style:normal; color:var(--teal); }
+.cover-desc { font-size:14px; color:var(--muted); text-align:center; max-width:520px; line-height:1.65; margin-bottom:30px; }
+.topic-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:560px; width:100%; }
+.topic-item { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:11px 12px; font-size:11.5px; font-family:var(--mono); color:var(--muted); text-align:center; line-height:1.4; }
+.topic-item span { display:block; color:var(--teal); font-size:10px; margin-bottom:3px; }
+
+/* FILE BAR */
+.filebar { display:flex; width:100%; max-width:780px; border-radius:10px; overflow:hidden; border:1px solid var(--border2); font-family:var(--mono); }
+.fb-seg { padding:18px 8px; text-align:center; font-size:11px; line-height:1.5; border-right:1px solid rgba(0,0,0,0.4); }
+.fb-seg:last-child { border-right:none; }
+.fb-seg small { display:block; font-size:9px; opacity:0.7; margin-top:3px; }
+.fb-hdr  { background:var(--amber-dim); color:var(--amber); }
+.fb-idx  { background:var(--purple-dim); color:var(--purple); }
+.fb-data { background:var(--blue-dim); color:var(--blue); flex:1; }
+
+.center { display:flex; flex-direction:column; align-items:center; gap:14px; width:100%; }
+svg text { font-family:var(--mono); }
+
+.cmp-table { width:100%; max-width:900px; border-collapse:collapse; font-size:12px; }
+.cmp-table th, .cmp-table td { padding:9px 14px; text-align:left; border-bottom:1px solid var(--border); }
+.cmp-table th { font-family:var(--mono); font-size:9.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--muted); background:var(--bg2); }
+.cmp-table th:first-child { border-radius:8px 0 0 0; } .cmp-table th:last-child { border-radius:0 8px 0 0; }
+.cmp-table tr:last-child td { border-bottom:none; }
+.cmp-table td:first-child { color:var(--text); font-family:var(--mono); font-size:11.5px; }
+.cmp-table tbody tr:hover { background:var(--bg2); }
+.cmp-table .g { color:var(--green); } .cmp-table .a { color:var(--amber); } .cmp-table .r { color:var(--red); } .cmp-table .b { color:var(--blue); } .cmp-table .p { color:var(--purple); } .cmp-table .m { color:var(--muted); font-family:var(--mono); font-size:11px; }
+</style>
+</head>
+<body>
+
+<div class="progress"><div class="progress-bar" id="bar"></div></div>
+<div class="deck">
+
+<!-- ════ 1 · COVER ════ -->
+<div class="slide active">
+  <div class="cover-tag">Lab · Video Engineering II</div>
+  <div class="cover-title"><em>Video</em> Streaming</div>
+  <div class="cover-desc">How a video file is laid out, how the web plays it before it finishes downloading, and how the same A/V packets travel across streaming protocols.</div>
+  <div class="topic-grid">
+    <div class="topic-item"><span>PART 1</span>File structure</div>
+    <div class="topic-item"><span>PART 2</span>Progressive download</div>
+    <div class="topic-item"><span>PART 3</span>NAL &amp; protocols</div>
+  </div>
+</div>
+
+<!-- ════ 2 · FILE = HEADER + INTERLEAVED ════ -->
+<div class="slide">
+  <div class="slide-title">01 — A Video File Is <em>Header + Frames</em></div>
+  <div class="slide-sub">mp4 · webm · mkv — all share this shape</div>
+  <div class="center">
+    <div class="filebar">
+      <div class="fb-seg fb-hdr" style="flex:0 0 130px;">HEADER<small>file type · brand</small></div>
+      <div class="fb-seg fb-idx" style="flex:0 0 170px;">INDEX / METADATA<small>tracks · codecs · timing · sample map</small></div>
+      <div class="fb-seg fb-data">MEDIA DATA — interleaved frames<small>V A V A V A V A …</small></div>
+    </div>
+    <svg viewBox="0 0 780 70" width="100%" style="max-width:780px;">
+      <g font-size="10">
+        <text x="65" y="16" fill="var(--amber)" text-anchor="middle">ftyp</text>
+        <text x="215" y="16" fill="var(--purple)" text-anchor="middle">moov</text>
+        <text x="480" y="16" fill="var(--blue)" text-anchor="middle">mdat</text>
+      </g>
+      <!-- interleave blocks -->
+      <g>
+        <rect x="320" y="30" width="34" height="26" rx="3" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="337" y="47" fill="var(--blue)" font-size="11" text-anchor="middle">V</text>
+        <rect x="360" y="34" width="22" height="18" rx="3" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="371" y="47" fill="var(--green)" font-size="9" text-anchor="middle">A</text>
+        <rect x="388" y="30" width="34" height="26" rx="3" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="405" y="47" fill="var(--blue)" font-size="11" text-anchor="middle">V</text>
+        <rect x="428" y="34" width="22" height="18" rx="3" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="439" y="47" fill="var(--green)" font-size="9" text-anchor="middle">A</text>
+        <rect x="456" y="30" width="34" height="26" rx="3" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="473" y="47" fill="var(--blue)" font-size="11" text-anchor="middle">V</text>
+        <rect x="496" y="34" width="22" height="18" rx="3" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="507" y="47" fill="var(--green)" font-size="9" text-anchor="middle">A</text>
+        <rect x="524" y="30" width="34" height="26" rx="3" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="541" y="47" fill="var(--blue)" font-size="11" text-anchor="middle">V</text>
+        <text x="600" y="47" fill="var(--muted)" font-size="10">… in time order →</text>
+      </g>
+    </svg>
+  </div>
+  <div class="note amber" style="margin-top:6px;">The <strong>header</strong> says <em>what</em> the file is. The <strong>index</strong> (mp4: <code>moov</code>) is a map: which byte is which frame, at what timestamp. The <strong>data</strong> (mp4: <code>mdat</code>) is the actual interleaved A/V bytes.</div>
+</div>
+
+<!-- ════ 3 · CONTAINER FAMILY ════ -->
+<div class="slide">
+  <div class="slide-title">01 — Same Idea, <em>Different Names</em></div>
+  <div class="slide-sub">the index and data are always there — the boxes are just renamed</div>
+  <table class="cmp-table" style="max-width:840px;">
+    <thead><tr><th>Container</th><th>Header box</th><th>Index / metadata</th><th>Media data</th></tr></thead>
+    <tbody>
+      <tr><td class="b">MP4 / MOV</td><td class="m">ftyp</td><td class="p">moov (atoms/boxes)</td><td>mdat</td></tr>
+      <tr><td class="b">WebM / MKV</td><td class="m">EBML header</td><td class="p">Segment ▸ Tracks + Cues</td><td>Clusters</td></tr>
+      <tr><td class="b">MPEG-TS</td><td class="m">— (no global header)</td><td class="p">PAT / PMT (recurring)</td><td>188-byte packets</td></tr>
+    </tbody>
+  </table>
+  <div class="note purple" style="margin-top:18px;"><strong>MPEG-TS is the outlier:</strong> instead of one header up front, it sprinkles small index packets (PAT/PMT) <em>throughout</em> the stream — so a player can tune in at any point. That's exactly what live broadcast needs. More in Part 3.</div>
+</div>
+
+<!-- ════ 4 · WHY INTERLEAVE ════ -->
+<div class="slide">
+  <div class="slide-title">01 — Why <em>Interleave</em> A &amp; V?</div>
+  <div class="slide-sub">so the player reads sound + picture for the same moment, in one forward pass</div>
+  <div class="cols cols-2" style="max-width:900px;">
+    <div class="col" style="align-items:center;">
+      <div class="label green">interleaved · good</div>
+      <svg viewBox="0 0 360 90" width="100%" style="max-width:360px;">
+        <g>
+          <rect x="6" y="20" width="30" height="40" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="21" y="44" fill="var(--blue)" font-size="11" text-anchor="middle">V</text>
+          <rect x="40" y="28" width="20" height="24" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="50" y="44" fill="var(--green)" font-size="9" text-anchor="middle">A</text>
+          <rect x="64" y="20" width="30" height="40" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="79" y="44" fill="var(--blue)" font-size="11" text-anchor="middle">V</text>
+          <rect x="98" y="28" width="20" height="24" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="108" y="44" fill="var(--green)" font-size="9" text-anchor="middle">A</text>
+          <rect x="122" y="20" width="30" height="40" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="137" y="44" fill="var(--blue)" font-size="11" text-anchor="middle">V</text>
+          <rect x="156" y="28" width="20" height="24" fill="var(--green-dim)" stroke="var(--green-border)"/>
+          <text x="250" y="44" fill="var(--green)" font-size="10">read straight through ✓</text>
+        </g>
+        <text x="6" y="80" fill="var(--muted)" font-size="9">tiny buffer · no seeking</text>
+      </svg>
+      <div class="note green" style="font-size:11.5px;">A &amp; V for each instant sit next to each other → sequential read, small buffer. Perfect for streaming off disk or network.</div>
+    </div>
+    <div class="col" style="align-items:center;">
+      <div class="label red">all-V-then-all-A · bad</div>
+      <svg viewBox="0 0 360 90" width="100%" style="max-width:360px;">
+        <rect x="6" y="20" width="180" height="40" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="96" y="44" fill="var(--blue)" font-size="11" text-anchor="middle">all video frames</text>
+        <rect x="190" y="28" width="160" height="24" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="270" y="44" fill="var(--green)" font-size="10" text-anchor="middle">all audio</text>
+        <path d="M96 64 Q180 90 270 56" stroke="var(--red)" stroke-width="1.4" fill="none" stroke-dasharray="3 3"/>
+        <text x="180" y="86" fill="var(--red)" font-size="9" text-anchor="middle">seek back &amp; forth to stay in sync ✗</text>
+      </svg>
+      <div class="note red" style="font-size:11.5px;">Player would have to jump across the whole file to pair audio with video. Huge buffering, impossible to stream.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ 5 · PROGRESSIVE DOWNLOAD ════ -->
+<div class="slide">
+  <div class="slide-title">02 — <em>Progressive Download</em></div>
+  <div class="slide-sub">start playing the front while the rest still downloads</div>
+  <div class="center">
+    <svg viewBox="0 0 820 230" width="100%" style="max-width:820px;">
+      <!-- timeline bar download -->
+      <text x="20" y="40" fill="var(--muted)" font-size="11">downloading →</text>
+      <rect x="20" y="50" width="780" height="34" rx="6" fill="var(--bg2)" stroke="var(--border)"/>
+      <rect x="20" y="50" width="120" height="34" rx="6" fill="var(--amber-dim)" stroke="var(--amber-border)"/><text x="80" y="71" fill="var(--amber)" font-size="10" text-anchor="middle">header+index</text>
+      <rect x="140" y="50" width="320" height="34" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="300" y="71" fill="var(--blue)" font-size="10" text-anchor="middle">chunks arrived</text>
+      <rect x="460" y="50" width="340" height="34" fill="var(--bg3)" stroke="var(--border)"/><text x="630" y="71" fill="var(--muted)" font-size="10" text-anchor="middle">still downloading…</text>
+
+      <!-- playhead -->
+      <line x1="300" y1="44" x2="300" y2="150" stroke="var(--teal)" stroke-width="2"/>
+      <polygon points="300,150 292,138 308,138" fill="var(--teal)"/>
+      <text x="300" y="168" fill="var(--teal)" font-size="11" text-anchor="middle">▶ playing here</text>
+
+      <!-- playback bar -->
+      <text x="20" y="200" fill="var(--muted)" font-size="11">playback (behind the download)</text>
+      <rect x="20" y="206" width="280" height="14" rx="4" fill="var(--teal-dim)" stroke="var(--teal-border)"/>
+    </svg>
+  </div>
+  <div class="note teal" style="margin-top:4px;">The player grabs the <strong>header + index first</strong>, learns where frames live, then decodes the chunks it already has while the network keeps filling the buffer ahead. No need to wait for the full file.</div>
+</div>
+
+<!-- ════ 6 · MOOV FRONT VS TAIL ════ -->
+<div class="slide">
+  <div class="slide-title">02 — The Catch: <em>Where Is the Index?</em></div>
+  <div class="slide-sub">progressive playback needs the index BEFORE the data</div>
+  <div class="cols cols-2" style="max-width:920px;">
+    <div class="col" style="align-items:center;">
+      <div class="label red">index at TAIL — default mp4</div>
+      <div class="filebar" style="max-width:380px;">
+        <div class="fb-seg fb-hdr" style="flex:0 0 50px;">ftyp</div>
+        <div class="fb-seg fb-data">mdat (data)</div>
+        <div class="fb-seg fb-idx" style="flex:0 0 70px;">moov</div>
+      </div>
+      <div class="note red" style="font-size:11.5px;">Player can't find frames until it reaches the <strong>end</strong> → must download (almost) the whole file before playback can begin. ✗ slow start</div>
+    </div>
+    <div class="col" style="align-items:center;">
+      <div class="label green">index at FRONT — faststart</div>
+      <div class="filebar" style="max-width:380px;">
+        <div class="fb-seg fb-hdr" style="flex:0 0 50px;">ftyp</div>
+        <div class="fb-seg fb-idx" style="flex:0 0 70px;">moov</div>
+        <div class="fb-seg fb-data">mdat (data)</div>
+      </div>
+      <div class="note green" style="font-size:11.5px;">Index arrives in the first few KB → player starts decoding almost immediately. ✓ instant start</div>
+    </div>
+  </div>
+  <div class="note amber" style="margin-top:14px;">Encoders write <code>moov</code> last by default (final sizes are only known when encoding ends). For the web you must <strong>move it to the front</strong>.</div>
+</div>
+
+<!-- ════ 7 · LAB FASTSTART ════ -->
+<div class="slide">
+  <div class="slide-title">02 — <em>Lab</em> · Move the Header, Watch It Play</div>
+  <div class="cols cols-2" style="max-width:960px;align-items:start;">
+    <div class="col">
+      <pre><span class="cm"># 1 · Index at TAIL (default) — the "slow" file</span>
+<span class="kw">ffmpeg</span> -i big_buck_bunny_1080p_h264.mov \
+       -c copy tail.mp4
+
+<span class="cm"># 2 · Index at FRONT — faststart, web-ready</span>
+<span class="kw">ffmpeg</span> -i big_buck_bunny_1080p_h264.mov \
+       -c copy -movflags <span class="str">+faststart</span> front.mp4
+
+<span class="cm"># 3 · Inspect atom order</span>
+<span class="kw">ffprobe</span> -v trace tail.mp4  2&gt;&amp;1 | grep -E "moov|mdat"
+<span class="kw">ffprobe</span> -v trace front.mp4 2&gt;&amp;1 | grep -E "moov|mdat"</pre>
+      <pre><span class="cm">&lt;!-- 4 · Play both in a browser --&gt;</span>
+<span class="tag">&lt;video</span> src=<span class="str">"tail.mp4"</span> controls<span class="tag">&gt;&lt;/video&gt;</span>
+<span class="tag">&lt;video</span> src=<span class="str">"front.mp4"</span> controls<span class="tag">&gt;&lt;/video&gt;</span></pre>
+    </div>
+    <div class="col" style="justify-content:center;">
+      <div class="note green"><strong>Expected:</strong> <code>front.mp4</code> starts almost instantly; <code>tail.mp4</code> hangs on a black frame / spinner until much more has buffered.</div>
+      <div class="note blue" style="font-size:11.5px;"><strong>Sharpen it:</strong> serve over a throttled connection (DevTools ▸ Network ▸ Slow 3G) to make the difference dramatic.</div>
+      <div class="note amber" style="font-size:11.5px;"><strong>Note:</strong> if the server supports HTTP <em>range requests</em>, a browser can fetch the tail <code>moov</code> with an extra round-trip and still play — just with a visible delay. Faststart removes that round-trip entirely.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ 8 · NAL UNITS ════ -->
+<div class="slide">
+  <div class="slide-title">03 — Inside the Video: <em>NAL Units</em></div>
+  <div class="slide-sub">H.264 / H.265 isn't one blob — it's a sequence of self-describing packets</div>
+  <div class="center">
+    <svg viewBox="0 0 840 150" width="100%" style="max-width:840px;">
+      <g font-size="10.5">
+        <rect x="10"  y="40" width="90"  height="56" rx="6" fill="var(--purple-dim)" stroke="var(--purple-border)"/><text x="55" y="66" fill="var(--purple)" text-anchor="middle" font-weight="600">SPS</text><text x="55" y="82" fill="var(--muted)" font-size="8.5" text-anchor="middle">video params</text>
+        <rect x="110" y="40" width="90"  height="56" rx="6" fill="var(--purple-dim)" stroke="var(--purple-border)"/><text x="155" y="66" fill="var(--purple)" text-anchor="middle" font-weight="600">PPS</text><text x="155" y="82" fill="var(--muted)" font-size="8.5" text-anchor="middle">picture params</text>
+        <rect x="210" y="40" width="150" height="56" rx="6" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="285" y="66" fill="var(--blue)" text-anchor="middle" font-weight="600">IDR slice</text><text x="285" y="82" fill="var(--muted)" font-size="8.5" text-anchor="middle">keyframe (I)</text>
+        <rect x="370" y="40" width="100" height="56" rx="6" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="420" y="66" fill="var(--green)" text-anchor="middle" font-weight="600">slice</text><text x="420" y="82" fill="var(--muted)" font-size="8.5" text-anchor="middle">P frame</text>
+        <rect x="480" y="40" width="100" height="56" rx="6" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="530" y="66" fill="var(--green)" text-anchor="middle" font-weight="600">slice</text><text x="530" y="82" fill="var(--muted)" font-size="8.5" text-anchor="middle">B frame</text>
+        <rect x="590" y="40" width="150" height="56" rx="6" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="665" y="66" fill="var(--blue)" text-anchor="middle" font-weight="600">IDR slice</text><text x="665" y="82" fill="var(--muted)" font-size="8.5" text-anchor="middle">next keyframe</text>
+        <text x="755" y="74" fill="var(--muted)" font-size="11">…</text>
+      </g>
+      <text x="10" y="24" fill="var(--muted)" font-size="10">┌ each NAL = [ start code ] + [ 1-byte header → type ] + payload</text>
+      <text x="10" y="128" fill="var(--muted)" font-size="10">SPS/PPS describe how to decode · IDR resets the decoder · slices carry the picture data</text>
+    </svg>
+  </div>
+  <div class="note purple" style="margin-top:4px;">NAL = <strong>Network Abstraction Layer</strong>. The codec emits these chunks so they can be packed into a file <em>or</em> dropped into network packets unchanged — same units, two destinations.</div>
+</div>
+
+<!-- ════ 9 · AUDIO FRAMES ════ -->
+<div class="slide">
+  <div class="slide-title">03 — And the Audio: <em>Frames</em></div>
+  <div class="slide-sub">AAC encodes audio into fixed little frames, each independently decodable</div>
+  <div class="center">
+    <svg viewBox="0 0 760 120" width="100%" style="max-width:760px;">
+      <g font-size="9.5">
+        <!-- frames -->
+        <g>
+          <rect x="20"  y="40" width="120" height="44" rx="5" fill="var(--green-dim)" stroke="var(--green-border)"/>
+          <rect x="20"  y="40" width="34"  height="44" rx="5" fill="var(--amber-dim)" stroke="var(--amber-border)"/>
+          <text x="37" y="66" fill="var(--amber)" font-size="8" text-anchor="middle">hdr</text>
+          <text x="100" y="66" fill="var(--green)" text-anchor="middle">1024 samples</text>
+        </g>
+        <rect x="150" y="40" width="120" height="44" rx="5" fill="var(--green-dim)" stroke="var(--green-border)"/><rect x="150" y="40" width="34" height="44" rx="5" fill="var(--amber-dim)" stroke="var(--amber-border)"/>
+        <rect x="280" y="40" width="120" height="44" rx="5" fill="var(--green-dim)" stroke="var(--green-border)"/><rect x="280" y="40" width="34" height="44" rx="5" fill="var(--amber-dim)" stroke="var(--amber-border)"/>
+        <rect x="410" y="40" width="120" height="44" rx="5" fill="var(--green-dim)" stroke="var(--green-border)"/><rect x="410" y="40" width="34" height="44" rx="5" fill="var(--amber-dim)" stroke="var(--amber-border)"/>
+        <text x="600" y="66" fill="var(--muted)" font-size="10">… one frame ≈ 21 ms</text>
+      </g>
+      <text x="20" y="26" fill="var(--muted)" font-size="10">ADTS header (for streaming) + payload — repeated per frame so a decoder can join mid-stream</text>
+      <text x="20" y="108" fill="var(--muted)" font-size="10">in a file the per-frame header is dropped (it's in the index); for RTP/TS it's added back</text>
+    </svg>
+  </div>
+  <div class="note green" style="margin-top:4px;">Like P-frames for video, each audio frame is small and regular — easy to packetize, easy to drop one without wrecking the rest.</div>
+</div>
+
+<!-- ════ 10 · TWO DESTINATIONS ════ -->
+<div class="slide">
+  <div class="slide-title">03 — One Source, <em>Two Destinations</em></div>
+  <div class="slide-sub">the same NAL + audio packets go into a file OR onto the wire</div>
+  <div class="center">
+    <svg viewBox="0 0 820 250" width="100%" style="max-width:820px;">
+      <!-- source -->
+      <rect x="310" y="10" width="200" height="56" rx="9" fill="var(--purple-dim)" stroke="var(--purple-border)"/>
+      <text x="410" y="34" fill="var(--purple)" font-size="12" text-anchor="middle" font-weight="600">Encoded packets</text>
+      <text x="410" y="52" fill="var(--muted)" font-size="9.5" text-anchor="middle">NAL units + audio frames</text>
+      <!-- split -->
+      <line x1="410" y1="66" x2="410" y2="92" stroke="var(--muted)" stroke-width="2"/>
+      <line x1="200" y1="92" x2="620" y2="92" stroke="var(--muted)" stroke-width="2"/>
+      <line x1="200" y1="92" x2="200" y2="118" stroke="var(--muted)" stroke-width="2" marker-end="url(#a)"/>
+      <line x1="620" y1="92" x2="620" y2="118" stroke="var(--muted)" stroke-width="2" marker-end="url(#a)"/>
+      <!-- file -->
+      <rect x="90" y="120" width="220" height="60" rx="9" fill="var(--blue-dim)" stroke="var(--blue-border)"/>
+      <text x="200" y="146" fill="var(--blue)" font-size="12" text-anchor="middle" font-weight="600">MUX → file</text>
+      <text x="200" y="164" fill="var(--muted)" font-size="9.5" text-anchor="middle">add index + timing · mp4 / mkv</text>
+      <text x="200" y="210" fill="var(--muted)" font-size="10" text-anchor="middle">store · seek · re-read later</text>
+      <!-- network -->
+      <rect x="510" y="120" width="220" height="60" rx="9" fill="var(--teal-dim)" stroke="var(--teal-border)"/>
+      <text x="620" y="146" fill="var(--teal)" font-size="12" text-anchor="middle" font-weight="600">PACKETIZE → network</text>
+      <text x="620" y="164" fill="var(--muted)" font-size="9.5" text-anchor="middle">wrap in protocol packets</text>
+      <text x="620" y="210" fill="var(--muted)" font-size="10" text-anchor="middle">send now · node → node · live</text>
+      <defs><marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--muted)"/></marker></defs>
+    </svg>
+  </div>
+  <div class="note teal" style="margin-top:4px;">A file is just packets <strong>at rest</strong>; a stream is the same packets <strong>in motion</strong>. The protocol decides how they're framed, addressed, and paced.</div>
+</div>
+
+<!-- ════ 11 · PROTOCOL LANDSCAPE ════ -->
+<div class="slide">
+  <div class="slide-title">03 — <em>Streaming Protocols</em> — Same Packets, Different Wire</div>
+  <table class="cmp-table" style="max-width:920px;">
+    <thead><tr><th>Protocol</th><th>Transport</th><th>Latency</th><th>Where it's used</th></tr></thead>
+    <tbody>
+      <tr><td class="b">RTSP + RTP</td><td class="m">UDP (mostly)</td><td class="g">~0.2–0.5 s</td><td>CCTV / IP cameras — pull a live feed</td></tr>
+      <tr><td class="b">RTMP</td><td class="m">TCP</td><td class="a">~2–5 s</td><td>Ingest to streaming servers (legacy, still common)</td></tr>
+      <tr><td class="b">WebRTC</td><td class="m">UDP (SRTP)</td><td class="g">&lt; 0.5 s</td><td>Browser calls, real-time interactive, VMS live grid</td></tr>
+      <tr><td class="b">UDP / MPEG-TS</td><td class="m">UDP</td><td class="g">~0.5–1 s</td><td>IPTV, broadcast contribution, multicast</td></tr>
+      <tr><td class="b">HTTP (HLS/DASH)</td><td class="m">TCP</td><td class="r">~3–30 s</td><td>Scale to millions via CDN — VOD &amp; live archive</td></tr>
+    </tbody>
+  </table>
+  <div class="note blue" style="margin-top:16px;">Pattern: <strong>UDP = low latency, may drop</strong> (live, interactive). <strong>TCP/HTTP = reliable, higher latency, scales on CDNs</strong> (broadcast to the masses). Pick by how "live" it must feel vs how many viewers.</div>
+</div>
+
+<!-- ════ 12 · TRY IT · UNICAST SINGLE → FAN-OUT ════ -->
+<div class="slide">
+  <div class="slide-title">03 — <em>Try It</em> · Send File over UDP/TS</div>
+  <div class="slide-sub">start simple: one sender → one player, then fan out</div>
+  <div class="center">
+    <!-- STEP 1 single -->
+    <svg viewBox="0 0 820 60" width="100%" style="max-width:820px;">
+      <rect x="10" y="12" width="140" height="40" rx="8" fill="var(--red-dim)" stroke="var(--red-border)"/><text x="80" y="37" fill="var(--red)" font-size="11" text-anchor="middle" font-weight="600">ffmpeg</text>
+      <line x1="150" y1="32" x2="300" y2="32" stroke="var(--muted)" stroke-width="2" marker-end="url(#au)"/>
+      <text x="225" y="24" fill="var(--teal)" font-size="9" text-anchor="middle">UDP/TS · 127.0.0.1:1234</text>
+      <rect x="305" y="12" width="140" height="40" rx="8" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="375" y="37" fill="var(--blue)" font-size="11" text-anchor="middle">ffplay</text>
+      <text x="470" y="36" fill="var(--muted)" font-size="10">one in → one out</text>
+      <defs><marker id="au" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L5,3 L0,6 Z" fill="var(--muted)"/></marker></defs>
+    </svg>
+  </div>
+  <div class="cols cols-2" style="max-width:920px;">
+    <div class="col">
+      <div class="label red">1 · sender — single output</div>
+      <pre><span class="kw">ffmpeg</span> -re -i big_buck_bunny_1080p_h264.mov \
+  -c copy -f mpegts \
+  <span class="str">udp://127.0.0.1:1234?pkt_size=1316</span></pre>
+    </div>
+    <div class="col">
+      <div class="label blue">2 · play it with ffplay</div>
+      <pre><span class="kw">ffplay</span> <span class="str">udp://127.0.0.1:1234</span></pre>
+      <div class="note blue" style="font-size:11px;"><strong>-re</strong> paces at real-time. <strong>-c copy</strong> works — file is already H.264/AAC.</div>
+    </div>
+  </div>
+  <div class="note amber" style="margin-top:10px;">Now <strong>fan out</strong> — plain UDP hits one address, so duplicate the output with <code>tee</code>, one port per player:</div>
+  <pre style="max-width:920px;"><span class="kw">ffmpeg</span> -re -i big_buck_bunny_1080p_h264.mov -c copy -f <span class="str">tee</span> \
+  <span class="str">"[f=mpegts]udp://127.0.0.1:1234|[f=mpegts]udp://127.0.0.1:1235"</span>
+
+<span class="kw">ffplay</span> udp://127.0.0.1:1234          <span class="cm"># player A</span>
+<span class="kw">ffplay</span> udp://127.0.0.1:1235          <span class="cm"># player B</span>
+<span class="kw">vlc</span>    udp://@:1235                 <span class="cm"># player B alt  (@ = listen on this port)</span></pre>
+</div>
+
+<!-- ════ 13 · MULTICAST CONCEPT ════ -->
+<div class="slide">
+  <div class="slide-title">03 — <em>Multicast</em> · One Send, Many Receivers</div>
+  <div class="slide-sub">stop duplicating at the sender — let the network copy for you</div>
+  <div class="cols cols-2" style="max-width:920px;align-items:center;">
+    <div class="col" style="align-items:center;">
+      <div class="label red">unicast · sender copies N times</div>
+      <svg viewBox="0 0 320 130" width="100%" style="max-width:300px;">
+        <rect x="10" y="48" width="80" height="34" rx="7" fill="var(--red-dim)" stroke="var(--red-border)"/><text x="50" y="69" fill="var(--red)" font-size="10" text-anchor="middle">ffmpeg</text>
+        <line x1="90" y1="58" x2="230" y2="22" stroke="var(--red)" stroke-width="1.5" marker-end="url(#m1)"/>
+        <line x1="90" y1="65" x2="230" y2="65" stroke="var(--red)" stroke-width="1.5" marker-end="url(#m1)"/>
+        <line x1="90" y1="72" x2="230" y2="108" stroke="var(--red)" stroke-width="1.5" marker-end="url(#m1)"/>
+        <rect x="235" y="8" width="75" height="28" rx="6" fill="var(--bg2)" stroke="var(--border)"/><text x="272" y="26" fill="var(--muted)" font-size="9" text-anchor="middle">player</text>
+        <rect x="235" y="51" width="75" height="28" rx="6" fill="var(--bg2)" stroke="var(--border)"/><text x="272" y="69" fill="var(--muted)" font-size="9" text-anchor="middle">player</text>
+        <rect x="235" y="94" width="75" height="28" rx="6" fill="var(--bg2)" stroke="var(--border)"/><text x="272" y="112" fill="var(--muted)" font-size="9" text-anchor="middle">player</text>
+        <defs><marker id="m1" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L4,3 L0,6 Z" fill="var(--red)"/></marker></defs>
+      </svg>
+      <div class="note red" style="font-size:11px;">3 players = 3× the upload bandwidth from one box.</div>
+    </div>
+    <div class="col" style="align-items:center;">
+      <div class="label green">multicast · sender sends once</div>
+      <svg viewBox="0 0 320 130" width="100%" style="max-width:300px;">
+        <rect x="10" y="48" width="80" height="34" rx="7" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="50" y="69" fill="var(--green)" font-size="10" text-anchor="middle">ffmpeg</text>
+        <line x1="90" y1="65" x2="150" y2="65" stroke="var(--green)" stroke-width="2.5" marker-end="url(#m2)"/>
+        <rect x="150" y="50" width="44" height="30" rx="6" fill="var(--teal-dim)" stroke="var(--teal-border)"/><text x="172" y="62" fill="var(--teal)" font-size="7.5" text-anchor="middle">switch</text><text x="172" y="73" fill="var(--teal)" font-size="7.5" text-anchor="middle">IGMP</text>
+        <line x1="194" y1="58" x2="240" y2="22" stroke="var(--teal)" stroke-width="1.5" marker-end="url(#m2)"/>
+        <line x1="194" y1="65" x2="240" y2="65" stroke="var(--teal)" stroke-width="1.5" marker-end="url(#m2)"/>
+        <line x1="194" y1="72" x2="240" y2="108" stroke="var(--teal)" stroke-width="1.5" marker-end="url(#m2)"/>
+        <rect x="245" y="8" width="65" height="28" rx="6" fill="var(--bg2)" stroke="var(--border)"/><text x="277" y="26" fill="var(--muted)" font-size="9" text-anchor="middle">player</text>
+        <rect x="245" y="51" width="65" height="28" rx="6" fill="var(--bg2)" stroke="var(--border)"/><text x="277" y="69" fill="var(--muted)" font-size="9" text-anchor="middle">player</text>
+        <rect x="245" y="94" width="65" height="28" rx="6" fill="var(--bg2)" stroke="var(--border)"/><text x="277" y="112" fill="var(--muted)" font-size="9" text-anchor="middle">player</text>
+        <defs><marker id="m2" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L4,3 L0,6 Z" fill="var(--teal)"/></marker></defs>
+      </svg>
+      <div class="note green" style="font-size:11px;">One stream out; the network duplicates only to those who <strong>joined</strong> the group.</div>
+    </div>
+  </div>
+  <div class="cols cols-2" style="max-width:920px;margin-top:6px;">
+    <div class="col">
+      <div class="label red">sender → group address</div>
+      <pre><span class="kw">ffmpeg</span> -re -i bbb.mov -c copy -f mpegts \
+  <span class="str">"udp://239.0.0.1:1234?pkt_size=1316&amp;ttl=1"</span></pre>
+    </div>
+    <div class="col">
+      <div class="label green">receivers join the group</div>
+      <pre><span class="kw">ffplay</span> <span class="str">udp://239.0.0.1:1234</span>
+<span class="kw">vlc</span>    <span class="str">udp://@239.0.0.1:1234</span>  <span class="cm"># @group</span></pre>
+    </div>
+  </div>
+  <div class="note teal" style="margin-top:8px;"><strong>239.0.0.0/8</strong> = the local/private multicast range (safe for a LAN). <strong>ttl=1</strong> keeps packets on your subnet. Receivers "join" via <strong>IGMP</strong> automatically when they open the URL. ⚠ Most <strong>Wi-Fi</strong> handles multicast poorly — demo on wired LAN, or fall back to the unicast/tee approach.</div>
+</div>
+
+<!-- ════ 14 · TRY IT · LIVE CAPTURE ════ -->
+<div class="slide">
+  <div class="slide-title">03 — <em>Try It</em> · Webcam / Screen → Stream</div>
+  <div class="slide-sub">raw capture must be ENCODED first — no -c copy</div>
+  <div class="center">
+    <svg viewBox="0 0 820 96" width="100%" style="max-width:820px;">
+      <rect x="10" y="26" width="180" height="48" rx="9" fill="var(--amber-dim)" stroke="var(--amber-border)"/><text x="100" y="48" fill="var(--amber)" font-size="11" text-anchor="middle" font-weight="600">Webcam / Screen</text><text x="100" y="64" fill="var(--muted)" font-size="9" text-anchor="middle">RAW frames</text>
+      <line x1="190" y1="50" x2="270" y2="50" stroke="var(--muted)" stroke-width="2" marker-end="url(#ac)"/><text x="230" y="42" fill="var(--red)" font-size="8.5" text-anchor="middle">must encode</text>
+      <rect x="275" y="26" width="230" height="48" rx="9" fill="var(--red-dim)" stroke="var(--red-border)"/><text x="390" y="48" fill="var(--red)" font-size="11" text-anchor="middle" font-weight="600">libx264</text><text x="390" y="64" fill="var(--muted)" font-size="9" text-anchor="middle">ultrafast · zerolatency · -g 30</text>
+      <line x1="505" y1="50" x2="585" y2="50" stroke="var(--muted)" stroke-width="2" marker-end="url(#ac)"/>
+      <rect x="590" y="26" width="220" height="48" rx="9" fill="var(--teal-dim)" stroke="var(--teal-border)"/><text x="700" y="48" fill="var(--teal)" font-size="11" text-anchor="middle" font-weight="600">MPEG-TS → UDP</text><text x="700" y="64" fill="var(--muted)" font-size="9" text-anchor="middle">udp://239.0.0.1:1234</text>
+      <defs><marker id="ac" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L5,3 L0,6 Z" fill="var(--muted)"/></marker></defs>
+    </svg>
+  </div>
+  <div class="cols cols-2" style="max-width:960px;">
+    <div class="col">
+      <div class="label blue">windows · dshow + gdigrab</div>
+      <pre><span class="cm"># list devices</span>
+<span class="kw">ffmpeg</span> -list_devices true -f dshow -i dummy
+
+<span class="cm"># WEBCAM in:</span>
+-f dshow -i video=<span class="str">"Integrated Camera"</span>
+<span class="cm"># SCREEN in (swap the input):</span>
+-f gdigrab -framerate 30 -i desktop</pre>
+    </div>
+    <div class="col">
+      <div class="label amber">macos · avfoundation</div>
+      <pre><span class="cm"># list devices (note the indexes)</span>
+<span class="kw">ffmpeg</span> -f avfoundation -list_devices true -i ""
+
+<span class="cm"># WEBCAM in (video:audio):</span>
+-f avfoundation -framerate 30 -i <span class="str">"0:0"</span>
+<span class="cm"># SCREEN in (use "Capture screen" index):</span>
+-f avfoundation -framerate 30 -i <span class="str">"1"</span></pre>
+    </div>
+  </div>
+  <div class="cols cols-2" style="max-width:960px;margin-top:10px;">
+    <div class="col">
+      <div class="label red">encode + send — identical after the input</div>
+      <pre><span class="cm"># append this to whichever input above:</span>
+  -c:v <span class="str">libx264</span> -preset ultrafast -tune zerolatency -b:v <span class="fl">2M</span> -g <span class="fl">30</span> -pix_fmt yuv420p \
+  -f mpegts <span class="str">udp://239.0.0.1:1234?pkt_size=1316</span></pre>
+    </div>
+    <div class="col">
+      <div class="label blue">watch the live capture</div>
+      <pre><span class="cm"># low-latency playback</span>
+<span class="kw">ffplay</span> -fflags nobuffer \
+  <span class="str">udp://239.0.0.1:1234</span></pre>
+      <div class="note blue" style="font-size:11px;"><code>-fflags nobuffer</code> trims the player's buffer so the preview stays close to live.</div>
+    </div>
+  </div>
+  <div class="note amber" style="margin-top:8px;"><strong>-g 30</strong> = a keyframe every second, so players joining mid-stream sync within ~1s. Lines shown wrapped — type as one line, or use your shell's continuation: <code>\</code> bash/zsh · <code>^</code> cmd · <code>`</code> PowerShell.</div>
+</div>
+
+<!-- ════ 15 · WHOLE JOURNEY ════ -->
+<div class="slide">
+  <div class="slide-title">The Whole <em>Journey</em></div>
+  <div class="slide-sub">capture → encode → package → deliver → decode</div>
+  <div class="center">
+    <svg viewBox="0 0 880 170" width="100%" style="max-width:880px;">
+      <g font-size="11">
+        <rect x="6"   y="58" width="120" height="56" rx="9" fill="var(--amber-dim)" stroke="var(--amber-border)"/><text x="66" y="82" fill="var(--amber)" text-anchor="middle" font-weight="600">Capture</text><text x="66" y="99" fill="var(--muted)" font-size="9" text-anchor="middle">camera</text>
+        <rect x="166" y="58" width="120" height="56" rx="9" fill="var(--red-dim)" stroke="var(--red-border)"/><text x="226" y="82" fill="var(--red)" text-anchor="middle" font-weight="600">Encode</text><text x="226" y="99" fill="var(--muted)" font-size="9" text-anchor="middle">→ NAL + audio</text>
+        <rect x="326" y="58" width="120" height="56" rx="9" fill="var(--purple-dim)" stroke="var(--purple-border)"/><text x="386" y="82" fill="var(--purple)" text-anchor="middle" font-weight="600">Package</text><text x="386" y="99" fill="var(--muted)" font-size="9" text-anchor="middle">mux / packetize</text>
+        <rect x="486" y="38" width="130" height="38" rx="9" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="551" y="62" fill="var(--blue)" text-anchor="middle" font-weight="600">File (faststart)</text>
+        <rect x="486" y="96" width="130" height="38" rx="9" fill="var(--teal-dim)" stroke="var(--teal-border)"/><text x="551" y="120" fill="var(--teal)" text-anchor="middle" font-weight="600">Stream (RTSP…)</text>
+        <rect x="666" y="58" width="120" height="56" rx="9" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="726" y="82" fill="var(--green)" text-anchor="middle" font-weight="600">Decode</text><text x="726" y="99" fill="var(--muted)" font-size="9" text-anchor="middle">&lt;video&gt; / player</text>
+      </g>
+      <g stroke="var(--muted)" stroke-width="2" marker-end="url(#aj)">
+        <line x1="126" y1="86" x2="164" y2="86"/><line x1="286" y1="86" x2="324" y2="86"/>
+        <line x1="446" y1="80" x2="484" y2="62"/><line x1="446" y1="92" x2="484" y2="110"/>
+        <line x1="616" y1="58" x2="664" y2="80"/><line x1="616" y1="114" x2="664" y2="92"/>
+      </g>
+      <defs><marker id="aj" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L5,3 L0,6 Z" fill="var(--muted)"/></marker></defs>
+    </svg>
+  </div>
+  <div class="note teal" style="margin-top:4px;">Everything in this lab is one idea seen twice: <strong>the same encoded packets either rest in a well-ordered file or fly across a protocol</strong> — that's the foundation the VMS is built on.</div>
+</div>
+
+</div><!-- /deck -->
+
+<div class="nav">
+  <button class="nav-btn" id="prev" disabled>← Prev</button>
+  <div class="counter" id="counter">1 / 15</div>
+  <button class="nav-btn" id="next">Next →</button>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const bar = document.getElementById('bar');
+const prev = document.getElementById('prev');
+const next = document.getElementById('next');
+const ctr  = document.getElementById('counter');
+let cur = 0;
+function go(n) {
+  slides[cur].classList.remove('active');
+  cur = n;
+  slides[cur].classList.add('active');
+  bar.style.width = ((cur + 1) / slides.length * 100) + '%';
+  ctr.textContent = (cur + 1) + ' / ' + slides.length;
+  prev.disabled = cur === 0;
+  next.disabled = cur === slides.length - 1;
+}
+prev.addEventListener('click', () => cur > 0 && go(cur - 1));
+next.addEventListener('click', () => cur < slides.length - 1 && go(cur + 1));
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { if (cur < slides.length - 1) go(cur + 1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { if (cur > 0) go(cur - 1); }
+});
+go(0);
+</script>
+</body>
+</html>
