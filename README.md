@@ -234,6 +234,44 @@ How to use it:
 
 This session connects data transfer and storage concepts to the real pipeline of a VMS: pull RTSP from cameras, record or transcode, then store and restream.
 
+## Video Streaming
+
+The [Video Streaming](./lab-video-streaming.html) lab explains how a video file is laid out on disk, how the web plays it before it finishes downloading, and how the same audio/video packets travel across streaming protocols.
+
+What it is:
+
+- a slide-based walkthrough of video file structure: header, index/metadata, and interleaved media data
+- an explanation of progressive download and why playback can start before a file fully arrives
+- coverage of NAL units and how A/V packets map onto streaming protocols
+
+How to use it:
+
+- start with the file-structure slides to see how `mp4`, `webm`, and `mkv` share the same header-plus-frames shape
+- follow the progressive download segment to understand why the web can play partial files
+- trace how interleaved frames become NAL units carried over streaming protocols
+
+This session connects on-disk video layout to the packets that move across the network during playback.
+
+## MediaMTX — CCTV Sim + VMS
+
+The [MediaMTX Lab](./lab-mediamtx-vms.html) is a hands-on exercise that runs two MediaMTX servers: one simulating a building full of cameras, and one acting as a Video Management Server (VMS).
+
+What it is:
+
+- a two-server architecture where a simulator pretends to be the cameras and a VMS pulls, records, and serves their streams
+- a CCTV simulator exposing webcam, mobile phone, and archived-footage virtual cameras on shifted ports
+- labs for adding VMS sources via config file and live via the REST API with `curl`
+- labs for automatic recording via config and combined automatic plus manual recording via the API
+
+How to use it:
+
+- set up two MediaMTX instances on shifted ports, one as the simulator and one as the VMS
+- simulate cameras with a webcam, a phone app over Wi-Fi, and looping archived footage
+- configure VMS sources first by file, then drive them live over the REST API
+- enable recording through config, then add and control recordings through the API
+
+This session shows the full VMS workflow in practice: pull RTSP from simulated cameras, record streams, and serve them back through a central management server.
+
 ## Why this project matters
 
 Understanding these three data structures is essential for anyone working with data retrieval, because each structure shapes how data is stored, searched, and joined.
