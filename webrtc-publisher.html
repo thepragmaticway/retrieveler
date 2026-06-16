@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebRTC Publisher → MediaMTX</title>
+<style>
+  :root {
+    --bg:#0d1117; --card:#161b22; --field:#21262d; --border:rgba(255,255,255,.1);
+    --text:#e6edf3; --muted:#7d8590; --green:#4ade80; --red:#f87171; --teal:#2dd4bf; --amber:#f59e0b;
+    --mono:'DM Mono',ui-monospace,monospace;
+  }
+  * { box-sizing:border-box; }
+  body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); margin:0; padding:20px; }
+  .container { max-width:1000px; margin:0 auto; }
+  h1 { font-size:22px; font-weight:600; letter-spacing:-.02em; margin:0 0 4px; }
+  .lead { color:var(--muted); font-size:13px; margin-bottom:18px; }
+  .banner { padding:10px 14px; border-radius:8px; font-size:12.5px; line-height:1.5; margin-bottom:16px; display:none; }
+  .banner.show { display:block; }
+  .banner.warn { background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.3); color:var(--red); }
+  .settings { background:var(--card); padding:16px; border-radius:10px; border:1px solid var(--border); margin-bottom:18px; }
+  .settings label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  input { width:100%; padding:9px 11px; border-radius:6px; border:1px solid var(--border); background:var(--field); color:#fff; margin-top:6px; font-family:var(--mono); font-size:13px; }
+  .row { display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
+  .check { display:flex; align-items:center; gap:7px; font-size:13px; color:var(--text); margin-top:10px; }
+  .check input { width:auto; margin:0; }
+  .streams { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .card { background:var(--card); padding:16px; border-radius:10px; border:1px solid var(--border); }
+  .card h2 { margin:0 0 10px; font-size:15px; font-weight:600; }
+  video { width:100%; background:#000; border-radius:6px; aspect-ratio:16/9; }
+  button { width:100%; padding:11px; cursor:pointer; border:none; border-radius:7px; font-weight:600; font-size:14px; margin-top:11px; transition:filter .15s; }
+  button:hover:not(:disabled) { filter:brightness(1.1); }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  .btn-start { background:var(--green); color:#04250f; }
+  .btn-stop { background:var(--red); color:#fff; }
+  .status { font-family:var(--mono); font-size:11px; margin-top:9px; color:var(--muted); min-height:15px; }
+  .status.live { color:var(--green); }
+  .status.err { color:var(--red); }
+  /* tabs */
+  .tabs { display:flex; gap:6px; margin-bottom:16px; }
+  .tab { flex:1 1 0; width:auto; padding:9px 16px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--muted); font-size:13px; font-weight:600; cursor:pointer; margin-top:0; }
+  .tab.active { background:var(--teal); color:#04231f; border-color:var(--teal); }
+  .panel { display:none; }
+  .panel.active { display:block; }
+  .player-card { max-width:640px; margin:0 auto; }
+  @media (max-width:680px){ .streams{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>WebRTC Publisher</h1>
+  <div class="lead">Publish your camera and screen to MediaMTX over WHIP. Video is forced to H.264 so the stream plays back over WebRTC, HLS, RTSP, and RTMP.</div>
+
+  <div id="secBanner" class="banner warn">⚠ This page isn't a secure context. Camera/screen access needs <b>https://</b> or <b>localhost</b>. On a phone, open it over HTTPS (e.g. a tunnel).</div>
+
+  <div class="settings">
+    <label for="serverUrl">MediaMTX WebRTC base URL</label>
+    <input id="serverUrl" type="text" value="http://localhost:8889">
+    <label class="check"><input id="forceH264" type="checkbox" checked> Force H.264 (recommended — enables RTMP/RTSP playback)</label>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tabPublish" onclick="switchTab('publish')">Publish</button>
+    <button class="tab" id="tabPlay" onclick="switchTab('play')">Play</button>
+  </div>
+
+  <div id="panelPublish" class="panel active">
+    <div class="streams">
+      <div class="card">
+        <h2>Camera</h2>
+        <input id="camPath" type="text" value="camera">
+        <video id="camPreview" autoplay muted playsinline></video>
+        <button id="camBtn" class="btn-start" onclick="toggleStream('cam')">Start camera</button>
+        <div id="camStatus" class="status">Disconnected</div>
+      </div>
+      <div class="card">
+        <h2>Screen</h2>
+        <input id="screenPath" type="text" value="screen">
+        <video id="screenPreview" autoplay muted playsinline></video>
+        <button id="screenBtn" class="btn-start" onclick="toggleStream('screen')">Start screen share</button>
+        <div id="screenStatus" class="status">Disconnected</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="panelPlay" class="panel">
+    <div class="card player-card">
+      <h2>Play a stream (WebRTC / WHEP)</h2>
+      <input id="playPath" type="text" value="camera">
+      <video id="playPreview" autoplay playsinline controls></video>
+      <button id="playBtn" class="btn-start" onclick="togglePlay()">Play</button>
+      <div id="playStatus" class="status">Disconnected</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const streams = {
+    cam:    { pc:null, stream:null, active:false, resource:null },
+    screen: { pc:null, stream:null, active:false, resource:null }
+  };
+
+  // --- environment checks ---
+  const secure = window.isSecureContext;
+  if (!secure) document.getElementById('secBanner').classList.add('show');
+
+  const screenSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+  if (!screenSupported) {
+    const b = document.getElementById('screenBtn');
+    b.disabled = true;
+    setStatus('screen', 'Screen share not supported on this device', 'err');
+  }
+
+  function setStatus(type, msg, cls='') {
+    const el = document.getElementById(`${type}Status`);
+    el.textContent = msg;
+    el.className = 'status' + (cls ? ' ' + cls : '');
+  }
+
+  // --- prefer H.264 on the connection's video transceiver ---
+  function preferH264(pc) {
+    if (!('getCapabilities' in RTCRtpSender)) return;
+    const caps = RTCRtpSender.getCapabilities('video');
+    if (!caps) return;
+    const h264   = caps.codecs.filter(c => c.mimeType.toLowerCase() === 'video/h264');
+    const others = caps.codecs.filter(c => c.mimeType.toLowerCase() !== 'video/h264');
+    if (!h264.length) return;
+    pc.getTransceivers().forEach(tx => {
+      if (tx.sender && tx.sender.track && tx.sender.track.kind === 'video' && tx.setCodecPreferences) {
+        try { tx.setCodecPreferences([...h264, ...others]); } catch (e) { /* ignore */ }
+      }
+    });
+  }
+
+  async function toggleStream(type) {
+    const s = streams[type];
+    const btn = document.getElementById(`${type}Btn`);
+    const label = type === 'cam' ? 'camera' : 'screen share';
+    const path = document.getElementById(`${type}Path`).value.trim();
+    const serverUrl = document.getElementById('serverUrl').value.trim().replace(/\/$/, '');
+    const videoElem = document.getElementById(`${type}Preview`);
+
+    if (s.active) { stop(type, label, btn, videoElem); return; }
+
+    if (!path) { setStatus(type, 'Set a path first', 'err'); return; }
+
+    try {
+      setStatus(type, 'Requesting media…');
+      s.stream = type === 'cam'
+        ? await navigator.mediaDevices.getUserMedia({ video:true, audio:true })
+        : await navigator.mediaDevices.getDisplayMedia({ video:true, audio:true });
+      videoElem.srcObject = s.stream;
+
+      const pc = new RTCPeerConnection({ iceServers:[{ urls:'stun:stun.l.google.com:19302' }] });
+      s.pc = pc;
+
+      // send-only transceivers (lets us set codec preferences)
+      s.stream.getTracks().forEach(t => pc.addTransceiver(t, { direction:'sendonly', streams:[s.stream] }));
+      if (document.getElementById('forceH264').checked) preferH264(pc);
+
+      setStatus(type, 'Negotiating…');
+      await pc.setLocalDescription(await pc.createOffer());
+      // wait for ICE gathering to finish (simple, robust for WHIP)
+      await waitIce(pc);
+
+      const whipUrl = `${serverUrl}/${path}/whip`;
+      const res = await fetch(whipUrl, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/sdp' },
+        body: pc.localDescription.sdp
+      });
+      if (!res.ok) throw new Error(`WHIP server returned ${res.status}`);
+
+      // remember the resource URL for clean teardown (WHIP Location header)
+      const loc = res.headers.get('Location');
+      s.resource = loc ? new URL(loc, whipUrl).href : null;
+
+      await pc.setRemoteDescription({ type:'answer', sdp: await res.text() });
+
+      btn.textContent = `Stop ${label}`;
+      btn.className = 'btn-stop';
+      setStatus(type, `Live · publishing H.264 to /${path}`, 'live');
+      s.active = true;
+
+      // if the user stops sharing via the browser's own UI
+      const vt = s.stream.getVideoTracks()[0];
+      if (vt) vt.onended = () => { if (s.active) stop(type, label, btn, videoElem); };
+
+    } catch (err) {
+      console.error(err);
+      setStatus(type, 'Failed: ' + err.message, 'err');
+      if (s.stream) s.stream.getTracks().forEach(t => t.stop());
+      if (s.pc) s.pc.close();
+      s.stream = s.pc = null; s.active = false;
+      videoElem.srcObject = null;
+    }
+  }
+
+  function waitIce(pc) {
+    if (pc.iceGatheringState === 'complete') return Promise.resolve();
+    return new Promise(resolve => {
+      const check = () => { if (pc.iceGatheringState === 'complete') { pc.removeEventListener('icegatheringstatechange', check); resolve(); } };
+      pc.addEventListener('icegatheringstatechange', check);
+      setTimeout(resolve, 2000); // fallback so we never hang
+    });
+  }
+
+  function stop(type, label, btn, videoElem) {
+    const s = streams[type];
+    if (s.resource) { fetch(s.resource, { method:'DELETE' }).catch(()=>{}); }
+    if (s.pc) s.pc.close();
+    if (s.stream) s.stream.getTracks().forEach(t => t.stop());
+    videoElem.srcObject = null;
+    btn.textContent = `Start ${label}`;
+    btn.className = 'btn-start';
+    setStatus(type, 'Disconnected');
+    s.pc = s.stream = s.resource = null; s.active = false;
+  }
+
+  // ---- tabs ----
+  function switchTab(which) {
+    const isPub = which === 'publish';
+    document.getElementById('tabPublish').classList.toggle('active', isPub);
+    document.getElementById('tabPlay').classList.toggle('active', !isPub);
+    document.getElementById('panelPublish').classList.toggle('active', isPub);
+    document.getElementById('panelPlay').classList.toggle('active', !isPub);
+  }
+
+  // ---- WHEP player ----
+  const player = { pc:null, active:false, resource:null };
+
+  async function togglePlay() {
+    const btn = document.getElementById('playBtn');
+    const videoElem = document.getElementById('playPreview');
+    if (player.active) { stopPlay(btn, videoElem); return; }
+
+    const path = document.getElementById('playPath').value.trim();
+    const serverUrl = document.getElementById('serverUrl').value.trim().replace(/\/$/, '');
+    if (!path) { setStatus('play', 'Set a path first', 'err'); return; }
+
+    try {
+      setStatus('play', 'Connecting…');
+      const pc = new RTCPeerConnection({ iceServers:[{ urls:'stun:stun.l.google.com:19302' }] });
+      player.pc = pc;
+
+      // we only receive
+      pc.addTransceiver('video', { direction:'recvonly' });
+      pc.addTransceiver('audio', { direction:'recvonly' });
+      pc.ontrack = (e) => { videoElem.srcObject = e.streams[0]; };
+      pc.oniceconnectionstatechange = () => {
+        if (['failed','disconnected'].includes(pc.iceConnectionState) && player.active)
+          setStatus('play', 'Connection lost', 'err');
+      };
+
+      await pc.setLocalDescription(await pc.createOffer());
+      await waitIce(pc);
+
+      const whepUrl = `${serverUrl}/${path}/whep`;
+      const res = await fetch(whepUrl, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/sdp' },
+        body: pc.localDescription.sdp
+      });
+      if (!res.ok) throw new Error(`WHEP server returned ${res.status}`);
+
+      const loc = res.headers.get('Location');
+      player.resource = loc ? new URL(loc, whepUrl).href : null;
+
+      await pc.setRemoteDescription({ type:'answer', sdp: await res.text() });
+
+      btn.textContent = 'Stop';
+      btn.className = 'btn-stop';
+      setStatus('play', `Playing /${path}`, 'live');
+      player.active = true;
+
+    } catch (err) {
+      console.error(err);
+      setStatus('play', 'Failed: ' + err.message, 'err');
+      if (player.pc) player.pc.close();
+      player.pc = null; player.active = false;
+      videoElem.srcObject = null;
+    }
+  }
+
+  function stopPlay(btn, videoElem) {
+    if (player.resource) { fetch(player.resource, { method:'DELETE' }).catch(()=>{}); }
+    if (player.pc) player.pc.close();
+    videoElem.srcObject = null;
+    btn.textContent = 'Play';
+    btn.className = 'btn-start';
+    setStatus('play', 'Disconnected');
+    player.pc = player.resource = null; player.active = false;
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab — Web Video Publishing (WebRTC + MediaMTX)</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d1117; --bg2: #161b22; --bg3: #21262d; --bg4: #080c11;
+  --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.15);
+  --text: #e6edf3; --muted: #7d8590;
+  --teal: #2dd4bf; --teal-dim: rgba(45,212,191,0.10); --teal-border: rgba(45,212,191,0.28);
+  --amber: #f59e0b; --amber-dim: rgba(245,158,11,0.10); --amber-border: rgba(245,158,11,0.28);
+  --blue: #60a5fa; --blue-dim: rgba(96,165,250,0.10); --blue-border: rgba(96,165,250,0.28);
+  --purple: #a78bfa; --purple-dim: rgba(167,139,250,0.10); --purple-border: rgba(167,139,250,0.28);
+  --green: #4ade80; --green-dim: rgba(74,222,128,0.10); --green-border: rgba(74,222,128,0.28);
+  --red: #f87171; --red-dim: rgba(248,113,113,0.10); --red-border: rgba(248,113,113,0.28);
+  --font: 'DM Sans', sans-serif; --mono: 'DM Mono', monospace;
+}
+html, body { width:100%; height:100%; background:var(--bg); color:var(--text); font-family:var(--font); overflow:hidden; }
+.deck { width:100%; height:100%; position:relative; }
+.slide { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:40px 60px 74px; opacity:0; pointer-events:none; transform:translateY(14px); transition:opacity 0.3s ease, transform 0.3s ease; }
+.slide.active { opacity:1; pointer-events:all; transform:translateY(0); }
+.nav { position:fixed; bottom:24px; left:0; right:0; display:flex; align-items:center; justify-content:center; gap:16px; z-index:100; }
+.nav-btn { background:var(--bg2); border:1px solid var(--border2); color:var(--text); font-family:var(--font); font-size:13px; padding:7px 18px; border-radius:8px; cursor:pointer; transition:background 0.15s, border-color 0.15s; }
+.nav-btn:hover { background:var(--bg3); border-color:var(--teal); }
+.nav-btn:disabled { opacity:0.2; cursor:default; }
+.counter { font-size:12px; color:var(--muted); font-family:var(--mono); min-width:54px; text-align:center; }
+.progress { position:fixed; top:0; left:0; right:0; height:2px; background:var(--border); z-index:100; }
+.progress-bar { height:100%; background:var(--teal); transition:width 0.3s ease; }
+.slide-title { font-size:24px; font-weight:600; letter-spacing:-0.02em; text-align:center; margin-bottom:20px; line-height:1.2; flex-shrink:0; }
+.slide-title em { font-style:normal; color:var(--teal); }
+.slide-sub { font-size:12px; font-family:var(--mono); color:var(--muted); text-align:center; margin-top:-14px; margin-bottom:20px; letter-spacing:0.04em; flex-shrink:0; }
+pre { background:var(--bg4); border:1px solid var(--border); border-radius:10px; padding:12px 16px; font-family:var(--mono); font-size:11px; line-height:1.65; color:#cdd9e5; overflow-x:auto; white-space:pre; }
+.cm { color:#8b949e; font-style:italic; } .kw { color:#ff7b72; } .str { color:#a5d6ff; } .fl { color:#79c0ff; } .out { color:#7ee787; } .fn { color:#d2a8ff; }
+.cols { display:grid; gap:14px; width:100%; max-width:960px; }
+.cols-2 { grid-template-columns:1fr 1fr; } .cols-3 { grid-template-columns:1fr 1fr 1fr; }
+.col { display:flex; flex-direction:column; gap:9px; }
+.label { font-size:10px; font-family:var(--mono); letter-spacing:0.1em; text-transform:uppercase; padding:5px 12px; border-radius:6px; display:inline-block; width:fit-content; }
+.label.teal { background:var(--teal-dim); color:var(--teal); border:1px solid var(--teal-border); }
+.label.amber { background:var(--amber-dim); color:var(--amber); border:1px solid var(--amber-border); }
+.label.blue { background:var(--blue-dim); color:var(--blue); border:1px solid var(--blue-border); }
+.label.purple { background:var(--purple-dim); color:var(--purple); border:1px solid var(--purple-border); }
+.label.green { background:var(--green-dim); color:var(--green); border:1px solid var(--green-border); }
+.label.red { background:var(--red-dim); color:var(--red); border:1px solid var(--red-border); }
+.note { border-radius:10px; padding:11px 16px; font-size:12px; line-height:1.6; width:100%; max-width:960px; flex-shrink:0; }
+.note.teal { background:var(--teal-dim); border:1px solid var(--teal-border); }
+.note.amber { background:var(--amber-dim); border:1px solid var(--amber-border); }
+.note.purple { background:var(--purple-dim); border:1px solid var(--purple-border); }
+.note.blue { background:var(--blue-dim); border:1px solid var(--blue-border); }
+.note.red { background:var(--red-dim); border:1px solid var(--red-border); }
+.note.green { background:var(--green-dim); border:1px solid var(--green-border); }
+.note strong { color:var(--teal); } .note.amber strong { color:var(--amber); } .note.purple strong { color:var(--purple); } .note.blue strong { color:var(--blue); } .note.red strong { color:var(--red); } .note.green strong { color:var(--green); }
+.note code { font-family:var(--mono); font-size:11px; color:var(--teal); background:var(--bg4); padding:1px 6px; border-radius:4px; }
+.cover-tag { font-size:11px; font-family:var(--mono); color:var(--teal); letter-spacing:0.12em; text-transform:uppercase; border:1px solid var(--teal-border); background:var(--teal-dim); padding:4px 14px; border-radius:20px; margin-bottom:22px; }
+.cover-title { font-size:42px; font-weight:600; letter-spacing:-0.03em; text-align:center; line-height:1.1; margin-bottom:14px; }
+.cover-title em { font-style:normal; color:var(--teal); }
+.cover-desc { font-size:14px; color:var(--muted); text-align:center; max-width:560px; line-height:1.65; margin-bottom:28px; }
+.topic-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:640px; width:100%; }
+.topic-item { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 11px; font-size:11px; font-family:var(--mono); color:var(--muted); text-align:center; line-height:1.4; }
+.topic-item span { display:block; color:var(--teal); font-size:10px; margin-bottom:3px; }
+.cmp-table { width:100%; max-width:900px; border-collapse:collapse; font-size:12px; }
+.cmp-table th, .cmp-table td { padding:8px 14px; text-align:left; border-bottom:1px solid var(--border); }
+.cmp-table th { font-family:var(--mono); font-size:9.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--muted); background:var(--bg2); }
+.cmp-table th:first-child { border-radius:8px 0 0 0; } .cmp-table th:last-child { border-radius:0 8px 0 0; }
+.cmp-table tr:last-child td { border-bottom:none; }
+.cmp-table td:first-child { color:var(--text); font-family:var(--mono); font-size:11.5px; }
+.cmp-table tbody tr:hover { background:var(--bg2); }
+.cmp-table .g { color:var(--green); } .cmp-table .a { color:var(--amber); } .cmp-table .r { color:var(--red); } .cmp-table .b { color:var(--blue); } .cmp-table .p { color:var(--purple); } .cmp-table .m { color:var(--muted); font-family:var(--mono); font-size:11px; } .cmp-table .yes { color:var(--green); } .cmp-table .no { color:var(--red); }
+.center { display:flex; flex-direction:column; align-items:center; gap:14px; width:100%; }
+svg text { font-family:var(--mono); }
+.steps { display:flex; flex-direction:column; gap:8px; width:100%; max-width:600px; }
+.step { display:flex; gap:12px; align-items:flex-start; background:var(--bg2); border:1px solid var(--border); border-radius:9px; padding:10px 14px; }
+.step-num { flex-shrink:0; width:22px; height:22px; border-radius:50%; background:var(--teal-dim); border:1px solid var(--teal-border); color:var(--teal); font-family:var(--mono); font-size:11px; display:flex; align-items:center; justify-content:center; }
+.step-txt { font-size:12px; line-height:1.5; padding-top:2px; }
+.step-txt code { font-family:var(--mono); font-size:10.5px; color:var(--teal); }
+.home-link { position:fixed; top:18px; left:20px; z-index:110; color:var(--teal); text-decoration:none; font-family:var(--mono); font-size:12px; background:rgba(13,17,23,0.88); border:1px solid var(--teal-border); border-radius:999px; padding:7px 12px; }
+.home-link:hover { color:var(--text); border-color:var(--teal); }
+</style>
+</head>
+<body>
+
+<a href="index.html" class="home-link">← Back to overview</a>
+<div class="progress"><div class="progress-bar" id="bar"></div></div>
+<div class="deck">
+
+<!-- ════ 1 · COVER ════ -->
+<div class="slide active">
+  <div class="cover-tag">Lab · Video Engineering IV</div>
+  <div class="cover-title"><em>Web</em> Video Publishing — WebRTC + MediaMTX</div>
+  <div class="cover-desc">Build a browser app that publishes camera and screen to MediaMTX over WebRTC — running from any desktop or phone — then play it back over WebRTC, HLS, or RTSP.</div>
+  <div class="topic-grid">
+    <div class="topic-item"><span>01</span>Media Device API</div>
+    <div class="topic-item"><span>02</span>How WebRTC works</div>
+    <div class="topic-item"><span>03</span>ICE · STUN · TURN</div>
+    <div class="topic-item"><span>04</span>Streams &amp; tracks</div>
+    <div class="topic-item"><span>05</span>Browser codecs</div>
+    <div class="topic-item"><span>06</span>WHIP publish · WHEP play</div>
+    <div class="topic-item"><span>07</span>Build the publisher UI</div>
+    <div class="topic-item"><span>08</span>Play on any protocol</div>
+    <div class="topic-item"><span>09</span>Lab + checklist</div>
+  </div>
+</div>
+
+<!-- ════ 2 · ARCHITECTURE ════ -->
+<div class="slide">
+  <div class="slide-title">The <em>Goal</em></div>
+  <div class="slide-sub">browser captures → publishes over WebRTC → MediaMTX serves it to everyone</div>
+  <div class="center">
+    <svg viewBox="0 0 900 250" width="100%" style="max-width:900px;">
+      <rect x="10" y="60" width="200" height="130" rx="12" fill="var(--blue-dim)" stroke="var(--blue-border)" stroke-width="1.5"/>
+      <text x="110" y="84" fill="var(--blue)" font-size="12" text-anchor="middle" font-weight="600">BROWSER (any device)</text>
+      <rect x="28" y="100" width="76" height="34" rx="6" fill="var(--bg2)" stroke="var(--border)"/><text x="66" y="121" fill="var(--text)" font-size="9.5" text-anchor="middle">📷 camera</text>
+      <rect x="116" y="100" width="76" height="34" rx="6" fill="var(--bg2)" stroke="var(--border)"/><text x="154" y="121" fill="var(--text)" font-size="9.5" text-anchor="middle">🖥 screen</text>
+      <text x="110" y="160" fill="var(--muted)" font-size="9" text-anchor="middle">getUserMedia /</text>
+      <text x="110" y="173" fill="var(--muted)" font-size="9" text-anchor="middle">getDisplayMedia</text>
+      <line x1="210" y1="125" x2="330" y2="125" stroke="var(--teal)" stroke-width="2.5" marker-end="url(#a)"/>
+      <text x="270" y="113" fill="var(--teal)" font-size="9.5" text-anchor="middle">WHIP</text>
+      <text x="270" y="143" fill="var(--muted)" font-size="8" text-anchor="middle">WebRTC publish</text>
+      <rect x="335" y="60" width="200" height="130" rx="12" fill="var(--teal-dim)" stroke="var(--teal-border)" stroke-width="1.5"/>
+      <text x="435" y="100" fill="var(--teal)" font-size="13" text-anchor="middle" font-weight="600">MediaMTX</text>
+      <text x="435" y="122" fill="var(--muted)" font-size="9" text-anchor="middle">one ingest, many egress</text>
+      <text x="435" y="150" fill="var(--muted)" font-size="9" text-anchor="middle">:8889 WHIP/WHEP</text>
+      <line x1="535" y1="125" x2="640" y2="125" stroke="var(--muted)" stroke-width="2" marker-end="url(#a)"/>
+      <rect x="645" y="42" width="245" height="40" rx="8" fill="var(--bg2)" stroke="var(--purple-border)"/><text x="767" y="66" fill="var(--purple)" font-size="10" text-anchor="middle">WebRTC · browser, sub-second</text>
+      <rect x="645" y="92" width="245" height="40" rx="8" fill="var(--bg2)" stroke="var(--green-border)"/><text x="767" y="116" fill="var(--green)" font-size="10" text-anchor="middle">HLS · any device incl. iOS</text>
+      <rect x="645" y="142" width="245" height="40" rx="8" fill="var(--bg2)" stroke="var(--amber-border)"/><text x="767" y="166" fill="var(--amber)" font-size="10" text-anchor="middle">RTSP · ffplay, VLC, VMS</text>
+      <defs><marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--teal)"/></marker></defs>
+    </svg>
+  </div>
+  <div class="note teal" style="margin-top:4px;">No app install, no plugin — a web page is the camera. This is how you'd add "stream from your phone" to the VMS. <strong>WHIP</strong> = the standard HTTP way to start a WebRTC publish; MediaMTX speaks it natively.</div>
+</div>
+
+<!-- ════ 3 · MEDIA DEVICE API ════ -->
+<div class="slide">
+  <div class="slide-title">01 — The <em>Media Device</em> API</div>
+  <div class="slide-sub">one call gets a live MediaStream; a stream is a bag of tracks</div>
+  <div class="cols cols-2">
+    <div class="col">
+      <div class="label blue">camera + mic</div>
+      <pre><span class="kw">const</span> stream = <span class="kw">await</span> navigator.mediaDevices
+  .<span class="fn">getUserMedia</span>({ video: <span class="kw">true</span>, audio: <span class="kw">true</span> });
+
+video.srcObject = stream;   <span class="cm">// preview</span></pre>
+      <div class="label purple">screen (+ system audio)</div>
+      <pre><span class="kw">const</span> stream = <span class="kw">await</span> navigator.mediaDevices
+  .<span class="fn">getDisplayMedia</span>({ video: <span class="kw">true</span>, audio: <span class="kw">true</span> });</pre>
+    </div>
+    <div class="col">
+      <div class="label teal">a stream is made of tracks</div>
+      <pre>stream.<span class="fn">getVideoTracks</span>()  <span class="cm">// [VideoTrack]</span>
+stream.<span class="fn">getAudioTracks</span>()  <span class="cm">// [AudioTrack]</span>
+
+<span class="kw">const</span> t = stream.getVideoTracks()[<span class="fl">0</span>];
+t.label      <span class="cm">// "FaceTime HD Camera"</span>
+t.enabled = <span class="kw">false</span>   <span class="cm">// mute / pause</span>
+t.<span class="fn">stop</span>()      <span class="cm">// release the device</span></pre>
+      <div class="note red" style="font-size:11px;"><strong>Secure context required:</strong> these APIs only work on <code>https://</code> or <code>localhost</code>. On a phone hitting <code>http://192.168.x.x</code> they're <em>blocked</em> — see the lab's HTTPS step.</div>
+    </div>
+  </div>
+  <div class="note amber" style="margin-top:8px;"><strong>Mobile reality:</strong> <code>getUserMedia</code> (camera) works great on phones. <code>getDisplayMedia</code> (screen share) is <strong>not supported</strong> on most mobile browsers — that button is desktop-only.</div>
+</div>
+
+<!-- ════ 4 · HOW WEBRTC WORKS ════ -->
+<div class="slide">
+  <div class="slide-title">02 — How <em>WebRTC</em> Connects</div>
+  <div class="slide-sub">signaling is out-of-band; media flows peer-to-peer</div>
+  <div class="center">
+    <svg viewBox="0 0 880 230" width="100%" style="max-width:880px;">
+      <rect x="20" y="80" width="150" height="70" rx="10" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="95" y="110" fill="var(--blue)" font-size="12" text-anchor="middle" font-weight="600">Browser</text><text x="95" y="128" fill="var(--muted)" font-size="9" text-anchor="middle">RTCPeerConnection</text>
+      <rect x="710" y="80" width="150" height="70" rx="10" fill="var(--teal-dim)" stroke="var(--teal-border)"/><text x="785" y="110" fill="var(--teal)" font-size="12" text-anchor="middle" font-weight="600">MediaMTX</text>
+      <!-- signaling -->
+      <rect x="330" y="14" width="220" height="40" rx="8" fill="var(--amber-dim)" stroke="var(--amber-border)"/><text x="440" y="32" fill="var(--amber)" font-size="10" text-anchor="middle" font-weight="600">1 · SIGNALING (HTTP / WHIP)</text><text x="440" y="46" fill="var(--muted)" font-size="8.5" text-anchor="middle">exchange SDP offer ⇄ answer</text>
+      <path d="M120 80 Q300 20 330 34" stroke="var(--amber)" stroke-width="1.4" fill="none" stroke-dasharray="4 3"/>
+      <path d="M760 80 Q560 20 550 34" stroke="var(--amber)" stroke-width="1.4" fill="none" stroke-dasharray="4 3"/>
+      <!-- media -->
+      <line x1="170" y1="120" x2="710" y2="120" stroke="var(--green)" stroke-width="3" marker-end="url(#a2)" marker-start="url(#a2s)"/>
+      <rect x="350" y="128" width="180" height="34" rx="8" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="440" y="149" fill="var(--green)" font-size="10" text-anchor="middle" font-weight="600">2 · MEDIA (SRTP/UDP)</text>
+      <text x="440" y="190" fill="var(--muted)" font-size="9" text-anchor="middle">audio + video packets flow directly, encrypted</text>
+      <defs>
+        <marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--green)"/></marker>
+        <marker id="a2s" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto"><path d="M6,0 L0,3 L6,6 Z" fill="var(--green)"/></marker>
+      </defs>
+    </svg>
+  </div>
+  <div class="note blue" style="margin-top:4px;">The two sides first <strong>describe themselves</strong> to each other (SDP: codecs, IPs, keys) over an HTTP channel — that's <strong>WHIP</strong>. Once they agree, encrypted media flows on its own UDP path. Offer goes out, answer comes back, done.</div>
+</div>
+
+<!-- ════ 5 · ICE / STUN / TURN ════ -->
+<div class="slide">
+  <div class="slide-title">03 — <em>ICE</em> · Finding a Path Through NAT</div>
+  <div class="slide-sub">STUN discovers your public address · TURN relays when direct fails</div>
+  <div class="center">
+    <svg viewBox="0 0 880 230" width="100%" style="max-width:880px;">
+      <rect x="20" y="90" width="120" height="60" rx="9" fill="var(--blue-dim)" stroke="var(--blue-border)"/><text x="80" y="125" fill="var(--blue)" font-size="11" text-anchor="middle">Peer A</text>
+      <rect x="740" y="90" width="120" height="60" rx="9" fill="var(--teal-dim)" stroke="var(--teal-border)"/><text x="800" y="125" fill="var(--teal)" font-size="11" text-anchor="middle">Peer B</text>
+      <!-- STUN -->
+      <rect x="320" y="10" width="240" height="44" rx="9" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="440" y="30" fill="var(--green)" font-size="10" text-anchor="middle" font-weight="600">STUN — "what's my public IP?"</text><text x="440" y="45" fill="var(--muted)" font-size="8.5" text-anchor="middle">cheap · works for most networks</text>
+      <path d="M80 90 Q200 50 320 38" stroke="var(--green)" stroke-width="1.3" fill="none" stroke-dasharray="3 3"/>
+      <!-- direct path -->
+      <line x1="140" y1="120" x2="740" y2="120" stroke="var(--green)" stroke-width="2.5" marker-end="url(#a3)" marker-start="url(#a3s)"/>
+      <text x="440" y="112" fill="var(--green)" font-size="10" text-anchor="middle" font-weight="600">✓ direct P2P (best)</text>
+      <!-- TURN -->
+      <rect x="320" y="176" width="240" height="44" rx="9" fill="var(--amber-dim)" stroke="var(--amber-border)"/><text x="440" y="196" fill="var(--amber)" font-size="10" text-anchor="middle" font-weight="600">TURN — relay server</text><text x="440" y="211" fill="var(--muted)" font-size="8.5" text-anchor="middle">fallback when firewalls block direct · costs bandwidth</text>
+      <path d="M80 150 Q200 200 320 198" stroke="var(--amber)" stroke-width="1.3" fill="none" stroke-dasharray="3 3"/>
+      <path d="M800 150 Q680 200 560 198" stroke="var(--amber)" stroke-width="1.3" fill="none" stroke-dasharray="3 3"/>
+      <defs>
+        <marker id="a3" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L5,3 L0,6 Z" fill="var(--green)"/></marker>
+        <marker id="a3s" markerWidth="7" markerHeight="7" refX="2" refY="3" orient="auto"><path d="M5,0 L0,3 L5,6 Z" fill="var(--green)"/></marker>
+      </defs>
+    </svg>
+  </div>
+  <div class="note green" style="margin-top:4px;"><strong>ICE</strong> gathers every possible route (local IP, STUN-discovered public IP, TURN relay), tries them, and keeps the best. On a LAN it connects directly — <code>stun:stun.l.google.com:19302</code> is enough for the lab. You only need TURN to cross strict corporate firewalls or the open internet.</div>
+</div>
+
+<!-- ════ 6 · LAYERS / TRACKS ════ -->
+<div class="slide">
+  <div class="slide-title">04 — Inside a Connection: <em>Streams, Tracks &amp; Data</em></div>
+  <div class="slide-sub">media rides SRTP, arbitrary data rides a DataChannel — same secure transport</div>
+  <div class="center">
+    <svg viewBox="0 0 820 250" width="100%" style="max-width:820px;">
+      <!-- app layer -->
+      <text x="20" y="28" fill="var(--muted)" font-size="9.5">APP</text>
+      <rect x="60" y="12" width="340" height="56" rx="8" fill="var(--blue-dim)" stroke="var(--blue-border)"/>
+      <text x="230" y="32" fill="var(--blue)" font-size="10.5" text-anchor="middle" font-weight="600">MediaStream → MediaStreamTracks</text>
+      <text x="150" y="52" fill="var(--green)" font-size="9" text-anchor="middle">🎬 video track</text>
+      <text x="300" y="52" fill="var(--amber)" font-size="9" text-anchor="middle">🔊 audio track</text>
+      <rect x="430" y="12" width="330" height="56" rx="8" fill="var(--purple-dim)" stroke="var(--purple-border)"/>
+      <text x="595" y="38" fill="var(--purple)" font-size="10.5" text-anchor="middle" font-weight="600">RTCDataChannel</text>
+      <text x="595" y="54" fill="var(--muted)" font-size="9" text-anchor="middle">messages, metadata, control</text>
+      <!-- secure layer -->
+      <text x="20" y="108" fill="var(--muted)" font-size="9.5">SECURE</text>
+      <rect x="60" y="92" width="340" height="40" rx="8" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="230" y="116" fill="var(--green)" font-size="10.5" text-anchor="middle" font-weight="600">SRTP (encrypted media)</text>
+      <rect x="430" y="92" width="330" height="40" rx="8" fill="var(--purple-dim)" stroke="var(--purple-border)"/><text x="595" y="116" fill="var(--purple)" font-size="10.5" text-anchor="middle" font-weight="600">SCTP (reliable data)</text>
+      <!-- dtls -->
+      <text x="20" y="166" fill="var(--muted)" font-size="9.5">CRYPTO</text>
+      <rect x="60" y="150" width="700" height="36" rx="8" fill="var(--amber-dim)" stroke="var(--amber-border)"/><text x="410" y="172" fill="var(--amber)" font-size="10.5" text-anchor="middle" font-weight="600">DTLS — handshake &amp; encryption keys</text>
+      <!-- ice -->
+      <text x="20" y="222" fill="var(--muted)" font-size="9.5">NET</text>
+      <rect x="60" y="206" width="700" height="36" rx="8" fill="var(--teal-dim)" stroke="var(--teal-border)"/><text x="410" y="228" fill="var(--teal)" font-size="10.5" text-anchor="middle" font-weight="600">ICE — the chosen UDP path (host / STUN / TURN)</text>
+    </svg>
+  </div>
+  <div class="note purple" style="margin-top:4px;">For this lab we only push <strong>tracks</strong> (camera video + mic audio). The <strong>DataChannel</strong> sibling is how WebRTC also moves files, chat, or game state over the very same connection — good to know, not needed here.</div>
+</div>
+
+<!-- ════ 7 · CODECS BY BROWSER ════ -->
+<div class="slide">
+  <div class="slide-title">05 — <em>Codec</em> Support by Browser</div>
+  <div class="slide-sub">WebRTC negotiates a codec both sides share — but the default pick matters</div>
+  <table class="cmp-table" style="max-width:820px;">
+    <thead><tr><th>Codec</th><th>Chrome / Edge</th><th>Firefox</th><th>Safari</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="b">H.264</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="m">universal · best for re-streaming</td></tr>
+      <tr><td class="b">VP8</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="m">webm · common Chrome default</td></tr>
+      <tr><td class="b">VP9</td><td class="yes">✓</td><td class="yes">✓</td><td class="a">✓ (15+)</td><td class="m">webm · better compression</td></tr>
+      <tr><td class="b">AV1</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">partial</td><td class="m">newest · high CPU</td></tr>
+      <tr><td class="b">Opus (audio)</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="m">the WebRTC audio default everywhere</td></tr>
+    </tbody>
+  </table>
+  <div class="note amber" style="margin-top:16px;"><strong>Chrome tends to offer VP8/VP9 (webm) first.</strong> That plays fine over WebRTC and HLS — but it breaks the moment you want RTMP, which is H.264-only. The next slide fixes this.</div>
+</div>
+
+<!-- ════ 8 · CODEC GOTCHA / FORCE H264 ════ -->
+<div class="slide">
+  <div class="slide-title">05 — Force <em>H.264</em> for Compatibility</div>
+  <div class="slide-sub">reorder the codec list before the offer so every player works</div>
+  <div class="cols cols-2">
+    <div class="col">
+      <pre><span class="cm">// add tracks as send-only transceivers</span>
+stream.getTracks().<span class="fn">forEach</span>(t =&gt;
+  pc.<span class="fn">addTransceiver</span>(t, {
+    direction: <span class="str">'sendonly'</span>, streams:[stream]
+  }));
+
+<span class="cm">// prefer H.264 on the video transceiver</span>
+<span class="kw">const</span> caps = RTCRtpSender
+  .<span class="fn">getCapabilities</span>(<span class="str">'video'</span>).codecs;
+<span class="kw">const</span> h264 = caps.filter(c =&gt;
+  c.mimeType === <span class="str">'video/H264'</span>);
+
+pc.getTransceivers().forEach(tx =&gt; {
+  <span class="kw">if</span> (tx.sender.track?.kind === <span class="str">'video'</span>)
+    tx.<span class="fn">setCodecPreferences</span>(
+      [...h264, ...caps.filter(c=&gt;
+        c.mimeType!==<span class="str">'video/H264'</span>)]);
+});</pre>
+    </div>
+    <div class="col" style="justify-content:center;">
+      <div class="note green"><strong>Why:</strong> publish H.264 + Opus and your single stream is readable over <strong>WebRTC, HLS, and RTSP</strong> without any server-side transcoding.</div>
+      <div class="note red"><strong>Without this:</strong> Chrome picks VP8 → RTMP playback fails, and HLS over older players needs a transcode. One line of codec ordering saves a lot of pain.</div>
+      <div class="note blue" style="font-size:11px;"><code>setCodecPreferences</code> is supported in current Chrome, Edge, Firefox, and Safari. If H.264 isn't in the caps list, the browser falls back gracefully to the next codec.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ 9 · WHIP PUBLISH ════ -->
+<div class="slide">
+  <div class="slide-title">06 — <em>WHIP</em> · Publish in 4 Steps</div>
+  <div class="slide-sub">getUserMedia → offer → POST to MediaMTX → apply answer</div>
+  <pre style="max-width:900px;"><span class="cm">// 1 · capture + peer connection</span>
+<span class="kw">const</span> stream = <span class="kw">await</span> navigator.mediaDevices.getUserMedia({ video:<span class="kw">true</span>, audio:<span class="kw">true</span> });
+<span class="kw">const</span> pc = <span class="kw">new</span> RTCPeerConnection({ iceServers:[{ urls:<span class="str">'stun:stun.l.google.com:19302'</span> }] });
+stream.getTracks().forEach(t =&gt; pc.addTransceiver(t, { direction:<span class="str">'sendonly'</span>, streams:[stream] }));
+
+<span class="cm">// 2 · create the offer (SDP)</span>
+<span class="kw">await</span> pc.setLocalDescription(<span class="kw">await</span> pc.createOffer());
+
+<span class="cm">// 3 · POST the offer to MediaMTX's WHIP endpoint</span>
+<span class="kw">const</span> res = <span class="kw">await</span> fetch(<span class="str">`http://localhost:8889/${path}/whip`</span>, {
+  method:<span class="str">'POST'</span>, headers:{ <span class="str">'Content-Type'</span>:<span class="str">'application/sdp'</span> }, body:pc.localDescription.sdp });
+
+<span class="cm">// 4 · apply MediaMTX's answer → media starts flowing</span>
+<span class="kw">await</span> pc.setRemoteDescription({ type:<span class="str">'answer'</span>, sdp: <span class="kw">await</span> res.text() });</pre>
+  <div class="note teal" style="margin-top:10px;">That's the whole publish handshake. MediaMTX now has your stream on path <code>${path}</code> and will serve it on every protocol it supports. To stop cleanly, <code>pc.close()</code> and <code>DELETE</code> the resource URL from the response's <code>Location</code> header.</div>
+</div>
+
+<!-- ════ 10 · WHEP PLAY ════ -->
+<div class="slide">
+  <div class="slide-title">06 — <em>WHEP</em> · Play in the Browser</div>
+  <div class="slide-sub">the mirror image of WHIP — recvonly instead of sendonly</div>
+  <div class="cols cols-2">
+    <div class="col">
+      <pre><span class="kw">const</span> pc = <span class="kw">new</span> RTCPeerConnection();
+
+<span class="cm">// we only receive</span>
+pc.<span class="fn">addTransceiver</span>(<span class="str">'video'</span>, {direction:<span class="str">'recvonly'</span>});
+pc.<span class="fn">addTransceiver</span>(<span class="str">'audio'</span>, {direction:<span class="str">'recvonly'</span>});
+
+pc.<span class="fn">ontrack</span> = (e) =&gt; {
+  video.srcObject = e.streams[<span class="fl">0</span>];
+};
+
+<span class="kw">await</span> pc.setLocalDescription(
+  <span class="kw">await</span> pc.createOffer());
+
+<span class="kw">const</span> res = <span class="kw">await</span> fetch(
+  <span class="str">`http://localhost:8889/${path}/whep`</span>, {
+  method:<span class="str">'POST'</span>,
+  headers:{<span class="str">'Content-Type'</span>:<span class="str">'application/sdp'</span>},
+  body: pc.localDescription.sdp });
+
+<span class="kw">await</span> pc.setRemoteDescription({
+  type:<span class="str">'answer'</span>, sdp: <span class="kw">await</span> res.text() });</pre>
+    </div>
+    <div class="col" style="justify-content:center;">
+      <div class="note purple"><strong>Easiest path of all:</strong> MediaMTX ships a built-in player page. Just open <code>http://localhost:8889/&lt;path&gt;</code> in any browser — no code needed to verify a publish.</div>
+      <div class="note green" style="font-size:11.5px;">WHEP is identical in shape to WHIP: build an offer, POST it to the <code>/whep</code> endpoint, apply the answer. The only differences are <code>recvonly</code> transceivers and reading frames in <code>ontrack</code>.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ 11 · THE UI ════ -->
+<div class="slide">
+  <div class="slide-title">07 — Build the <em>Publisher UI</em></div>
+  <div class="slide-sub">two cards: camera + screen, each with preview, path field, start/stop</div>
+  <div class="cols cols-2" style="max-width:900px;">
+    <div class="col" style="align-items:center;">
+      <svg viewBox="0 0 380 210" width="100%" style="max-width:360px;">
+        <rect x="2" y="2" width="376" height="206" rx="10" fill="var(--bg2)" stroke="var(--border)"/>
+        <rect x="14" y="14" width="174" height="182" rx="8" fill="var(--bg4)" stroke="var(--blue-border)"/>
+        <text x="101" y="34" fill="var(--blue)" font-size="11" text-anchor="middle" font-weight="600">Camera</text>
+        <rect x="26" y="44" width="150" height="84" rx="5" fill="#000" stroke="var(--border)"/><text x="101" y="90" fill="var(--muted)" font-size="9" text-anchor="middle">live preview</text>
+        <rect x="26" y="136" width="150" height="22" rx="4" fill="var(--bg3)"/><text x="101" y="151" fill="var(--muted)" font-size="8.5" text-anchor="middle">path: camera</text>
+        <rect x="26" y="164" width="150" height="24" rx="5" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="101" y="180" fill="var(--green)" font-size="9" text-anchor="middle">Start Camera</text>
+        <rect x="192" y="14" width="174" height="182" rx="8" fill="var(--bg4)" stroke="var(--purple-border)"/>
+        <text x="279" y="34" fill="var(--purple)" font-size="11" text-anchor="middle" font-weight="600">Screen</text>
+        <rect x="204" y="44" width="150" height="84" rx="5" fill="#000" stroke="var(--border)"/><text x="279" y="90" fill="var(--muted)" font-size="9" text-anchor="middle">live preview</text>
+        <rect x="204" y="136" width="150" height="22" rx="4" fill="var(--bg3)"/><text x="279" y="151" fill="var(--muted)" font-size="8.5" text-anchor="middle">path: screen</text>
+        <rect x="204" y="164" width="150" height="24" rx="5" fill="var(--green-dim)" stroke="var(--green-border)"/><text x="279" y="180" fill="var(--green)" font-size="9" text-anchor="middle">Start Screen Share</text>
+      </svg>
+    </div>
+    <div class="col" style="justify-content:center;">
+      <div class="note teal"><strong>Provided:</strong> <code>webrtc-publisher.html</code> — a complete, responsive, single-file app. It extends the starter with H.264 forcing, a secure-context check, mobile layout, and a clean stop/teardown.</div>
+      <div class="note amber" style="font-size:11.5px;">Toggle logic per card: not active → capture, build offer, WHIP POST, show preview, flip button to <strong>Stop</strong>. Active → close PC, stop tracks, clear preview.</div>
+      <div class="note blue" style="font-size:11.5px;">On mobile the two cards stack, and the Screen card auto-disables (no <code>getDisplayMedia</code>).</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ 12 · PLAY ON ANY PROTOCOL ════ -->
+<div class="slide">
+  <div class="slide-title">08 — Play the Published Stream <em>Anywhere</em></div>
+  <div class="slide-sub">one WebRTC publish, many ways out — codec decides what's possible</div>
+  <table class="cmp-table" style="max-width:860px;">
+    <thead><tr><th>Protocol</th><th>How to play</th><th>Codecs</th><th>Latency</th></tr></thead>
+    <tbody>
+      <tr><td class="p">WebRTC (WHEP)</td><td class="m">browser → localhost:8889/&lt;path&gt;</td><td class="g">H264 · VP8/9 · AV1 · Opus</td><td class="g">sub-second</td></tr>
+      <tr><td class="g">HLS</td><td class="m">browser → localhost:8888/&lt;path&gt;</td><td class="a">H264 · H265 · AV1 (+Opus in fmp4)</td><td class="r">~2–6 s</td></tr>
+      <tr><td class="a">RTSP</td><td class="m">ffplay / VLC → :8554/&lt;path&gt;</td><td class="g">almost all</td><td class="g">low</td></tr>
+      <tr><td class="b">RTMP</td><td class="m">ffplay / OBS → :1935/&lt;path&gt;</td><td class="r">H264 + AAC only</td><td class="a">~2 s</td></tr>
+    </tbody>
+  </table>
+  <div class="note red" style="margin-top:14px;"><strong>The codec rule, made concrete:</strong> publish <strong>VP8</strong> (Chrome default) → WebRTC ✓ HLS ✓ but RTMP ✗. Publish <strong>H.264</strong> (forced, slide 8) → all four work. That single choice is why we reorder codecs in the publisher.</div>
+</div>
+
+<!-- ════ 13 · HTTPS FOR MOBILE ════ -->
+<div class="slide">
+  <div class="slide-title">Lab Setup — <em>HTTPS</em> for Mobile</div>
+  <div class="slide-sub">phones refuse camera access over plain http — give the page TLS</div>
+  <div class="cols cols-2">
+    <div class="col">
+      <div class="label green">easiest · a tunnel</div>
+      <pre><span class="cm"># serve the publisher folder</span>
+npx serve .            <span class="cm"># :3000</span>
+
+<span class="cm"># expose it over https</span>
+npx localtunnel --port 3000
+<span class="cm"># → https://xxxx.loca.lt  (open on phone)</span></pre>
+      <div class="note green" style="font-size:11.5px;">The phone loads the page over HTTPS, so <code>getUserMedia</code> is allowed. Point the app's server field at your PC's MediaMTX.</div>
+      <a href="./webrtc-publisher.html" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:9px;text-decoration:none;background:var(--teal-dim);border:1px solid var(--teal-border);border-radius:10px;padding:11px 16px;color:var(--teal);font-size:12.5px;font-weight:500;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><path d="M10 14L21 3M21 3h-6M21 3v6" stroke="var(--teal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h6" stroke="var(--teal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Open the publisher app → <code style="font-family:var(--mono);font-size:11px;color:var(--text);background:var(--bg4);padding:1px 6px;border-radius:4px;">./webrtc-publisher.html</code>
+      </a>
+      <div class="note blue" style="font-size:11px;">Hosted next to this page — the relative link resolves to the same base path on GitHub Pages.</div>
+    </div>
+    <div class="col">
+      <div class="label amber">also fine · localhost</div>
+      <pre><span class="cm"># on the SAME machine, http://localhost
+# is already a secure context — camera
+# works with no TLS at all.</span>
+
+<span class="cm"># MediaMTX WebRTC also needs reachable
+# ICE hosts; on a LAN add your IP:</span>
+<span class="kw">webrtcAdditionalHosts:</span> [<span class="str">192.168.1.50</span>]</pre>
+      <div class="note blue" style="font-size:11.5px;">For phone↔PC over Wi-Fi, set <code>webrtcAdditionalHosts</code> to your PC's LAN IP so ICE can find a path.</div>
+    </div>
+  </div>
+  <div class="note red" style="margin-top:10px;"><strong>Mixed content:</strong> an HTTPS page can't <code>fetch()</code> an <code>http://</code> WHIP endpoint. Either run MediaMTX behind HTTPS too, or test mobile via the tunnel pointing at an HTTPS-fronted server.</div>
+</div>
+
+<!-- ════ 14 · ACCEPTANCE ════ -->
+<div class="slide">
+  <div class="slide-title"><em>Acceptance</em> Checklist</div>
+  <div class="slide-sub">what "done" looks like</div>
+  <div class="steps" style="max-width:700px;">
+    <div class="step"><div class="step-num">1</div><div class="step-txt">Publisher page captures camera (<code>getUserMedia</code>) and screen (<code>getDisplayMedia</code>) with a live preview each</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-txt">Both publish to MediaMTX over WHIP to distinct paths (<code>camera</code>, <code>screen</code>); start/stop works cleanly</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-txt">Video is forced to <strong>H.264</strong> via <code>setCodecPreferences</code>; confirmed by RTMP playback succeeding</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-txt">Published stream plays back via WebRTC (<code>:8889/&lt;path&gt;</code>), HLS (<code>:8888</code>), and RTSP (<code>ffplay :8554</code>)</div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-txt">Camera publish works from a <strong>phone</strong> over HTTPS; screen card correctly disabled on mobile</div></div>
+  </div>
+  <div class="note teal" style="margin-top:16px;">You now have a browser-native camera for the VMS — the same WHIP flow a real product uses to let anyone contribute a feed from the device already in their pocket.</div>
+</div>
+
+</div><!-- /deck -->
+
+<div class="nav">
+  <button class="nav-btn" id="prev" disabled>← Prev</button>
+  <div class="counter" id="counter">1 / 14</div>
+  <button class="nav-btn" id="next">Next →</button>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const bar = document.getElementById('bar');
+const prev = document.getElementById('prev');
+const next = document.getElementById('next');
+const ctr  = document.getElementById('counter');
+let cur = 0;
+function go(n) {
+  slides[cur].classList.remove('active');
+  cur = n;
+  slides[cur].classList.add('active');
+  bar.style.width = ((cur + 1) / slides.length * 100) + '%';
+  ctr.textContent = (cur + 1) + ' / ' + slides.length;
+  prev.disabled = cur === 0;
+  next.disabled = cur === slides.length - 1;
+}
+prev.addEventListener('click', () => cur > 0 && go(cur - 1));
+next.addEventListener('click', () => cur < slides.length - 1 && go(cur + 1));
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { if (cur < slides.length - 1) go(cur + 1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { if (cur > 0) go(cur - 1); }
+});
+go(0);
+</script>
+</body>
+</html>
