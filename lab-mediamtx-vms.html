@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab — MediaMTX · CCTV Simulator + VMS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d1117; --bg2: #161b22; --bg3: #21262d; --bg4: #080c11;
+  --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.15);
+  --text: #e6edf3; --muted: #7d8590;
+  --teal: #2dd4bf; --teal-dim: rgba(45,212,191,0.10); --teal-border: rgba(45,212,191,0.28);
+  --amber: #f59e0b; --amber-dim: rgba(245,158,11,0.10); --amber-border: rgba(245,158,11,0.28);
+  --blue: #60a5fa; --blue-dim: rgba(96,165,250,0.10); --blue-border: rgba(96,165,250,0.28);
+  --purple: #a78bfa; --purple-dim: rgba(167,139,250,0.10); --purple-border: rgba(167,139,250,0.28);
+  --green: #4ade80; --green-dim: rgba(74,222,128,0.10); --green-border: rgba(74,222,128,0.28);
+  --red: #f87171; --red-dim: rgba(248,113,113,0.10); --red-border: rgba(248,113,113,0.28);
+  --font: 'DM Sans', sans-serif; --mono: 'DM Mono', monospace;
+}
+html, body { width:100%; height:100%; background:var(--bg); color:var(--text); font-family:var(--font); overflow:hidden; }
+.deck { width:100%; height:100%; position:relative; }
+.slide { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:40px 60px 74px; opacity:0; pointer-events:none; transform:translateY(14px); transition:opacity 0.3s ease, transform 0.3s ease; }
+.slide.active { opacity:1; pointer-events:all; transform:translateY(0); }
+.nav { position:fixed; bottom:24px; left:0; right:0; display:flex; align-items:center; justify-content:center; gap:16px; z-index:100; }
+.nav-btn { background:var(--bg2); border:1px solid var(--border2); color:var(--text); font-family:var(--font); font-size:13px; padding:7px 18px; border-radius:8px; cursor:pointer; transition:background 0.15s, border-color 0.15s; }
+.nav-btn:hover { background:var(--bg3); border-color:var(--teal); }
+.nav-btn:disabled { opacity:0.2; cursor:default; }
+.counter { font-size:12px; color:var(--muted); font-family:var(--mono); min-width:54px; text-align:center; }
+.progress { position:fixed; top:0; left:0; right:0; height:2px; background:var(--border); z-index:100; }
+.progress-bar { height:100%; background:var(--teal); transition:width 0.3s ease; }
+.slide-title { font-size:24px; font-weight:600; letter-spacing:-0.02em; text-align:center; margin-bottom:20px; line-height:1.2; flex-shrink:0; }
+.slide-title em { font-style:normal; color:var(--teal); }
+.slide-sub { font-size:12px; font-family:var(--mono); color:var(--muted); text-align:center; margin-top:-14px; margin-bottom:20px; letter-spacing:0.04em; flex-shrink:0; }
+pre { background:var(--bg4); border:1px solid var(--border); border-radius:10px; padding:12px 16px; font-family:var(--mono); font-size:11px; line-height:1.65; color:#cdd9e5; overflow-x:auto; white-space:pre; }
+.cm { color:#8b949e; font-style:italic; } .kw { color:#ff7b72; } .str { color:#a5d6ff; } .fl { color:#79c0ff; } .out { color:#7ee787; } .yk { color:#79c0ff; }
+.cols { display:grid; gap:14px; width:100%; max-width:960px; }
+.cols-2 { grid-template-columns:1fr 1fr; } .cols-3 { grid-template-columns:1fr 1fr 1fr; }
+.col { display:flex; flex-direction:column; gap:9px; }
+.label { font-size:10px; font-family:var(--mono); letter-spacing:0.1em; text-transform:uppercase; padding:5px 12px; border-radius:6px; display:inline-block; width:fit-content; }
+.label.teal { background:var(--teal-dim); color:var(--teal); border:1px solid var(--teal-border); }
+.label.amber { background:var(--amber-dim); color:var(--amber); border:1px solid var(--amber-border); }
+.label.blue { background:var(--blue-dim); color:var(--blue); border:1px solid var(--blue-border); }
+.label.purple { background:var(--purple-dim); color:var(--purple); border:1px solid var(--purple-border); }
+.label.green { background:var(--green-dim); color:var(--green); border:1px solid var(--green-border); }
+.label.red { background:var(--red-dim); color:var(--red); border:1px solid var(--red-border); }
+.note { border-radius:10px; padding:11px 16px; font-size:12px; line-height:1.6; width:100%; max-width:960px; flex-shrink:0; }
+.note.teal { background:var(--teal-dim); border:1px solid var(--teal-border); }
+.note.amber { background:var(--amber-dim); border:1px solid var(--amber-border); }
+.note.purple { background:var(--purple-dim); border:1px solid var(--purple-border); }
+.note.blue { background:var(--blue-dim); border:1px solid var(--blue-border); }
+.note.red { background:var(--red-dim); border:1px solid var(--red-border); }
+.note.green { background:var(--green-dim); border:1px solid var(--green-border); }
+.note strong { color:var(--teal); } .note.amber strong { color:var(--amber); } .note.purple strong { color:var(--purple); } .note.blue strong { color:var(--blue); } .note.red strong { color:var(--red); } .note.green strong { color:var(--green); }
+.note code { font-family:var(--mono); font-size:11px; color:var(--teal); background:var(--bg4); padding:1px 6px; border-radius:4px; }
+.cover-tag { font-size:11px; font-family:var(--mono); color:var(--teal); letter-spacing:0.12em; text-transform:uppercase; border:1px solid var(--teal-border); background:var(--teal-dim); padding:4px 14px; border-radius:20px; margin-bottom:22px; }
+.cover-title { font-size:44px; font-weight:600; letter-spacing:-0.03em; text-align:center; line-height:1.1; margin-bottom:14px; }
+.cover-title em { font-style:normal; color:var(--teal); }
+.cover-desc { font-size:14px; color:var(--muted); text-align:center; max-width:560px; line-height:1.65; margin-bottom:28px; }
+.topic-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:620px; width:100%; }
+.topic-item { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:10px 11px; font-size:11px; font-family:var(--mono); color:var(--muted); text-align:center; line-height:1.4; }
+.topic-item span { display:block; color:var(--teal); font-size:10px; margin-bottom:3px; }
+.cmp-table { width:100%; max-width:880px; border-collapse:collapse; font-size:12px; }
+.cmp-table th, .cmp-table td { padding:8px 14px; text-align:left; border-bottom:1px solid var(--border); }
+.cmp-table th { font-family:var(--mono); font-size:9.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--muted); background:var(--bg2); }
+.cmp-table th:first-child { border-radius:8px 0 0 0; } .cmp-table th:last-child { border-radius:0 8px 0 0; }
+.cmp-table tr:last-child td { border-bottom:none; }
+.cmp-table td:first-child { color:var(--text); font-family:var(--mono); font-size:11.5px; }
+.cmp-table tbody tr:hover { background:var(--bg2); }
+.cmp-table .g { color:var(--green); } .cmp-table .a { color:var(--amber); } .cmp-table .b { color:var(--blue); } .cmp-table .p { color:var(--purple); } .cmp-table .m { color:var(--muted); font-family:var(--mono); font-size:11px; }
+.center { display:flex; flex-direction:column; align-items:center; gap:14px; width:100%; }
+svg text { font-family:var(--mono); }
+.steps { display:flex; flex-direction:column; gap:8px; width:100%; max-width:560px; }
+.step { display:flex; gap:12px; align-items:flex-start; background:var(--bg2); border:1px solid var(--border); border-radius:9px; padding:10px 14px; }
+.step-num { flex-shrink:0; width:22px; height:22px; border-radius:50%; background:var(--teal-dim); border:1px solid var(--teal-border); color:var(--teal); font-family:var(--mono); font-size:11px; display:flex; align-items:center; justify-content:center; }
+.step-txt { font-size:12px; line-height:1.5; padding-top:2px; }
+.step-txt code { font-family:var(--mono); font-size:10.5px; color:var(--teal); }
+</style>
+</head>
+<body>
+
+<a href="index.html" class="overview-link" style="position:fixed;top:14px;left:18px;z-index:100;color:var(--teal);text-decoration:none;font-family:var(--mono);font-size:12px;letter-spacing:0.04em;">← Back to overview</a>
+
+<div class="progress"><div class="progress-bar" id="bar"></div></div>
+<div class="deck">
+
+<!-- ════ 1 · COVER ════ -->
+<div class="slide active">
+  <div class="cover-tag">Lab · Video Engineering III</div>
+  <div class="cover-title"><em>MediaMTX</em> — CCTV Sim + VMS</div>
+  <div class="cover-desc">Run two MediaMTX servers: one simulating a building full of cameras (webcam, phone, archived footage), one acting as a Video Management Server — configured by file, then driven live over its REST API with curl.</div>
+  <div class="topic-grid">
+    <div class="topic-item"><span>SETUP</span>Two instances, shifted ports</div>
+    <div class="topic-item"><span>SIM</span>Webcam · mobile · virtual cams</div>
+    <div class="topic-item"><span>LAB 1</span>VMS sources via config</div>
+    <div class="topic-item"><span>LAB 2</span>VMS sources via API</div>
+    <div class="topic-item"><span>LAB 3</span>Auto recording via config</div>
+    <div class="topic-item"><span>LAB 4</span>Auto + manual recording via API</div>
+  </div>
+</div>
+
+<!-- ════ 2 · ARCHITECTURE ════ -->
+<div class="slide">
+  <div class="slide-title">The <em>Two-Server</em> Architecture</div>
+  <div class="slide-sub">simulator pretends to be the cameras · VMS pulls, records, serves</div>
+  <div class="center">
+    <svg viewBox="0 0 900 290" width="100%" style="max-width:900px;">
+      <!-- SIMULATOR BOX -->
+      <rect x="10" y="20" width="360" height="250" rx="12" fill="var(--amber-dim)" stroke="var(--amber-border)" stroke-width="1.5"/>
+      <text x="190" y="44" fill="var(--amber)" font-size="13" text-anchor="middle" font-weight="600">CCTV SIMULATOR · mediamtx #1</text>
+      <text x="190" y="60" fill="var(--muted)" font-size="9.5" text-anchor="middle">ports prefixed with 1 → rtsp :18554 · rtmp :11935</text>
+      <!-- cams -->
+      <rect x="30" y="80" width="150" height="38" rx="7" fill="var(--bg2)" stroke="var(--blue-border)"/><text x="105" y="98" fill="var(--blue)" font-size="10" text-anchor="middle">/webcam</text><text x="105" y="111" fill="var(--muted)" font-size="8.5" text-anchor="middle">USB camera · on demand</text>
+      <rect x="200" y="80" width="150" height="38" rx="7" fill="var(--bg2)" stroke="var(--purple-border)"/><text x="275" y="98" fill="var(--purple)" font-size="10" text-anchor="middle">/mobilecam</text><text x="275" y="111" fill="var(--muted)" font-size="8.5" text-anchor="middle">phone app over Wi-Fi</text>
+      <rect x="30" y="130" width="150" height="38" rx="7" fill="var(--bg2)" stroke="var(--green-border)"/><text x="105" y="148" fill="var(--green)" font-size="10" text-anchor="middle">/vcam1</text><text x="105" y="161" fill="var(--muted)" font-size="8.5" text-anchor="middle">archived footage loop</text>
+      <rect x="200" y="130" width="150" height="38" rx="7" fill="var(--bg2)" stroke="var(--green-border)"/><text x="275" y="148" fill="var(--green)" font-size="10" text-anchor="middle">/vcam2</text><text x="275" y="161" fill="var(--muted)" font-size="8.5" text-anchor="middle">archived footage loop</text>
+      <text x="190" y="200" fill="var(--amber)" font-size="10" text-anchor="middle">each path = one fake camera</text>
+      <text x="190" y="216" fill="var(--muted)" font-size="9" text-anchor="middle">rtsp://localhost:18554/&lt;path&gt;</text>
+      <!-- arrow -->
+      <line x1="370" y1="145" x2="480" y2="145" stroke="var(--teal)" stroke-width="2.5" marker-end="url(#aa)"/>
+      <text x="425" y="134" fill="var(--teal)" font-size="9.5" text-anchor="middle">VMS pulls RTSP</text>
+      <!-- VMS BOX -->
+      <rect x="485" y="20" width="405" height="250" rx="12" fill="var(--teal-dim)" stroke="var(--teal-border)" stroke-width="1.5"/>
+      <text x="687" y="44" fill="var(--teal)" font-size="13" text-anchor="middle" font-weight="600">VMS · mediamtx #2</text>
+      <text x="687" y="60" fill="var(--muted)" font-size="9.5" text-anchor="middle">default ports · rtsp :8554 · API :9997 · playback :9996</text>
+      <rect x="505" y="80" width="175" height="40" rx="7" fill="var(--bg2)" stroke="var(--teal-border)"/><text x="592" y="98" fill="var(--teal)" font-size="10" text-anchor="middle">paths cam1..camN</text><text x="592" y="112" fill="var(--muted)" font-size="8.5" text-anchor="middle">sources = simulator URLs</text>
+      <rect x="700" y="80" width="170" height="40" rx="7" fill="var(--bg2)" stroke="var(--red-border)"/><text x="785" y="98" fill="var(--red)" font-size="10" text-anchor="middle">● recordings</text><text x="785" y="112" fill="var(--muted)" font-size="8.5" text-anchor="middle">fmp4 segments on disk</text>
+      <rect x="505" y="135" width="365" height="40" rx="7" fill="var(--bg2)" stroke="var(--blue-border)"/><text x="687" y="153" fill="var(--blue)" font-size="10" text-anchor="middle">REST API · :9997 — add paths, start/stop record, list</text><text x="687" y="167" fill="var(--muted)" font-size="8.5" text-anchor="middle">driven entirely with curl</text>
+      <text x="687" y="205" fill="var(--muted)" font-size="9" text-anchor="middle">readers: ffplay / VLC ← rtsp://localhost:8554/cam1</text>
+      <defs><marker id="aa" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--teal)"/></marker></defs>
+    </svg>
+  </div>
+  <div class="note teal" style="margin-top:4px;">MediaMTX calls publishers <strong>writers</strong> (sources) and players <strong>readers</strong>. The simulator is a building of writers; the VMS reads them, records them, and re-serves them — exactly the VMS capstone topology.</div>
+</div>
+
+<!-- ════ 3 · SETUP TWO INSTANCES ════ -->
+<div class="slide">
+  <div class="slide-title">Setup — <em>Two Instances</em>, Shifted Ports</div>
+  <div class="slide-sub">download mediamtx → two folders → two configs · prepend "1" to simulator ports</div>
+  <div class="cols cols-2">
+    <div class="col">
+      <div class="label amber">cctv-sim/mediamtx.yml</div>
+      <pre><span class="yk">rtspAddress:</span> <span class="str">:18554</span>
+<span class="yk">rtmpAddress:</span> <span class="str">:11935</span>
+<span class="yk">hlsAddress:</span> <span class="str">:18888</span>
+<span class="yk">webrtcAddress:</span> <span class="str">:18889</span>
+<span class="yk">srtAddress:</span> <span class="str">:18890</span>
+<span class="yk">api:</span> no          <span class="cm"># sim doesn't need it</span></pre>
+      <div class="label teal">vms/mediamtx.yml</div>
+      <pre><span class="cm"># default ports · just enable the API</span>
+<span class="yk">api:</span> yes
+<span class="yk">apiAddress:</span> <span class="str">:9997</span></pre>
+    </div>
+    <div class="col">
+      <table class="cmp-table" style="font-size:11px;">
+        <thead><tr><th>Service</th><th>VMS (default)</th><th>Simulator (+1)</th></tr></thead>
+        <tbody>
+          <tr><td>RTSP</td><td class="m">8554</td><td class="a">18554</td></tr>
+          <tr><td>RTMP</td><td class="m">1935</td><td class="a">11935</td></tr>
+          <tr><td>HLS</td><td class="m">8888</td><td class="a">18888</td></tr>
+          <tr><td>WebRTC</td><td class="m">8889</td><td class="a">18889</td></tr>
+          <tr><td>SRT</td><td class="m">8890</td><td class="a">18890</td></tr>
+          <tr><td>API</td><td class="g">9997</td><td class="m">off</td></tr>
+        </tbody>
+      </table>
+      <pre><span class="cm"># download: github.com/bluenviron/mediamtx/releases
+# (win64.zip / darwin_arm64.tar.gz)
+# run each in its own terminal:</span>
+cd cctv-sim  &amp;&amp; ./mediamtx     <span class="cm"># or mediamtx.exe</span>
+cd vms       &amp;&amp; ./mediamtx</pre>
+    </div>
+  </div>
+  <div class="note amber" style="margin-top:10px;">Both read the <code>mediamtx.yml</code> sitting <strong>next to their executable</strong> — that's how two copies coexist on one machine without port collisions.</div>
+</div>
+
+<!-- ════ 4 · SIM · WEBCAM ════ -->
+<div class="slide">
+  <div class="slide-title">Simulator — Camera 1: <em>USB Webcam</em></div>
+  <div class="slide-sub">runOnDemand: ffmpeg starts only when someone watches — like a camera waking up</div>
+  <div class="cols cols-2">
+    <div class="col">
+      <div class="label blue">windows · cctv-sim/mediamtx.yml</div>
+      <pre><span class="yk">paths:</span>
+  <span class="yk">webcam:</span>
+    <span class="yk">runOnDemand:</span> &gt;
+      ffmpeg -f dshow -i video=<span class="str">"USB 2.0 Camera"</span>
+      -c:v libx264 -preset veryfast
+      -maxrate 4000k -bufsize 8000k
+      -pix_fmt yuv420p -g 60
+      -f flv rtmp://localhost:11935/$MTX_PATH
+    <span class="yk">runOnDemandRestart:</span> yes</pre>
+    </div>
+    <div class="col">
+      <div class="label amber">macos · avfoundation variant</div>
+      <pre><span class="yk">paths:</span>
+  <span class="yk">webcam:</span>
+    <span class="yk">runOnDemand:</span> &gt;
+      ffmpeg -f avfoundation -framerate 30
+      -i <span class="str">"0:none"</span>
+      -c:v libx264 -preset veryfast
+      -maxrate 4000k -bufsize 8000k
+      -pix_fmt yuv420p -g 60
+      -f flv rtmp://localhost:11935/$MTX_PATH
+    <span class="yk">runOnDemandRestart:</span> yes</pre>
+    </div>
+  </div>
+  <div class="note blue" style="margin-top:10px;"><strong>$MTX_PATH</strong> is filled in by MediaMTX (= <code>webcam</code>) — ffmpeg publishes via RTMP <strong>back into the same server</strong>, which then serves it on every protocol. Find your device name/index with the list commands from the streaming lab (<code>-list_devices true</code>).</div>
+</div>
+
+<!-- ════ 5 · SIM · MOBILE CAM ════ -->
+<div class="slide">
+  <div class="slide-title">Simulator — Camera 2: <em>Your Phone</em></div>
+  <div class="slide-sub">two ways to wire a phone in: phone PUSHES to the sim, or sim PULLS from the phone</div>
+  <div class="cols cols-2">
+    <div class="col">
+      <div class="label green">option A · phone publishes (recommended)</div>
+      <div class="note green" style="font-size:11.5px;"><strong>Larix Broadcaster</strong> — free, no ads, Android + iPhone. In the app: New connection → URL <code>rtsp://&lt;PC-IP&gt;:18554/mobilecam</code> → start broadcasting.</div>
+      <pre><span class="cm"># sim config — nothing to add!
+# any publish to an unknown path
+# auto-creates it. Just verify:</span>
+ffplay rtsp://localhost:18554/mobilecam</pre>
+    </div>
+    <div class="col">
+      <div class="label purple">option B · sim pulls from phone</div>
+      <div class="note purple" style="font-size:11.5px;">Apps that run an <strong>RTSP server on the phone</strong> (e.g. <strong>IP Webcam</strong> on Android — free tier is fine). Note the URL the app shows, then:</div>
+      <pre><span class="yk">paths:</span>
+  <span class="yk">mobilecam:</span>
+    <span class="yk">source:</span> <span class="str">rtsp://192.168.1.123:8080/cam</span>
+    <span class="yk">sourceOnDemand:</span> yes</pre>
+    </div>
+  </div>
+  <div class="note amber" style="margin-top:10px;">Phone and PC must be on the <strong>same Wi-Fi</strong>. Find your PC's IP with <code>ipconfig</code> (win) / <code>ifconfig</code> (mac). iPhone has few free RTSP-<em>server</em> apps, which is why push-with-Larix (option A) is the cross-platform recommendation.</div>
+</div>
+
+<!-- ════ 6 · SIM · VIRTUAL CAMS ════ -->
+<div class="slide">
+  <div class="slide-title">Simulator — Cameras 3+4: <em>Virtual Cams</em> from Footage</div>
+  <div class="slide-sub">loop archived CCTV clips forever — cameras that never sleep</div>
+  <pre style="max-width:880px;"><span class="yk">paths:</span>
+  <span class="yk">vcam1:</span>
+    <span class="yk">runOnInit:</span> &gt;
+      ffmpeg -re -stream_loop -1 -i footage1.mp4
+      -c:v libx264 -preset veryfast -b:v 2M -pix_fmt yuv420p -g 60 -an
+      -f rtsp rtsp://localhost:18554/$MTX_PATH
+    <span class="yk">runOnInitRestart:</span> yes
+
+  <span class="yk">vcam2:</span>
+    <span class="yk">runOnInit:</span> &gt;
+      ffmpeg -re -stream_loop -1 -i footage2.mp4
+      -c:v libx264 -preset veryfast -b:v 2M -pix_fmt yuv420p -g 60 -an
+      -f rtsp rtsp://localhost:18554/$MTX_PATH
+    <span class="yk">runOnInitRestart:</span> yes</pre>
+  <div class="cols cols-2" style="margin-top:10px;">
+    <div class="note green"><strong>runOnInit</strong> (vs runOnDemand): starts when the server boots and keeps running — a 24/7 camera. <strong>-stream_loop -1</strong> loops the file forever; <strong>-re</strong> paces it at real time.</div>
+    <div class="note blue"><strong>Footage:</strong> any mp4 works — search "CCTV sample footage" on archive.org or pexels.com, or reuse Big Buck Bunny. If the clip is already H.264 you can swap the encode flags for <code>-c copy</code> to save CPU.</div>
+  </div>
+</div>
+
+<!-- ════ 7 · SIM · VERIFY ════ -->
+<div class="slide">
+  <div class="slide-title">Simulator — <em>Verify</em> the Building Is Alive</div>
+  <div class="slide-sub">four cameras, one server — open a player per path</div>
+  <div class="cols cols-2" style="max-width:880px;">
+    <div class="col">
+      <div class="label teal">readers — ffplay</div>
+      <pre>ffplay rtsp://localhost:18554/webcam
+ffplay rtsp://localhost:18554/mobilecam
+ffplay rtsp://localhost:18554/vcam1
+ffplay rtsp://localhost:18554/vcam2</pre>
+    </div>
+    <div class="col">
+      <div class="label amber">same streams, other protocols</div>
+      <pre><span class="cm"># VLC over RTSP</span>
+vlc rtsp://localhost:18554/vcam1
+<span class="cm"># browser · HLS</span>
+http://localhost:18888/vcam1
+<span class="cm"># browser · WebRTC (lowest latency)</span>
+http://localhost:18889/vcam1</pre>
+    </div>
+  </div>
+  <div class="note teal" style="margin-top:12px;"><strong>Checkpoint before continuing:</strong> all four paths play. <code>webcam</code> takes a moment to appear (ffmpeg spawns on demand); <code>vcam1/2</code> are instant; <code>mobilecam</code> needs the phone app broadcasting. One protocol in, every protocol out — that's MediaMTX's core trick.</div>
+</div>
+
+<!-- ════ 8 · LAB 1 · VMS SOURCES VIA CONFIG ════ -->
+<div class="slide">
+  <div class="slide-title">Lab 1 — VMS <em>Sources via Config File</em></div>
+  <div class="slide-sub">the VMS becomes a writer-collector: each path pulls one simulator camera</div>
+  <div class="cols cols-2">
+    <div class="col">
+      <div class="label teal">vms/mediamtx.yml</div>
+      <pre><span class="yk">api:</span> yes
+<span class="yk">apiAddress:</span> <span class="str">:9997</span>
+
+<span class="yk">paths:</span>
+  <span class="yk">cam1:</span>
+    <span class="yk">source:</span> <span class="str">rtsp://localhost:18554/vcam1</span>
+  <span class="yk">cam2:</span>
+    <span class="yk">source:</span> <span class="str">rtsp://localhost:18554/vcam2</span>
+  <span class="yk">cam3:</span>
+    <span class="yk">source:</span> <span class="str">rtsp://localhost:18554/webcam</span>
+    <span class="yk">sourceOnDemand:</span> yes</pre>
+    </div>
+    <div class="col" style="justify-content:center;">
+      <div class="label green">restart VMS, then read from IT — port 8554</div>
+      <pre>ffplay rtsp://localhost:8554/cam1
+ffplay rtsp://localhost:8554/cam2
+ffplay rtsp://localhost:8554/cam3</pre>
+      <div class="note green" style="font-size:11.5px;">You're now watching simulator cameras <strong>through</strong> the VMS — sim is the writer, VMS path is the proxy, ffplay is the reader.</div>
+      <div class="note blue" style="font-size:11.5px;"><strong>sourceOnDemand</strong> on cam3: VMS only connects to the webcam when a reader asks — which in turn triggers the sim's runOnDemand ffmpeg. Lazy all the way down.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ 9 · LAB 2 · VMS SOURCES VIA API ════ -->
+<div class="slide">
+  <div class="slide-title">Lab 2 — VMS <em>Sources via REST API</em></div>
+  <div class="slide-sub">same result, zero restarts — everything with curl against :9997</div>
+  <pre style="max-width:920px;"><span class="cm"># 1 · add a path that pulls vcam1 from the simulator</span>
+curl -X POST http://localhost:9997/v3/config/paths/add/cam4 \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -d <span class="str">'{"source": "rtsp://localhost:18554/vcam1"}'</span>
+
+<span class="cm"># 2 · list configured paths / check live state</span>
+curl http://localhost:9997/v3/config/paths/list
+curl http://localhost:9997/v3/paths/get/cam4
+
+<span class="cm"># 3 · play it (reader) — it's live immediately, no restart</span>
+ffplay rtsp://localhost:8554/cam4
+
+<span class="cm"># 4 · change the source on the fly, then remove the path</span>
+curl -X PATCH http://localhost:9997/v3/config/paths/patch/cam4 \
+  -d <span class="str">'{"source": "rtsp://localhost:18554/vcam2"}'</span>
+curl -X DELETE http://localhost:9997/v3/config/paths/delete/cam4</pre>
+  <div class="cols cols-2" style="margin-top:10px;">
+    <div class="note amber"><strong>Windows quoting:</strong> cmd needs the JSON in double quotes with escapes: <code>-d "{\"source\": \"rtsp://...\"}"</code>. In PowerShell use <code>curl.exe</code> (plain <code>curl</code> is an alias for Invoke-WebRequest).</div>
+    <div class="note red"><strong>Runtime only:</strong> API changes live in memory — they're gone after a restart. Persistent cameras belong in the yml; the API is for dynamic add/remove. A real VMS backend stores its camera list in its own DB and re-adds via API on boot.</div>
+  </div>
+</div>
+
+<!-- ════ 10 · LAB 3 · AUTO RECORDING VIA CONFIG ════ -->
+<div class="slide">
+  <div class="slide-title">Lab 3 — <em>Automatic Recording</em> via Config</div>
+  <div class="slide-sub">every frame that reaches a path is segmented to disk</div>
+  <div class="cols cols-2">
+    <div class="col">
+      <div class="label teal">vms/mediamtx.yml — per path</div>
+      <pre><span class="yk">pathDefaults:</span>
+  <span class="yk">recordPath:</span> <span class="str">./recordings/%path/%Y-%m-%d_%H-%M-%S-%f</span>
+  <span class="yk">recordFormat:</span> fmp4
+  <span class="yk">recordSegmentDuration:</span> 1m
+  <span class="yk">recordDeleteAfter:</span> 24h
+
+<span class="yk">paths:</span>
+  <span class="yk">cam1:</span>
+    <span class="yk">source:</span> <span class="str">rtsp://localhost:18554/vcam1</span>
+    <span class="yk">record:</span> yes
+  <span class="yk">cam2:</span>
+    <span class="yk">source:</span> <span class="str">rtsp://localhost:18554/vcam2</span>
+    <span class="yk">record:</span> no   <span class="cm"># live-only path</span></pre>
+    </div>
+    <div class="col" style="justify-content:center;">
+      <div class="label green">verify — files appear every minute</div>
+      <pre><span class="cm"># watch segments arrive</span>
+ls vms/recordings/cam1/
+<span class="out">2026-06-12_10-00-00-000000.mp4
+2026-06-12_10-01-00-000000.mp4</span>
+
+<span class="cm"># each segment is a normal mp4:</span>
+ffplay vms/recordings/cam1/2026-06-12_10-00-00-000000.mp4</pre>
+      <div class="note green" style="font-size:11.5px;"><strong>recordSegmentDuration</strong> chops the archive into bite-size files (1m here for fast lab feedback; 1h is a common production value). <strong>recordDeleteAfter</strong> is your retention policy — old segments self-delete.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ 11 · LAB 4 · RECORDING VIA API ════ -->
+<div class="slide">
+  <div class="slide-title">Lab 4 — Recording <em>via API</em> · Auto + Manual</div>
+  <div class="slide-sub">record:true at creation = automatic · patch it live = manual start/stop</div>
+  <pre style="max-width:920px;"><span class="cm"># AUTO — new path that records from the moment it exists</span>
+curl -X POST http://localhost:9997/v3/config/paths/add/cam5 \
+  -d <span class="str">'{"source": "rtsp://localhost:18554/vcam2", "record": true}'</span>
+
+<span class="cm"># MANUAL — start recording on an existing path…</span>
+curl -X PATCH http://localhost:9997/v3/config/paths/patch/cam2 \
+  -d <span class="str">'{"record": true}'</span>
+
+<span class="cm"># …let it run a couple of minutes, then stop</span>
+curl -X PATCH http://localhost:9997/v3/config/paths/patch/cam2 \
+  -d <span class="str">'{"record": false}'</span>
+
+<span class="cm"># inspect what's on disk, via API</span>
+curl http://localhost:9997/v3/recordings/list
+curl http://localhost:9997/v3/recordings/get/cam2</pre>
+  <div class="note purple" style="margin-top:10px;">This patch pair — <code>{"record": true}</code> / <code>{"record": false}</code> — is exactly the primitive behind a VMS UI's <strong>⏺ record button</strong>: the frontend calls your backend, your backend calls MediaMTX. Manual recording uses the same <code>recordPath</code>/segment settings from Lab 3.</div>
+</div>
+
+<!-- ════ 12 · WRAP ════ -->
+<div class="slide">
+  <div class="slide-title"><em>Acceptance</em> Checklist</div>
+  <div class="slide-sub">what "done" looks like for this lab</div>
+  <div class="steps" style="max-width:680px;">
+    <div class="step"><div class="step-num">1</div><div class="step-txt">Two MediaMTX instances run side by side — sim on <code>1xxxx</code> ports, VMS on defaults with API on <code>:9997</code></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-txt">Simulator serves 4 cameras: <code>/webcam</code> (on demand), <code>/mobilecam</code> (phone), <code>/vcam1</code> + <code>/vcam2</code> (looped footage) — all playable in ffplay</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-txt">VMS proxies sim cameras via config-file paths AND via curl-created paths, readable on <code>rtsp://localhost:8554/&lt;path&gt;</code></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-txt">Auto-recording produces timestamped fmp4 segments under <code>./recordings/&lt;path&gt;/</code> with retention configured</div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-txt">Manual record start/stop works live via PATCH, and <code>/v3/recordings/list</code> shows the segments</div></div>
+  </div>
+  <div class="note teal" style="margin-top:16px;">You've now built, by hand, the spine of the VMS capstone: <strong>camera fleet → ingest server → live proxy → recorder → API control</strong>. The capstone wraps this in your own backend + React frontend.</div>
+</div>
+
+</div><!-- /deck -->
+
+<div class="nav">
+  <button class="nav-btn" id="prev" disabled>← Prev</button>
+  <div class="counter" id="counter">1 / 12</div>
+  <button class="nav-btn" id="next">Next →</button>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const bar = document.getElementById('bar');
+const prev = document.getElementById('prev');
+const next = document.getElementById('next');
+const ctr  = document.getElementById('counter');
+let cur = 0;
+function go(n) {
+  slides[cur].classList.remove('active');
+  cur = n;
+  slides[cur].classList.add('active');
+  bar.style.width = ((cur + 1) / slides.length * 100) + '%';
+  ctr.textContent = (cur + 1) + ' / ' + slides.length;
+  prev.disabled = cur === 0;
+  next.disabled = cur === slides.length - 1;
+}
+prev.addEventListener('click', () => cur > 0 && go(cur - 1));
+next.addEventListener('click', () => cur < slides.length - 1 && go(cur + 1));
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { if (cur < slides.length - 1) go(cur + 1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { if (cur > 0) go(cur - 1); }
+});
+go(0);
+</script>
+</body>
+</html>
